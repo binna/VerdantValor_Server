@@ -15,5 +15,8 @@
             public const string SECRET_KEY = "ThisIsASecretKeyForJwtTokenDemoT";
             public const int EXPIRE_MINUTES = 30;
         }
+
+        public const byte idMinLength = 5;
+        public const byte idMaxLength = 15;
     }
 }

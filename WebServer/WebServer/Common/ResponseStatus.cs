@@ -1,4 +1,6 @@
-﻿namespace WebServer.Common
+﻿using WebServer.Contexts;
+
+namespace WebServer.Common
 {
     public sealed class ResponseStatus
     {
@@ -13,8 +15,13 @@
         public static readonly ResponseStatus emptyUser = new(false, 2012, "가입한 유저가 존재하지 않습니다.");
         public static readonly ResponseStatus notMatchPw  = new(false, 2013, "비밀번호가 일치하지 않습니다.");
         public static readonly ResponseStatus idAlreadyExists = new(false, 2014, "아이디가 이미 존재합니다.");
+        public static readonly ResponseStatus invalidIdLength = new(false, 2015, $"아이디 길이 조건을 만족하지 않습니다({AppConstant.idMinLength}-{AppConstant.idMaxLength}).");
+        public static readonly ResponseStatus invalidNickname = new(false, 2016, "사용할 수 없는 닉네임입니다.");
+        public static readonly ResponseStatus invalidId = new(false, 2017, "사용할 수 없는 아이디입니다.");
+
 
         public static readonly ResponseStatus unexpectedError = new(false, 9999, "예상하지 못한 오류가 발생했습니다.");
+
 
         public bool isSuccess { get; }
         public int code { get; }

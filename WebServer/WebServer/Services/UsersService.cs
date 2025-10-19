@@ -9,6 +9,7 @@ namespace WebServer.Services
 
         // TODO DB로 이전 예정 =======
         public Dictionary<string, string> userInfos = new();
+        public HashSet<string> bannedIds = new();
         // ===========================
 
         public UsersService(JwtService jwtService)
@@ -20,6 +21,8 @@ namespace WebServer.Services
             userInfos.Add("user2", "5678");
             userInfos.Add("user3", "9012");
             // ===========================
+
+            bannedIds.Add("admin");
         }
 
         public ApiResponse<JoinRes> Join(string id, string pw /* TODO 추후 필요한 항목 추가하기 */)
@@ -27,7 +30,11 @@ namespace WebServer.Services
             if (userInfos.ContainsKey(id))
                 return new ApiResponse<JoinRes>(ResponseStatus.idAlreadyExists);
 
-            // TODO 사용 못하는 아이디 모음
+            bool containsForbiddenWord = 
+                bannedIds.Any(word => id.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+            if (containsForbiddenWord)
+                return new ApiResponse<JoinRes>(ResponseStatus.invalidId);
 
             userInfos.Add(id, pw);
 

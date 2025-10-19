@@ -28,7 +28,9 @@ namespace WebServer.Controllers
             if (string.IsNullOrEmpty(request.pw))
                 return new ApiResponse<JoinRes>(ResponseStatus.emptyPw);
 
-            // TODO 아이디 길이 제한
+            if (request.id.Length < AppConstant.idMinLength 
+                    || request.id.Length > AppConstant.idMaxLength)
+                return new ApiResponse<JoinRes>(ResponseStatus.invalidIdLength);
 
             return usersService.Join(request.id, request.pw);
         }
