@@ -22,21 +22,21 @@ namespace WebServer.Services
             // ===========================
         }
 
-        public CommonResponse<LoginRes> CheckPassword(string id, string pw)
+        public ApiResponse<LoginRes> CheckPassword(string id, string pw)
         {
             userInfos.TryGetValue(id, out var findPw);
             if (string.IsNullOrEmpty(findPw))
             {
-                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyUser);
+                return new ApiResponse<LoginRes>(ResponseStatus.emptyUser);
             }
 
             if (pw != findPw)
             {
-                return new CommonResponse<LoginRes>(CommonResponseStatus.notMatchPw);
+                return new ApiResponse<LoginRes>(ResponseStatus.notMatchPw);
             }
 
             var response = new LoginRes() { token = jwtService.CreateToken(id) };
-            return new CommonResponse<LoginRes>(CommonResponseStatus.success, response);
+            return new ApiResponse<LoginRes>(ResponseStatus.success, response);
         }
     }
 }

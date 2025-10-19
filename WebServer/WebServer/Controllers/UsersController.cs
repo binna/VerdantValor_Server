@@ -6,7 +6,7 @@ using WebServer.Services;
 
 namespace WebServer.Controllers
 {
-    [Route(AppConstant.Route.API_BASE)]
+    [Route(CommonConstant.Route.API_BASE)]
     [ApiController]
     public class UsersController : Controller
     {

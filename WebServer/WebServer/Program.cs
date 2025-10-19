@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using WebServer.Common;
+using WebServer.Configs;
 using WebServer.Contexts;
 using WebServer.Services;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,11 +35,11 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = AppConstant.Jwt.ISSUER,
-            ValidAudience = AppConstant.Jwt.AUDIENCE,
+            ValidIssuer = CommonConstant.Jwt.ISSUER,
+            ValidAudience = CommonConstant.Jwt.AUDIENCE,
             IssuerSigningKey = 
                 new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(AppConstant.Jwt.SECRET_KEY))
+                    Encoding.UTF8.GetBytes(CommonConstant.Jwt.SECRET_KEY))
         };
     });
 
@@ -45,14 +50,24 @@ builder.Services
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-//if (!app.Environment.IsDevelopment())
-//{
-//    app.UseExceptionHandler("/Error");
-//    // The default HSTS value is 30 days.
-//    // You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-//    app.UseHsts();
-//}
+// 모든 익셉션 JSON으로 형식 통일
+app
+    .UseExceptionHandler(exceptionHandlerApp =>
+    {
+        exceptionHandlerApp.Run(async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            context.Response.ContentType = "application/json";
+
+            var exceptionHandlerPathFeature =
+                context.Features.Get<IExceptionHandlerPathFeature>();
+            var ex = exceptionHandlerPathFeature?.Error;
+            
+            await context.Response.WriteAsJsonAsync(new AppException(ex));
+        });
+    });
+
+// HSTS (HTTP Strict Transport Security) : app.UseHsts();
 
 app.UseHttpsRedirection();
 

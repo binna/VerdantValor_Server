@@ -14,6 +14,8 @@
         public static readonly CommonResponseStatus notMatchPw  = new(false, 2013, "비밀번호가 일치하지 않습니다.");
 
 
+        public static readonly CommonResponseStatus unexpectedError = new(false, 9999, "예상하지 못한 오류가 발생했습니다.");
+
         public bool isSuccess { get; }
         public int code { get; }
         public string message { get; }
