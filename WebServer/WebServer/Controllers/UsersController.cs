@@ -10,51 +10,25 @@ namespace WebServer.Controllers
     [ApiController]
     public class UsersController : Controller
     {
-        private readonly JwtService jwtService;
+        private readonly UsersService usersService;
 
-        // TODO DB로 이전 예정 =======
-        public Dictionary<string, string> userInfos = new();
-        // ===========================
-
-        public UsersController(JwtService jwtService)
+        public UsersController(UsersService usersService)
         {
-            this.jwtService = jwtService;
-
-            // TODO DB로 이전 예정 =======
-            userInfos.Add("user1", "1234");
-            userInfos.Add("user2", "5678");
-            userInfos.Add("user3", "9012");
-            // ===========================
+            this.usersService = usersService;
         }
 
         [HttpPost("login")]
-        public CommonResponse<LoginRes> Login(LoginReq request)
+        public CommonResponse<LoginRes> Login([FromBody] LoginReq request)
         {
             LoginRes response = new();
 
             if (string.IsNullOrEmpty(request.id))
-            {
                 return new CommonResponse<LoginRes>(CommonResponseStatus.emptyId);
-            }
 
             if (string.IsNullOrEmpty(request.pw))
-            {
                 return new CommonResponse<LoginRes>(CommonResponseStatus.emptyPw);
-            }
 
-            userInfos.TryGetValue(request.id, out var pw);
-            if (string.IsNullOrEmpty(pw))
-            {
-                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyUser);
-            }
-
-            if (pw != request.pw)
-            {
-                return new CommonResponse<LoginRes>(CommonResponseStatus.notMatchPw);
-            }
-
-            response.token = jwtService.CreateToken(request.id);
-            return new CommonResponse<LoginRes>(CommonResponseStatus.success, response);
+            return usersService.CheckPassword(request.id, request.pw);
         }
     }
 }

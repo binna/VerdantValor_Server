@@ -40,7 +40,8 @@ builder.Services
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
-    .AddSingleton<JwtService>();
+    .AddSingleton<JwtService>()
+    .AddSingleton<UsersService>();
 
 var app = builder.Build();
 
