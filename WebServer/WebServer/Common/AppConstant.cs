@@ -1,6 +1,6 @@
 ﻿namespace WebServer.Contexts
 {
-    public static partial class AppConstants
+    public static partial class AppConstant
     {
         public static class Route
         {

@@ -30,11 +30,11 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = AppConstants.Jwt.ISSUER,
-            ValidAudience = AppConstants.Jwt.AUDIENCE,
+            ValidIssuer = AppConstant.Jwt.ISSUER,
+            ValidAudience = AppConstant.Jwt.AUDIENCE,
             IssuerSigningKey = 
                 new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(AppConstants.Jwt.SECRET_KEY))
+                    Encoding.UTF8.GetBytes(AppConstant.Jwt.SECRET_KEY))
         };
     });
 

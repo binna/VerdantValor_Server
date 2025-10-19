@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WebServer.Common;
 using WebServer.Contexts;
 using WebServer.Models;
 using WebServer.Services;
 
 namespace WebServer.Controllers
 {
-    [Route(AppConstants.Route.API_BASE)]
+    [Route(AppConstant.Route.API_BASE)]
     [ApiController]
     public class UsersController : Controller
     {
@@ -27,39 +28,33 @@ namespace WebServer.Controllers
         }
 
         [HttpPost("login")]
-        public LoginRes Login(LoginReq request)
+        public CommonResponse<LoginRes> Login(LoginReq request)
         {
             LoginRes response = new();
 
             if (string.IsNullOrEmpty(request.id))
             {
-                Console.WriteLine("1");
-                return response;
+                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyId);
             }
 
             if (string.IsNullOrEmpty(request.pw))
             {
-                Console.WriteLine("2");
-                return response;
+                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyPw);
             }
 
-            userInfos.TryGetValue(request.id, out var password);
-            Console.WriteLine(password);
-
-            if (string.IsNullOrEmpty(password))
+            userInfos.TryGetValue(request.id, out var pw);
+            if (string.IsNullOrEmpty(pw))
             {
-                Console.WriteLine("4");
-                return response;
+                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyUser);
             }
 
-            if (password != request.pw)
+            if (pw != request.pw)
             {
-                Console.WriteLine("3");
-                return response;
+                return new CommonResponse<LoginRes>(CommonResponseStatus.notMatchPw);
             }
 
             response.token = jwtService.CreateToken(request.id);
-            return response;
+            return new CommonResponse<LoginRes>(CommonResponseStatus.success, response);
         }
     }
 }
