@@ -12,7 +12,7 @@
         public static readonly ResponseStatus emptyPw = new(false, 2011, "PW를 입력해주세요.");
         public static readonly ResponseStatus emptyUser = new(false, 2012, "가입한 유저가 존재하지 않습니다.");
         public static readonly ResponseStatus notMatchPw  = new(false, 2013, "비밀번호가 일치하지 않습니다.");
-
+        public static readonly ResponseStatus idAlreadyExists = new(false, 2014, "아이디가 이미 존재합니다.");
 
         public static readonly ResponseStatus unexpectedError = new(false, 9999, "예상하지 못한 오류가 발생했습니다.");
 
