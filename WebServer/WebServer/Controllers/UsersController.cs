@@ -6,7 +6,7 @@ using WebServer.Services;
 
 namespace WebServer.Controllers
 {
-    [Route(CommonConstant.Route.API_BASE)]
+    [Route(AppConstant.Route.API_BASE)]
     [ApiController]
     public class UsersController : Controller
     {
@@ -18,15 +18,15 @@ namespace WebServer.Controllers
         }
 
         [HttpPost("login")]
-        public CommonResponse<LoginRes> Login([FromBody] LoginReq request)
+        public ApiResponse<LoginRes> Login([FromBody] LoginReq request)
         {
             LoginRes response = new();
 
             if (string.IsNullOrEmpty(request.id))
-                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyId);
+                return new ApiResponse<LoginRes>(ResponseStatus.emptyId);
 
             if (string.IsNullOrEmpty(request.pw))
-                return new CommonResponse<LoginRes>(CommonResponseStatus.emptyPw);
+                return new ApiResponse<LoginRes>(ResponseStatus.emptyPw);
 
             return usersService.CheckPassword(request.id, request.pw);
         }

@@ -1,14 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebServer.Common;
-using WebServer.Configs;
 using WebServer.Contexts;
 using WebServer.Services;
-using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,11 +31,11 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = CommonConstant.Jwt.ISSUER,
-            ValidAudience = CommonConstant.Jwt.AUDIENCE,
+            ValidIssuer = AppConstant.Jwt.ISSUER,
+            ValidAudience = AppConstant.Jwt.AUDIENCE,
             IssuerSigningKey = 
                 new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(CommonConstant.Jwt.SECRET_KEY))
+                    Encoding.UTF8.GetBytes(AppConstant.Jwt.SECRET_KEY))
         };
     });
 
