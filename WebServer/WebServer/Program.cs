@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebServer.Common;
+using WebServer.Configs;
 using WebServer.Contexts;
 using WebServer.Services;
 
@@ -42,6 +43,7 @@ builder.Services
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<JwtService>()
+    .AddSingleton<DbFactory>()
     .AddSingleton<UsersService>();
 
 var app = builder.Build();

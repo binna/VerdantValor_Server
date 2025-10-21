@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
 using WebServer.Common;
 using WebServer.Contexts;
-using WebServer.Models;
+using WebServer.Models.DTO;
 using WebServer.Services;
 
 namespace WebServer.Controllers

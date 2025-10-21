@@ -1,4 +1,4 @@
-﻿namespace WebServer.Models
+﻿namespace WebServer.Models.DTO
 {
     public class JoinRes
     {

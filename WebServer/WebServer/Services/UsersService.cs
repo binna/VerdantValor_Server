@@ -1,10 +1,12 @@
 ﻿using WebServer.Common;
-using WebServer.Models;
+using WebServer.Configs;
+using WebServer.Models.DTO;
 
 namespace WebServer.Services
 {
     public class UsersService
     {
+        private readonly ILogger<UsersService> logger;
         private readonly JwtService jwtService;
 
         // TODO DB로 이전 예정 =======
@@ -12,8 +14,10 @@ namespace WebServer.Services
         public HashSet<string> bannedIds = new();
         // ===========================
 
-        public UsersService(JwtService jwtService)
+        public UsersService(ILogger<UsersService> logger, 
+                            JwtService jwtService)
         {
+            this.logger = logger;
             this.jwtService = jwtService;
 
             // TODO DB로 이전 예정 =======
