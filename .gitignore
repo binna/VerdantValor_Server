@@ -720,3 +720,7 @@ obj/
 
 # Optional: static library folders
 **/wwwroot/lib/
+
+# ETC
+appsettings.json
+appsettings.*.json
