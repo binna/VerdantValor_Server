@@ -6,7 +6,6 @@
         public string message { get; }
         public int code { get; }
 
-
         public T? result { get; set; }
 
         public ApiResponse(ResponseStatus status)

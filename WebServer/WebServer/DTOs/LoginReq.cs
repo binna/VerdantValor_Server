@@ -1,4 +1,4 @@
-﻿namespace WebServer.Models.DTO
+﻿namespace WebServer.DTOs
 {
     public class LoginReq
     {

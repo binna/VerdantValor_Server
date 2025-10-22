@@ -16,7 +16,10 @@
             public const int EXPIRE_MINUTES = 30;
         }
 
-        public const byte idMinLength = 5;
-        public const byte idMaxLength = 15;
+        public const byte emailMinLength = 5;
+        public const byte emailMaxLength = 50;
+
+        public const byte nicknameMinLength = 3;
+        public const byte nicknameMaxLength = 30;
     }
 }

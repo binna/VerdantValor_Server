@@ -1,6 +1,9 @@
-﻿using WebServer.Common;
-using WebServer.Configs;
-using WebServer.Models.DTO;
+﻿using Mysqlx.Crud;
+using WebServer.Common;
+using WebServer.DTOs;
+using WebServer.Helpers;
+using WebServer.Models;
+using WebServer.Models.Repositories;
 
 namespace WebServer.Services
 {
@@ -8,55 +11,54 @@ namespace WebServer.Services
     {
         private readonly ILogger<UsersService> logger;
         private readonly JwtService jwtService;
+        private readonly UsersDAO usersDao;
 
         // TODO DB로 이전 예정 =======
-        public Dictionary<string, string> userInfos = new();
         public HashSet<string> bannedIds = new();
         // ===========================
 
         public UsersService(ILogger<UsersService> logger, 
-                            JwtService jwtService)
+                            JwtService jwtService, 
+                            UsersDAO usersDao)
         {
             this.logger = logger;
             this.jwtService = jwtService;
-
-            // TODO DB로 이전 예정 =======
-            userInfos.Add("user1", "1234");
-            userInfos.Add("user2", "5678");
-            userInfos.Add("user3", "9012");
-            // ===========================
+            this.usersDao = usersDao;
 
             bannedIds.Add("admin");
         }
 
-        public ApiResponse<JoinRes> Join(string id, string pw /* TODO 추후 필요한 항목 추가하기 */)
+        public ApiResponse<JoinRes> Join(string email, string pw, string? nickname)
         {
-            if (userInfos.ContainsKey(id))
-                return new ApiResponse<JoinRes>(ResponseStatus.idAlreadyExists);
+            if (usersDao.existsByEmail(email))
+                return new ApiResponse<JoinRes>(ResponseStatus.emailAlreadyExists);
 
             bool containsForbiddenWord = 
-                bannedIds.Any(word => id.Contains(word, StringComparison.OrdinalIgnoreCase));
+                bannedIds.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
 
             if (containsForbiddenWord)
-                return new ApiResponse<JoinRes>(ResponseStatus.invalidId);
+                return new ApiResponse<JoinRes>(ResponseStatus.forbiddenEmail);
 
-            userInfos.Add(id, pw);
+            string hashpw = HashHelper.ComputeSHA512Hash(pw);
 
-            var response = new JoinRes() { token = jwtService.CreateToken(id) };
+            if (!usersDao.Save(nickname, email, hashpw))
+                return new ApiResponse<JoinRes>(ResponseStatus.dbError);
+
+            var response = new JoinRes() { token = jwtService.CreateToken(email) };
             return new ApiResponse<JoinRes>(ResponseStatus.success, response);
         }
 
-        public ApiResponse<LoginRes> CheckPassword(string id, string pw)
+        public ApiResponse<LoginRes> CheckPassword(string email, string pw)
         {
-            userInfos.TryGetValue(id, out var findPw);
+            Users? user = usersDao.FindByEmail(email);
 
-            if (string.IsNullOrEmpty(findPw))
+            if (user == null)
                 return new ApiResponse<LoginRes>(ResponseStatus.emptyUser);
 
-            if (pw != findPw)
+            if (!HashHelper.VerifySHA512Hash(pw, user.pw))
                 return new ApiResponse<LoginRes>(ResponseStatus.notMatchPw);
 
-            var response = new LoginRes() { token = jwtService.CreateToken(id) };
+            var response = new LoginRes() { token = jwtService.CreateToken(email) };
             return new ApiResponse<LoginRes>(ResponseStatus.success, response);
         }
     }

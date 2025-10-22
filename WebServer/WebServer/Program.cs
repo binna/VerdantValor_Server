@@ -5,6 +5,7 @@ using System.Text;
 using WebServer.Common;
 using WebServer.Configs;
 using WebServer.Contexts;
+using WebServer.Models.Repositories;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,8 +44,11 @@ builder.Services
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<JwtService>()
-    .AddSingleton<DbFactory>()
     .AddSingleton<UsersService>();
+
+builder.Services
+    .AddSingleton<DbFactory>()
+    .AddSingleton<UsersDAO>();
 
 var app = builder.Build();
 

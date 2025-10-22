@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using System.Data.Common;
+using System.Text;
 using WebServer.Common;
 using WebServer.Contexts;
-using WebServer.Models.DTO;
+using WebServer.DTOs;
+using WebServer.Helpers;
 using WebServer.Services;
 
 namespace WebServer.Controllers
@@ -24,17 +26,27 @@ namespace WebServer.Controllers
         {
             JoinRes response = new();
 
-            if (string.IsNullOrEmpty(request.id))
-                return new ApiResponse<JoinRes>(ResponseStatus.emptyId);
+            if (string.IsNullOrEmpty(request.email))
+                return new ApiResponse<JoinRes>(ResponseStatus.emptyEmail);
 
             if (string.IsNullOrEmpty(request.pw))
                 return new ApiResponse<JoinRes>(ResponseStatus.emptyPw);
 
-            if (request.id.Length < AppConstant.idMinLength 
-                    || request.id.Length > AppConstant.idMaxLength)
-                return new ApiResponse<JoinRes>(ResponseStatus.invalidIdLength);
+            if (!ValidationHelper.IsValidEmail(request.email))
+                return new ApiResponse<JoinRes>(ResponseStatus.emailAlphabetNumericOnly);
 
-            return usersService.Join(request.id, request.pw);
+            if (request.email.Length < AppConstant.emailMinLength 
+                    || request.email.Length > AppConstant.emailMaxLength)
+                return new ApiResponse<JoinRes>(ResponseStatus.invalidLength);
+
+            if (!string.IsNullOrEmpty(request.nickname))
+            {
+                if (request.nickname.Length < AppConstant.nicknameMinLength
+                    || request.nickname.Length > AppConstant.nicknameMaxLength)
+                    return new ApiResponse<JoinRes>(ResponseStatus.invalidLength);
+            }
+
+            return usersService.Join(request.email, request.pw, request.nickname);
         }
 
         [HttpPost("login")]
@@ -43,7 +55,7 @@ namespace WebServer.Controllers
             LoginRes response = new();
 
             if (string.IsNullOrEmpty(request.id))
-                return new ApiResponse<LoginRes>(ResponseStatus.emptyId);
+                return new ApiResponse<LoginRes>(ResponseStatus.emptyEmail);
 
             if (string.IsNullOrEmpty(request.pw))
                 return new ApiResponse<LoginRes>(ResponseStatus.emptyPw);
