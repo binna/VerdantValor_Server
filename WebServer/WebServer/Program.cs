@@ -49,6 +49,7 @@ builder.Services
 
 builder.Services
     .AddSingleton<DbFactory>()
+    .AddSingleton<RedisClient>()
     .AddSingleton<UsersDAO>();
 
 var app = builder.Build();
