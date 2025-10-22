@@ -14,7 +14,7 @@ namespace WebServer.Configs
         private readonly string connUrl;
 
         public DbFactory(ILogger<DbFactory> logger,
-                        IConfiguration configuration)
+                         IConfiguration configuration)
         {
             this.logger = logger;
             this.connUrl = configuration["DB:MySQL:Url"];
@@ -22,6 +22,7 @@ namespace WebServer.Configs
             if (this.connUrl == null)
             {
                 logger.LogError("DB Connection Fail");
+                // TODO
             }
 
             logger.LogInformation("DB Connection Success");

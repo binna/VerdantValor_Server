@@ -10,7 +10,7 @@ namespace WebServer.Models.Repositories
         private readonly DbFactory dbFactory;
 
         public UsersDAO(ILogger<UsersDAO> logger, 
-                               DbFactory dbFactory)
+                        DbFactory dbFactory)
         {
             this.logger = logger;
             this.dbFactory = dbFactory;

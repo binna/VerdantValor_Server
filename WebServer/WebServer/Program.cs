@@ -4,7 +4,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebServer.Common;
 using WebServer.Configs;
-using WebServer.Contexts;
 using WebServer.Models.Repositories;
 using WebServer.Services;
 
@@ -27,17 +26,19 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var jwt = builder.Configuration.GetSection("JWT");
+
         options.TokenValidationParameters = new()
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = AppConstant.Jwt.ISSUER,
-            ValidAudience = AppConstant.Jwt.AUDIENCE,
+            ValidIssuer = jwt["Issuer"],
+            ValidAudience = jwt["Audience"],
             IssuerSigningKey = 
                 new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(AppConstant.Jwt.SECRET_KEY))
+                    Encoding.UTF8.GetBytes(jwt["SecretKey"]))
         };
     });
 

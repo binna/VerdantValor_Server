@@ -1,17 +1,45 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using WebServer.Models.Repositories;
 
 namespace WebServer.Services
 {
     public class JwtService
     {
-        private static readonly SymmetricSecurityKey signingKey
-            = new(Encoding.UTF8.GetBytes(Contexts.AppConstant.Jwt.SECRET_KEY));
+        private readonly SymmetricSecurityKey signingKey;
+        private readonly SigningCredentials signingCredentials;
 
-        private static readonly SigningCredentials signingCredentials
-            = new(signingKey, SecurityAlgorithms.HmacSha256);
+        private readonly ILogger<JwtService> logger;
+
+        private readonly string issuer;
+        private readonly string audience;
+        private readonly string secretKey;
+        private readonly ushort expireMinutes;
+
+        public JwtService(ILogger<JwtService> logger,
+                          IConfiguration configuration)
+        {
+            this.logger = logger;
+
+            this.secretKey = configuration["JWT:SecretKey"];
+            this.expireMinutes = ushort.Parse(configuration["JWT:ExpireMinutes"]);
+            this.issuer = configuration["JWT:Issuer"];
+            this.audience = configuration["JWT:Audience"];
+
+            if (this.secretKey == null 
+                    || this.issuer == null 
+                    || this.audience == null)
+            {
+                // TODO
+                logger.LogError("JWT configuration is missing required fields");
+            }
+
+            signingKey = new(Encoding.UTF8.GetBytes(this.secretKey));
+            signingCredentials = new(signingKey, SecurityAlgorithms.HmacSha256);
+        }
 
         public string CreateToken(string id)
         {
@@ -21,10 +49,10 @@ namespace WebServer.Services
             };
 
             var token = new JwtSecurityToken(
-                issuer: Contexts.AppConstant.Jwt.ISSUER,
-                audience: Contexts.AppConstant.Jwt.AUDIENCE,
+                issuer: this.issuer,
+                audience: this.audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(Contexts.AppConstant.Jwt.EXPIRE_MINUTES),
+                expires: DateTime.UtcNow.AddMinutes(this.expireMinutes),
                 signingCredentials: signingCredentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
