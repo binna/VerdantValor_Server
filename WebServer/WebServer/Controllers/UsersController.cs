@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
-using System.Data.Common;
-using System.Text;
 using WebServer.Common;
 using WebServer.Contexts;
 using WebServer.DTOs;

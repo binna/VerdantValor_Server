@@ -1,6 +1,4 @@
-﻿using WebServer.Contexts;
-
-namespace WebServer.Common
+﻿namespace WebServer.Common
 {
     public sealed class ResponseStatus
     {
