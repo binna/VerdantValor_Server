@@ -9,11 +9,13 @@ namespace WebServer.Services
     public class UsersService
     {
         private readonly ILogger<UsersService> logger;
+
         private readonly JwtService jwtService;
         private readonly UsersDAO usersDao;
 
-        // TODO DB로 이전 예정 =======
-        public HashSet<string> bannedIds = new();
+        // TODO DB에서 관리하는 부분 제작하기 =======
+        public HashSet<string> bannedEmails = new();
+        public HashSet<string> bannedNicknames = new();
         // ===========================
 
         public UsersService(ILogger<UsersService> logger, 
@@ -21,33 +23,53 @@ namespace WebServer.Services
                             UsersDAO usersDao)
         {
             this.logger = logger;
+
             this.jwtService = jwtService;
             this.usersDao = usersDao;
 
-            bannedIds.Add("admin");
+            // ==========================================
+            bannedEmails.Add("admin");
+            bannedNicknames.Add("admin");
+            // ==========================================
         }
 
-        public ApiResponse<JoinRes> Join(string email, string pw, string? nickname)
+        public async Task<ApiResponse<JoinRes>> Join(string email, string pw, string nickname)
         {
             if (usersDao.existsByEmail(email))
                 return new ApiResponse<JoinRes>(ResponseStatus.emailAlreadyExists);
 
-            bool containsForbiddenWord = 
-                bannedIds.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
+            bool containsForbiddenWord =
+                bannedEmails.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
 
             if (containsForbiddenWord)
                 return new ApiResponse<JoinRes>(ResponseStatus.forbiddenEmail);
 
+            containsForbiddenWord =
+               bannedNicknames.Any(word => nickname.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+            if (containsForbiddenWord)
+                return new ApiResponse<JoinRes>(ResponseStatus.forbiddenNickname);
+
             string hashpw = HashHelper.ComputeSHA512Hash(pw);
 
             if (!usersDao.Save(nickname, email, hashpw))
+            {
+                logger.LogError("Database error occurred while saving user information.");
                 return new ApiResponse<JoinRes>(ResponseStatus.dbError);
+            }
 
-            var response = new JoinRes() { token = jwtService.CreateToken(email) };
+            var user = usersDao.FindByEmail(email);
+            if (user == null)
+            {
+                logger.LogError("Database error occurred while finding user information.");
+                return new ApiResponse<JoinRes>(ResponseStatus.dbError); 
+            }
+
+            var response = new JoinRes() { token = jwtService.CreateToken(user.userId, user.nickname) };
             return new ApiResponse<JoinRes>(ResponseStatus.success, response);
         }
 
-        public ApiResponse<LoginRes> CheckPassword(string email, string pw)
+        public async Task<ApiResponse<LoginRes>> CheckPassword(string email, string pw)
         {
             Users? user = usersDao.FindByEmail(email);
 
@@ -57,7 +79,7 @@ namespace WebServer.Services
             if (!HashHelper.VerifySHA512Hash(pw, user.pw))
                 return new ApiResponse<LoginRes>(ResponseStatus.notMatchPw);
 
-            var response = new LoginRes() { token = jwtService.CreateToken(email) };
+            var response = new LoginRes() { token = jwtService.CreateToken(user.userId, user.nickname) };
             return new ApiResponse<LoginRes>(ResponseStatus.success, response);
         }
     }

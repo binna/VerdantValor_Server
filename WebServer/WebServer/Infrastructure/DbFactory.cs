@@ -10,19 +10,23 @@ namespace WebServer.Configs
     public sealed class DbFactory
     {
         private readonly ILogger<DbFactory> logger;
+
         private readonly string connUrl;
 
         public DbFactory(ILogger<DbFactory> logger,
                          IConfiguration configuration)
         {
             this.logger = logger;
-            this.connUrl = configuration["DB:MySQL:Url"];
 
-            if (this.connUrl == null)
+            var connUrl = configuration["DB:MySQL:Url"];
+
+            if (connUrl == null)
             {
-                logger.LogError("DB Connection Fail");
-                // TODO
+                logger.LogCritical("DB Connection Fail");
+                Environment.Exit(1);
             }
+
+            this.connUrl = connUrl;
 
             logger.LogInformation("DB Connection Success");
         }

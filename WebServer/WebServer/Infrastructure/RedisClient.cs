@@ -5,6 +5,7 @@ namespace WebServer.Configs
     public class RedisClient
     {
         private readonly ILogger<RedisClient> logger;
+
         private readonly IDatabase database;
 
         public RedisClient(ILogger<RedisClient> logger, 
@@ -12,14 +13,24 @@ namespace WebServer.Configs
         {
             this.logger = logger;
 
-            var endpoint = $"{configuration["DB:Redis:Host"]}:{configuration["DB:Redis:Port"]}";
+            var host = configuration["DB:Redis:Host"];
+            var port = configuration["DB:Redis:Port"];
+
+            if (host == null || port == null)
+            {
+                logger.LogCritical("Redis configuration is missing required fields");
+                Environment.Exit(1);
+            }
+
+            var endpoint = $"{host}:{port}";
             var connection = ConnectionMultiplexer.Connect(endpoint);
-            this.database = connection.GetDatabase();
+
+            this.database = connection.GetDatabase(0);
 
             if (database == null)
             {
-                logger.LogError("Redis Connection Fail");
-                // TODO
+                logger.LogCritical("Redis Connection Fail");
+                Environment.Exit(1);
             }
         }
 
@@ -38,14 +49,19 @@ namespace WebServer.Configs
             return database.SortedSetAddAsync(key, member, score);
         }
 
-        public Task<SortedSetEntry[]> GetMemberTopRanking(string key, int rank)
+        public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
         {
             return database.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
         }
 
-        public Task<long?> GetMemberRank(string key, string info)
+        public Task<long?> GetMemberRank(string key, string member)
         {
-            return database.SortedSetRankAsync(key, info, Order.Descending);
+            return database.SortedSetRankAsync(key, member, Order.Descending);
+        }
+
+        public Task<double?> GetMemberScore(string key, string member)
+        {
+            return database.SortedSetScoreAsync(key, member);
         }
     }
 }

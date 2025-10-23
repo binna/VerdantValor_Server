@@ -19,14 +19,52 @@ builder.Services.AddControllers();
 // Swagger 등록
 builder.Services
     .AddEndpointsApiExplorer()
-    .AddSwaggerGen();
+    .AddSwaggerGen(options =>
+    {
+        options.SwaggerDoc("v1", new() { Title = "API", Version = "v1" });
+
+        options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Description = "JWT using Bearer scheme. Example: Bearer {token}"
+        });
+
+        options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
 
 // jwt
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var jwt = builder.Configuration.GetSection("JWT");
+        var jwtConfiguration = builder.Configuration.GetSection("JWT");
+
+        var issuer = jwtConfiguration["Issuer"];
+        var audience = jwtConfiguration["Audience"];
+        var secretKey = jwtConfiguration["SecretKey"];
+
+        if (issuer == null || audience == null || secretKey == null)
+        {
+            Console.WriteLine("[Critical Error] JWT configuration is missing required fields");
+            Environment.Exit(1);
+        }
 
         options.TokenValidationParameters = new()
         {
@@ -34,20 +72,19 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwt["Issuer"],
-            ValidAudience = jwt["Audience"],
-            IssuerSigningKey = 
-                new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwt["SecretKey"]))
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey =
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<JwtService>()
-    .AddSingleton<UsersService>();
+    .AddSingleton<UsersService>()
+    .AddSingleton<RankingService>()
 
-builder.Services
     .AddSingleton<DbFactory>()
     .AddSingleton<RedisClient>()
     .AddSingleton<UsersDAO>();
@@ -77,6 +114,7 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Swagger 활성화

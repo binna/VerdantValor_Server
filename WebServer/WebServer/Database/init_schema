@@ -5,7 +5,7 @@ USE VerdantValor;
 DROP TABLE users;
 CREATE TABLE users (
 	userId		BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-	nickname	VARCHAR(20)     NULL,
+	nickname	VARCHAR(20)     NOT NULL,
 	email		VARCHAR(50)		NOT NULL,
 	pw			CHAR(128)		NOT NULL,
 	deviceId	VARCHAR(255)    NULL,

@@ -7,14 +7,14 @@ namespace WebServer.Services
 {
     public class JwtService
     {
+        private readonly ILogger<JwtService> logger;
+
         private readonly SymmetricSecurityKey signingKey;
         private readonly SigningCredentials signingCredentials;
 
-        private readonly ILogger<JwtService> logger;
-
+        private readonly string secretKey;
         private readonly string issuer;
         private readonly string audience;
-        private readonly string secretKey;
         private readonly ushort expireMinutes;
 
         public JwtService(ILogger<JwtService> logger,
@@ -22,28 +22,43 @@ namespace WebServer.Services
         {
             this.logger = logger;
 
-            this.secretKey = configuration["JWT:SecretKey"];
-            this.expireMinutes = ushort.Parse(configuration["JWT:ExpireMinutes"]);
-            this.issuer = configuration["JWT:Issuer"];
-            this.audience = configuration["JWT:Audience"];
+            var secretKey = configuration["JWT:SecretKey"];
+            var issuer = configuration["JWT:Issuer"];
+            var audience = configuration["JWT:Audience"];
+            var expireMinutes = configuration["JWT:ExpireMinutes"];
 
-            if (this.secretKey == null 
-                    || this.issuer == null 
-                    || this.audience == null)
+            if (secretKey == null 
+                    || issuer == null || audience == null 
+                    || expireMinutes == null)
             {
-                // TODO
-                logger.LogError("JWT configuration is missing required fields");
+                logger.LogCritical("JWT configuration is missing required fields");
+                Environment.Exit(1);
             }
 
+            this.secretKey = secretKey;
+            this.issuer = issuer;
+            this.audience = audience;
+
+            try
+            {
+                this.expireMinutes = ushort.Parse(expireMinutes);
+            }
+            catch (Exception)
+            {
+                logger.LogCritical("JWT configuration is missing required fields");
+                Environment.Exit(1);
+            }
+            
             signingKey = new(Encoding.UTF8.GetBytes(this.secretKey));
             signingCredentials = new(signingKey, SecurityAlgorithms.HmacSha256);
         }
 
-        public string CreateToken(string id)
+        public string CreateToken(ulong userId, string nickname)
         {
             var claims = new[]
             {
-                new Claim("userId", id)
+                new Claim("userId", $"{userId}"),
+                new Claim("nickname", nickname)
             };
 
             var token = new JwtSecurityToken(

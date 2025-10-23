@@ -19,7 +19,7 @@ namespace WebServer.Controllers
         }
 
         [HttpPost("join")]
-        public ApiResponse<JoinRes> Join([FromBody] JoinReq request)
+        public async Task<ApiResponse<JoinRes>> Join([FromBody] JoinReq request)
         {
             JoinRes response = new();
 
@@ -29,25 +29,25 @@ namespace WebServer.Controllers
             if (string.IsNullOrEmpty(request.pw))
                 return new ApiResponse<JoinRes>(ResponseStatus.emptyPw);
 
+            if (string.IsNullOrEmpty(request.nickname))
+                return new ApiResponse<JoinRes>(ResponseStatus.emptyNickname);
+
             if (!ValidationHelper.IsValidEmail(request.email))
                 return new ApiResponse<JoinRes>(ResponseStatus.emailAlphabetNumericOnly);
 
-            if (request.email.Length < AppConstant.emailMinLength 
-                    || request.email.Length > AppConstant.emailMaxLength)
-                return new ApiResponse<JoinRes>(ResponseStatus.invalidLength);
+            if (request.email.Length < AppConstant.EAMIL_MinLength 
+                    || request.email.Length > AppConstant.EAMIL_MAX_LENGTH)
+                return new ApiResponse<JoinRes>(ResponseStatus.invalEmailLength);
 
-            if (!string.IsNullOrEmpty(request.nickname))
-            {
-                if (request.nickname.Length < AppConstant.nicknameMinLength
-                    || request.nickname.Length > AppConstant.nicknameMaxLength)
-                    return new ApiResponse<JoinRes>(ResponseStatus.invalidLength);
-            }
+            if (request.nickname.Length < AppConstant.NICKNAME_MIN_LENGTH
+                    || request.nickname.Length > AppConstant.NICKNAME_MAX_LENGTH)
+                return new ApiResponse<JoinRes>(ResponseStatus.invalNicknameLength);
 
-            return usersService.Join(request.email, request.pw, request.nickname);
+            return await usersService.Join(request.email, request.pw, request.nickname);
         }
 
         [HttpPost("login")]
-        public ApiResponse<LoginRes> Login([FromBody] LoginReq request)
+        public async Task<ApiResponse<LoginRes>> Login([FromBody] LoginReq request)
         {
             LoginRes response = new();
 
@@ -57,7 +57,7 @@ namespace WebServer.Controllers
             if (string.IsNullOrEmpty(request.pw))
                 return new ApiResponse<LoginRes>(ResponseStatus.emptyPw);
 
-            return usersService.CheckPassword(request.id, request.pw);
+            return await usersService.CheckPassword(request.id, request.pw);
         }
     }
 }

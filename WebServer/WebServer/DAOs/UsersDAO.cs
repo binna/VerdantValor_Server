@@ -51,7 +51,7 @@ namespace WebServer.Models.Repositories
             return new Users
             {
                 userId = reader.GetUInt64("userId"),
-                nickname = reader.IsDBNull("nickname") ? null : reader.GetString("nickname"),
+                nickname = reader.GetString("nickname"),
                 email = reader.GetString("email"),
                 pw = reader.GetString("pw"),
                 deviceId = reader.IsDBNull("deviceId") ? null : reader.GetString("deviceId"),
@@ -79,7 +79,7 @@ namespace WebServer.Models.Repositories
             return new Users
             {
                 userId = reader.GetUInt64("userId"),
-                nickname = reader.IsDBNull("nickname") ? null : reader.GetString("nickname"),
+                nickname = reader.GetString("nickname"),
                 email = reader.GetString("email"),
                 pw = reader.GetString("pw"),
                 deviceId = reader.IsDBNull("deviceId") ? null : reader.GetString("deviceId"),
@@ -88,7 +88,7 @@ namespace WebServer.Models.Repositories
             };
         }
 
-        public bool Save(string? nickname, string email, string pw)
+        public bool Save(string nickname, string email, string pw)
         {
             using var conn = dbFactory.CreateConnection();
             conn.Open();
