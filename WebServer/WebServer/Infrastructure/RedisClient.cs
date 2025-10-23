@@ -23,14 +23,29 @@ namespace WebServer.Configs
             }
         }
 
-        public Task<bool> SetStringValueAsync(string key, string value)
+        public Task<bool> AddStringAsync(string key, string value)
         {
             return database.StringSetAsync(key, value);
         }
 
-        public Task<bool> SetHashFieldValueAsync(string key, string hashField, string hashValue)
+        public Task<bool> AddHashAsync(string key, string hashField, string hashValue)
         {
             return database.HashSetAsync(key, hashField, hashValue);
+        }
+
+        public Task<bool> AddSortedSetAsync(string key, string member, double score)
+        {
+            return database.SortedSetAddAsync(key, member, score);
+        }
+
+        public Task<SortedSetEntry[]> GetMemberTopRanking(string key, int rank)
+        {
+            return database.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+        }
+
+        public Task<long?> GetMemberRank(string key, string info)
+        {
+            return database.SortedSetRankAsync(key, info, Order.Descending);
         }
     }
 }

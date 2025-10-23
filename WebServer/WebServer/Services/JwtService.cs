@@ -43,7 +43,7 @@ namespace WebServer.Services
         {
             var claims = new[]
             {
-                new Claim("id", id)
+                new Claim("userId", id)
             };
 
             var token = new JwtSecurityToken(
