@@ -16,7 +16,7 @@ namespace WebServer.Services
         // TODO DB에서 관리하는 부분 제작하기 =======
         public HashSet<string> bannedEmails = new();
         public HashSet<string> bannedNicknames = new();
-        // ===========================
+        // ========================================
 
         public UsersService(ILogger<UsersService> logger, 
                             JwtService jwtService, 
@@ -35,7 +35,7 @@ namespace WebServer.Services
 
         public async Task<ApiResponse<JoinRes>> Join(string email, string pw, string nickname)
         {
-            if (usersDao.existsByEmail(email))
+            if (await usersDao.ExistsByEmail(email))
                 return new ApiResponse<JoinRes>(ResponseStatus.emailAlreadyExists);
 
             bool containsForbiddenWord =
@@ -52,13 +52,13 @@ namespace WebServer.Services
 
             string hashpw = HashHelper.ComputeSHA512Hash(pw);
 
-            if (!usersDao.Save(nickname, email, hashpw))
+            if (!await usersDao.Save(nickname, email, hashpw))
             {
                 logger.LogError("Database error occurred while saving user information.");
                 return new ApiResponse<JoinRes>(ResponseStatus.dbError);
             }
 
-            var user = usersDao.FindByEmail(email);
+            var user = await usersDao.FindByEmail(email);
             if (user == null)
             {
                 logger.LogError("Database error occurred while finding user information.");
@@ -71,7 +71,7 @@ namespace WebServer.Services
 
         public async Task<ApiResponse<LoginRes>> CheckPassword(string email, string pw)
         {
-            Users? user = usersDao.FindByEmail(email);
+            Users? user = await usersDao.FindByEmail(email);
 
             if (user == null)
                 return new ApiResponse<LoginRes>(ResponseStatus.emptyUser);
