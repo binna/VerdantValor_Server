@@ -4,13 +4,13 @@ namespace WebServer.Models
 {
     public class Users
     {
-        public ulong userId { get; set; }
-        public string nickname { get; set; }
-        public string email { get; set; }
-        public string pw { get; set; }
-        public string? deviceId { get; set; }
-        public DateTime createdAt { get; set; }
-        public DateTime updatedAt { get; set; }
+        public ulong userId { get; private set; }
+        public string nickname { get; private set; }
+        public string email { get; private set; }
+        public string pw { get; private set; }
+        public string? deviceId { get; private set; }
+        public DateTime createdAt { get; private set; }
+        public DateTime updatedAt { get; private set; }
 
 
         public static async Task<Users?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
