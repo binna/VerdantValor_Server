@@ -1,0 +1,24 @@
+﻿namespace WebServer.Common
+{
+    public class ApiResponse(ResponseStatus status)
+    {
+        public bool IsSuccess { get; } = status.isSuccess;
+        public string Message { get; } = status.message;
+        public int Code { get; } = status.code;
+    }
+
+    public class ApiResponse<T> : ApiResponse
+    {
+        public T? Result { get; set; }
+
+        public ApiResponse(ResponseStatus status)
+           : base(status)
+        { }
+
+        public ApiResponse(ResponseStatus status, T result)
+            : base(status)
+        {
+            this.Result = result;
+        }
+    }
+}
