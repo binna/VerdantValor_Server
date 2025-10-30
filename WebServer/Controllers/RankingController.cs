@@ -1,9 +1,6 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.DTOs;
 using WebServer.Common;
-using WebServer.Contexts;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -12,16 +9,36 @@ namespace WebServer.Controllers;
 [ApiController]
 public class RankingController : Controller
 {
-    private readonly RankingService rankingService;
-
-    public RankingController(RankingService rankingService)
+    private readonly ILogger<RankingController> mLogger;
+    private readonly RankingService mRankingService;
+    private readonly HttpContext mHttpContext;
+    
+    public RankingController(
+        ILogger<RankingController> logger,
+        RankingService rankingService, 
+        IHttpContextAccessor httpContextAccessor)
     {
-        this.rankingService = rankingService;
+        mLogger = logger;
+        mRankingService = rankingService;
+
+        if (httpContextAccessor.HttpContext == null)
+        {
+            mLogger.LogCritical("HttpContext is missing required configuration for session-based authentication.");
+            Environment.Exit(1);
+        }
+        
+        mHttpContext = httpContextAccessor.HttpContext;
     }
 
     [HttpPost("{type}/GetTopRanking")]
     public async Task<ApiResponse<List<RankInfo>>> GetTopRanking(string type, int limit)
     {
+        var userId = mHttpContext.Session.GetString("userId");
+        var nickname = mHttpContext.Session.GetString("nickname");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
+            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidAuthToken);
+        
         AppConstant.RankingType rankingType;
 
         try
@@ -33,18 +50,17 @@ public class RankingController : Controller
             return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidRankingType);
         }
 
-        if (limit < AppConstant.RANKING_MIN || limit > AppConstant.RANKING_MAX)
-        {
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidRankingRange);
-        }
-
-        return await rankingService.GetTopRankingAsync(rankingType, limit);
+        return await mRankingService.GetTopRankingAsync(rankingType, limit);
     }
 
-    //[Authorize(AuthenticationSchemes = "Session")]
     [HttpPost("{type}/GetRank")]
     public async Task<ApiResponse<RankRes>> GetRank(string type)
     {
+        var userId = mHttpContext.Session.GetString("userId");
+        var nickname = mHttpContext.Session.GetString("nickname");
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
+            return new ApiResponse<RankRes>(ResponseStatus.invalidAuthToken);
 
         AppConstant.RankingType rankingType;
 
@@ -57,17 +73,16 @@ public class RankingController : Controller
             return new ApiResponse<RankRes>(ResponseStatus.invalidRankingType);
         }
 
-        return await rankingService.GetRankAsync(
+        return await mRankingService.GetRankAsync(
             rankingType, 
-            rankingService.CreateMemberFieldName("", ""));
+            mRankingService.CreateMemberFieldName(userId, nickname));
     }
 
-    [Authorize]
     [HttpPost("{type}/Entries")]
     public async Task<ApiResponse> Entries(string type, [FromBody] CreateScoreReq request)
     {
-        string? userId = User.FindFirst("userId")?.Value;
-        string? nickname = User.FindFirst("nickname")?.Value;
+        var userId = mHttpContext.Session.GetString("userId");
+        var nickname = mHttpContext.Session.GetString("nickname");
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
             return new ApiResponse(ResponseStatus.invalidAuthToken);
@@ -83,9 +98,9 @@ public class RankingController : Controller
             return new ApiResponse<RankRes>(ResponseStatus.invalidRankingType);
         }
 
-        return await rankingService.AddScore(
+        return await mRankingService.AddScore(
             rankingType, 
-            rankingService.CreateMemberFieldName(userId, nickname),
+            mRankingService.CreateMemberFieldName(userId, nickname),
             request.Score);
     }
 }

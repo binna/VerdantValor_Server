@@ -1,5 +1,4 @@
-﻿using SharedLibrary.Models;
-using WebServer.Common;
+﻿using WebServer.Common;
 using WebServer.DAOs;
 using WebServer.Helpers;
 using WebServer.Infrastructure;
@@ -8,15 +7,16 @@ namespace WebServer.Services;
 
 public class UsersService
 {
-    private readonly ILogger<UsersService> logger;
-    private readonly IHttpContextAccessor httpContextAccessor;
-    private readonly UsersDao usersDao;
-    private readonly RedisClient redisClient;
+    private readonly ILogger<UsersService> mLogger;
+    private readonly IHttpContextAccessor mHttpContextAccessor;
+    private readonly UsersDao mUsersDao;
+    private readonly RedisClient mRedisClient;
+    private readonly HttpContext mHttpContext;
 
-    // TODO DB에서 관리하는 부분 제작하기 =======
-    public HashSet<string> bannedEmails = new();
-    public HashSet<string> bannedNicknames = new();
-    // ========================================
+    #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
+    HashSet<string> bannedEmails = [];
+    HashSet<string> bannedNicknames = [];
+    #endregion
 
     public UsersService(
         ILogger<UsersService> logger,
@@ -24,23 +24,42 @@ public class UsersService
         UsersDao usersDao, 
         RedisClient redisClient)
     {
-        this.logger = logger;
-        this.httpContextAccessor = httpContextAccessor;
-        this.usersDao = usersDao;
-        this.redisClient = redisClient;
+        mLogger = logger;
+        mHttpContextAccessor = httpContextAccessor;
+        mUsersDao = usersDao;
+        mRedisClient = redisClient;
+        
+        if (httpContextAccessor.HttpContext == null)
+        {
+            mLogger.LogCritical("HttpContext is missing required configuration for session-based authentication.");
+            Environment.Exit(1);
+        }
+        
+        mHttpContext = httpContextAccessor.HttpContext;
 
-        // ==========================================
+        #region 금지 닉네임과 아이디 설정
         bannedEmails.Add("admin");
         bannedNicknames.Add("admin");
-        // ==========================================
+        #endregion
     }
 
     public async Task<ApiResponse> Join(string email, string pw, string nickname)
     {
-        if (await usersDao.ExistsByEmail(email))
+        if (!ValidationHelper.IsValidEmail(email))
+            return new ApiResponse(ResponseStatus.emailAlphabetNumericOnly);
+
+        if (email.Length is 
+                < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
+            return new ApiResponse(ResponseStatus.invalidEmailLength);
+
+        if (nickname.Length is 
+                < AppConstant.NICKNAME_MIN_LENGTH or > AppConstant.NICKNAME_MAX_LENGTH)
+            return new ApiResponse(ResponseStatus.invalidNicknameLength);
+        
+        if (await mUsersDao.ExistsByEmail(email))
             return new ApiResponse(ResponseStatus.emailAlreadyExists);
 
-        bool containsForbiddenWord =
+        var containsForbiddenWord =
             bannedEmails.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
 
         if (containsForbiddenWord)
@@ -52,18 +71,18 @@ public class UsersService
         if (containsForbiddenWord)
             return new ApiResponse(ResponseStatus.forbiddenNickname);
 
-        string hashpw = HashHelper.ComputeSHA512Hash(pw);
+        var hashPw = HashHelper.ComputeSha512Hash(pw);
 
-        if (!await usersDao.Save(nickname, email, hashpw))
+        if (!await mUsersDao.Save(nickname, email, hashPw))
         {
-            logger.LogError("Database error occurred while saving user information.");
+            mLogger.LogError("Database error occurred while saving user information.");
             return new ApiResponse(ResponseStatus.dbError);
         }
 
-        var user = await usersDao.FindByEmail(email);
+        var user = await mUsersDao.FindByEmail(email);
         if (user == null)
         {
-            logger.LogError("Database error occurred while finding user information.");
+            mLogger.LogError("Database error occurred while finding user information.");
             return new ApiResponse(ResponseStatus.dbError); 
         }
         
@@ -72,19 +91,16 @@ public class UsersService
 
     public async Task<ApiResponse> CheckPassword(string email, string pw)
     {
-        Users? user = await usersDao.FindByEmail(email);
+        var user = await mUsersDao.FindByEmail(email);
 
         if (user == null)
             return new ApiResponse(ResponseStatus.emptyUser);
 
-        if (!HashHelper.VerifySHA512Hash(pw, user.pw))
+        if (!HashHelper.VerifySha512Hash(pw, user.Pw))
             return new ApiResponse(ResponseStatus.notMatchPw);
         
-        httpContextAccessor.HttpContext!.Session.SetString("userId", $"{user.userId}");
-        httpContextAccessor.HttpContext!.Session.SetString("nickname", $"{user.nickname}");
-
-        Console.WriteLine(">>> " + httpContextAccessor.HttpContext.Session.GetString("userId"));
-        Console.WriteLine(">>> " + httpContextAccessor.HttpContext.Session.GetString("nickname"));
+        mHttpContext.Session.SetString("userId", $"{user.UserId}");
+        mHttpContext.Session.SetString("nickname", $"{user.Nickname}");
 
         return new ApiResponse(ResponseStatus.success);
     }

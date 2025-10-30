@@ -1,36 +1,35 @@
 ﻿using SharedLibrary.DTOs;
-using StackExchange.Redis;
 using WebServer.Common;
 using WebServer.Infrastructure;
-using WebServer.Contexts;
 
 namespace WebServer.Services;
 
 public class RankingService
 {
-    private readonly ILogger<RankingService> logger;
-    private readonly IHttpContextAccessor httpContextAccessor;
-    private readonly RedisClient redisClient;
+    private readonly ILogger<RankingService> mLogger;
+    private readonly RedisClient mRedisClient;
+    private readonly ApplicationDbContext mDbContext;
 
-    public RankingService(ILogger<RankingService> logger, 
-                          IHttpContextAccessor httpContextAccessor,
-                          RedisClient redisClient)
+    public RankingService(
+        ILogger<RankingService> logger, 
+        RedisClient redisClient, ApplicationDbContext dbContext)
     {
-        this.logger = logger;
-        this.httpContextAccessor = httpContextAccessor;
-        this.redisClient = redisClient;
+        mLogger = logger;
+        mRedisClient = redisClient;
+        mDbContext = dbContext;
     }
 
-    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.RankingType rankingType, int rank)
+    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.RankingType rankingType, int limit)
     {
+        if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
+            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidRankingRange);
+        
         try
         {
-            SortedSetEntry[] redisRankings =
-                await redisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), rank);
+            var redisRankings =
+                await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
-            List<RankInfo> rankingList = new(rank);
-
-            int index = 0;
+            List<RankInfo> rankingList = new(limit);
 
             foreach (var info in redisRankings)
             {
@@ -44,7 +43,7 @@ public class RankingService
                 }
                 catch (Exception)
                 {
-                    logger.LogError("Failed to parse userId.\nCheck Redis data.");
+                    mLogger.LogError("Failed to parse userId.\nCheck Redis data.");
                 }
                 
                 rankingList.Add(new()
@@ -59,44 +58,34 @@ public class RankingService
         }
         catch (Exception ex)
         {
-            logger.LogError($"[Error] {ex.StackTrace}");
+            mLogger.LogError($"[Error] {ex.StackTrace}");
             return new ApiResponse<List<RankInfo>>(ResponseStatus.redisError);
         }
     }
 
     public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.RankingType rankingType, string member)
     {
-        var rank = await redisClient
+        var rank = await mRedisClient
             .GetMemberRank(CreateRankingKeyName(rankingType), member);
 
-        var score = await redisClient
+        var score = await mRedisClient
             .GetMemberScore(CreateRankingKeyName(rankingType), member);
 
-        // if (rank == null && score == null)
-        //     return new ApiResponse<RankRes>(ResponseStatus.successEmptyRanking);
+        if (rank == null || score == null)
+            return new ApiResponse<RankRes>(ResponseStatus.successEmptyRanking);
 
         var rankInfo = new RankRes()
         {
-            Rank = rank == null ? 0 : (long)rank + 1,
-            Score = score == null ? 0 : (double)score
+            Rank = (long)rank + 1,
+            Score = (double)score
         };
-        
-        var userId = httpContextAccessor.HttpContext!.Session.GetString("userId");
-        var sessionId = httpContextAccessor.HttpContext!.Session.Id;
-        if (userId == null)
-        {
-            Console.WriteLine("END ===================================");
-            return new ApiResponse<RankRes>(ResponseStatus.successEmptyRanking);
-        }
-
-        Console.WriteLine(sessionId);
 
         return new ApiResponse<RankRes>(ResponseStatus.success, rankInfo);
     }
 
     public async Task<ApiResponse> AddScore(AppConstant.RankingType rankingType, string member, double score)
     {
-        var result = await redisClient
+        var result = await mRedisClient
             .AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score);
 
         if (result)
@@ -110,7 +99,7 @@ public class RankingService
         return $"{userId}/{nickname}";
     }
 
-    public string CreateRankingKeyName(AppConstant.RankingType rankingType)
+    private string CreateRankingKeyName(AppConstant.RankingType rankingType)
     {
         return $"{AppConstant.RANKING_ROOT}:{rankingType}";
     }

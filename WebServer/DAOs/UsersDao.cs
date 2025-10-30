@@ -6,54 +6,55 @@ namespace WebServer.DAOs;
 
 public sealed class UsersDao
 {
-    private readonly ILogger<UsersDao> logger;
-    private readonly DbFactory dbFactory;
+    private readonly ILogger<UsersDao> mLogger;
+    private readonly DbFactory mDbFactory;
 
-    public UsersDao(ILogger<UsersDao> logger, 
-                    DbFactory dbFactory)
+    public UsersDao(
+        ILogger<UsersDao> logger, 
+        DbFactory dbFactory)
     {
-        this.logger = logger;
-        this.dbFactory = dbFactory;
+        mLogger = logger;
+        mDbFactory = dbFactory;
     }
 
     public async Task<bool> ExistsByEmail(string email, CancellationToken token = default)
     {
-        using var conn = dbFactory.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
-        using var cmd = new MySqlCommand(
+        await using var cmd = new MySqlCommand(
             "SELECT 1 FROM users WHERE email = @email LIMIT 1", 
             conn);
 
         cmd.Parameters.Add("@email", MySqlDbType.VarChar).Value = email;
 
-        using var reader = await cmd.ExecuteReaderAsync(token);
+        await using var reader = await cmd.ExecuteReaderAsync(token);
 
         return await reader.ReadAsync(token);
     }
 
     public async Task<Users?> FindByEmail(string email, CancellationToken token = default)
     {
-        using var conn = dbFactory.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
-        using var cmd = new MySqlCommand(
+        await using var cmd = new MySqlCommand(
             "SELECT * FROM users WHERE email = @email",
             conn);
 
         cmd.Parameters.Add("@email", MySqlDbType.VarChar).Value = email;
 
-        using var reader = await cmd.ExecuteReaderAsync(token);
+        await using var reader = await cmd.ExecuteReaderAsync(token);
 
         return await Users.FromDbDataReaderAsync(reader, token);
     }
 
     public async Task<Users?> FindByUserId(ulong userId, CancellationToken token = default)
     {
-        using var conn = dbFactory.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
-        using var cmd = new MySqlCommand(
+        await using var cmd = new MySqlCommand(
             "SELECT * FROM users WHERE userId = @userId",
             conn);
 
@@ -66,7 +67,7 @@ public sealed class UsersDao
 
     public async Task<bool> Save(string nickname, string email, string pw)
     {
-        using var conn = dbFactory.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync();
 
         var cmd = new MySqlCommand(
@@ -76,7 +77,7 @@ public sealed class UsersDao
             "(@nickname, @email, @pw, @createdAt, @updatedAt);",
             conn);
 
-        DateTime now = DateTime.Now;
+        var now = DateTime.Now;
 
         cmd.Parameters.Add("@nickname", MySqlDbType.VarChar).Value = nickname;
         cmd.Parameters.Add("@email", MySqlDbType.VarChar).Value = email;
@@ -84,7 +85,7 @@ public sealed class UsersDao
         cmd.Parameters.Add("@createdAt", MySqlDbType.DateTime).Value = now;
         cmd.Parameters.Add("@updatedAt", MySqlDbType.DateTime).Value = now;
 
-        int rows = await cmd.ExecuteNonQueryAsync();
+        var rows = await cmd.ExecuteNonQueryAsync();
 
         return rows > 0;
     }

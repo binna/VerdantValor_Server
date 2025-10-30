@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.DTOs;
 using WebServer.Common;
-using WebServer.Contexts;
-using WebServer.Helpers;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -11,11 +9,11 @@ namespace WebServer.Controllers;
 [ApiController]
 public class UsersController : Controller
 {
-    private readonly UsersService usersService;
+    private readonly UsersService mUsersService;
 
     public UsersController(UsersService usersService)
     {
-        this.usersService = usersService;
+        mUsersService = usersService;
     }
 
     [HttpPost("join")]
@@ -29,19 +27,8 @@ public class UsersController : Controller
 
         if (string.IsNullOrEmpty(request.Nickname))
             return new ApiResponse(ResponseStatus.emptyNickname);
-
-        if (!ValidationHelper.IsValidEmail(request.Email))
-            return new ApiResponse(ResponseStatus.emailAlphabetNumericOnly);
-
-        if (request.Email.Length < AppConstant.EAMIL_MIN_LENGTH 
-                || request.Email.Length > AppConstant.EAMIL_MAX_LENGTH)
-            return new ApiResponse(ResponseStatus.invalEmailLength);
-
-        if (request.Nickname.Length < AppConstant.NICKNAME_MIN_LENGTH
-                || request.Nickname.Length > AppConstant.NICKNAME_MAX_LENGTH)
-            return new ApiResponse(ResponseStatus.invalNicknameLength);
-
-        return await usersService.Join(request.Email, request.Pw, request.Nickname);
+        
+        return await mUsersService.Join(request.Email, request.Pw, request.Nickname);
     }
 
     [HttpPost("login")]
@@ -53,6 +40,6 @@ public class UsersController : Controller
         if (string.IsNullOrEmpty(request.Pw))
             return new ApiResponse(ResponseStatus.emptyPw);
 
-        return await usersService.CheckPassword(request.Id, request.Pw);
+        return await mUsersService.CheckPassword(request.Id, request.Pw);
     }
 }

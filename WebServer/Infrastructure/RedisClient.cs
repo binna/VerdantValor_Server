@@ -4,20 +4,21 @@ namespace WebServer.Infrastructure;
 
 public class RedisClient
 {
-    private readonly ILogger<RedisClient> logger;
-    private readonly IDatabase database;
+    private readonly ILogger<RedisClient> mLogger;
+    private readonly IDatabase mDatabase;
 
-    public RedisClient(ILogger<RedisClient> logger, 
-                       IConfiguration configuration)
+    public RedisClient(
+        ILogger<RedisClient> logger, 
+        IConfiguration configuration)
     {
-        this.logger = logger;
+        mLogger = logger;
 
         var host = configuration["DB:Redis:Host"];
         var port = configuration["DB:Redis:Port"];
 
         if (host == null || port == null)
         {
-            this.logger.LogCritical("Redis configuration is missing required fields");
+            mLogger.LogCritical("Redis configuration is missing required fields");
             Environment.Exit(1);
         }
 
@@ -26,42 +27,42 @@ public class RedisClient
         try
         {
             var connection = ConnectionMultiplexer.Connect(endpoint);
-            this.database = connection.GetDatabase(0);
+            mDatabase = connection.GetDatabase(0);
         }
         catch (Exception ex)
         {
-            logger.LogCritical("Redis Connection Fail");
+            mLogger.LogCritical("Redis Connection Fail");
             Environment.Exit(1);
         }
     }
     
     public Task<bool> AddStringAsync(string key, string value)
     {
-        return database.StringSetAsync(key, value);
+        return mDatabase.StringSetAsync(key, value);
     }
 
     public Task<bool> AddHashAsync(string key, string hashField, string hashValue)
     {
-        return database.HashSetAsync(key, hashField, hashValue);
+        return mDatabase.HashSetAsync(key, hashField, hashValue);
     }
 
     public Task<bool> AddSortedSetAsync(string key, string member, double score)
     {
-        return database.SortedSetAddAsync(key, member, score);
+        return mDatabase.SortedSetAddAsync(key, member, score);
     }
 
     public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
     {
-        return database.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+        return mDatabase.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
     }
 
     public Task<long?> GetMemberRank(string key, string member)
     {
-        return database.SortedSetRankAsync(key, member, Order.Descending);
+        return mDatabase.SortedSetRankAsync(key, member, Order.Descending);
     }
 
     public Task<double?> GetMemberScore(string key, string member)
     {
-        return database.SortedSetScoreAsync(key, member);
+        return mDatabase.SortedSetScoreAsync(key, member);
     }
 }

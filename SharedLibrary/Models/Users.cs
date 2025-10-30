@@ -4,13 +4,13 @@ namespace SharedLibrary.Models;
 
 public class Users
 {
-    public ulong userId { get; private set; }
-    public string nickname { get; private set; }
-    public string email { get; private set; }
-    public string pw { get; private set; }
-    public string? deviceId { get; private set; }
-    public DateTime createdAt { get; private set; }
-    public DateTime updatedAt { get; private set; }
+    public ulong UserId { get; private init; }
+    public string Nickname { get; private init; }
+    public string Email { get; private init; }
+    public string Pw { get; private init; }
+    public string? DeviceId { get; private init; }
+    public DateTime CreatedAt { get; private init; }
+    public DateTime UpdatedAt { get; private init; }
 
 
     public static async Task<Users?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
@@ -18,30 +18,30 @@ public class Users
         if (!await reader.ReadAsync(token))
             return null;
 
-        int userIdIdx = reader.GetOrdinal("userId");
-        int nicknameIdx = reader.GetOrdinal("nickname");
-        int emailIdx = reader.GetOrdinal("email");
-        int pwIdx = reader.GetOrdinal("pw");
-        int deviceIdIdx = reader.GetOrdinal("deviceId");
-        int createdAtIdx = reader.GetOrdinal("createdAt");
-        int updatedIdx = reader.GetOrdinal("updatedAt");
+        var userIdIdx = reader.GetOrdinal("userId");
+        var nicknameIdx = reader.GetOrdinal("nickname");
+        var emailIdx = reader.GetOrdinal("email");
+        var pwIdx = reader.GetOrdinal("pw");
+        var deviceIdIdx = reader.GetOrdinal("deviceId");
+        var createdAtIdx = reader.GetOrdinal("createdAt");
+        var updatedIdx = reader.GetOrdinal("updatedAt");
 
         return new Users
         {
-            userId =
+            UserId =
                 await reader.GetFieldValueAsync<ulong>(userIdIdx, token),
-            nickname =
+            Nickname =
                 await reader.GetFieldValueAsync<string>(nicknameIdx, token),
-            email =
+            Email =
                 await reader.GetFieldValueAsync<string>(emailIdx, token),
-            pw =
+            Pw =
                 await reader.GetFieldValueAsync<string>(pwIdx, token),
-            deviceId =
+            DeviceId =
                 await reader.IsDBNullAsync(deviceIdIdx, token) ?
                     null : await reader.GetFieldValueAsync<string>(deviceIdIdx, token),
-            createdAt =
+            CreatedAt =
                 await reader.GetFieldValueAsync<DateTime>(createdAtIdx, token),
-            updatedAt =
+            UpdatedAt =
                 await reader.GetFieldValueAsync<DateTime>(updatedIdx, token)
         };
     }
