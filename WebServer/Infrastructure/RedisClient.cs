@@ -1,67 +1,67 @@
 ﻿using StackExchange.Redis;
 
-namespace WebServer.Configs
+namespace WebServer.Infrastructure;
+
+public class RedisClient
 {
-    public class RedisClient
+    private readonly ILogger<RedisClient> logger;
+    private readonly IDatabase database;
+
+    public RedisClient(ILogger<RedisClient> logger, 
+                       IConfiguration configuration)
     {
-        private readonly ILogger<RedisClient> logger;
+        this.logger = logger;
 
-        private readonly IDatabase database;
+        var host = configuration["DB:Redis:Host"];
+        var port = configuration["DB:Redis:Port"];
 
-        public RedisClient(ILogger<RedisClient> logger, 
-                           IConfiguration configuration)
+        if (host == null || port == null)
         {
-            this.logger = logger;
+            this.logger.LogCritical("Redis configuration is missing required fields");
+            Environment.Exit(1);
+        }
 
-            var host = configuration["DB:Redis:Host"];
-            var port = configuration["DB:Redis:Port"];
-
-            if (host == null || port == null)
-            {
-                logger.LogCritical("Redis configuration is missing required fields");
-                Environment.Exit(1);
-            }
-
-            var endpoint = $"{host}:{port}";
+        var endpoint = $"{host}:{port}";
+        
+        try
+        {
             var connection = ConnectionMultiplexer.Connect(endpoint);
-
             this.database = connection.GetDatabase(0);
-
-            if (database == null)
-            {
-                logger.LogCritical("Redis Connection Fail");
-                Environment.Exit(1);
-            }
         }
-
-        public Task<bool> AddStringAsync(string key, string value)
+        catch (Exception ex)
         {
-            return database.StringSetAsync(key, value);
+            logger.LogCritical("Redis Connection Fail");
+            Environment.Exit(1);
         }
+    }
+    
+    public Task<bool> AddStringAsync(string key, string value)
+    {
+        return database.StringSetAsync(key, value);
+    }
 
-        public Task<bool> AddHashAsync(string key, string hashField, string hashValue)
-        {
-            return database.HashSetAsync(key, hashField, hashValue);
-        }
+    public Task<bool> AddHashAsync(string key, string hashField, string hashValue)
+    {
+        return database.HashSetAsync(key, hashField, hashValue);
+    }
 
-        public Task<bool> AddSortedSetAsync(string key, string member, double score)
-        {
-            return database.SortedSetAddAsync(key, member, score);
-        }
+    public Task<bool> AddSortedSetAsync(string key, string member, double score)
+    {
+        return database.SortedSetAddAsync(key, member, score);
+    }
 
-        public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
-        {
-            return database.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
-        }
+    public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
+    {
+        return database.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+    }
 
-        public Task<long?> GetMemberRank(string key, string member)
-        {
-            return database.SortedSetRankAsync(key, member, Order.Descending);
-        }
+    public Task<long?> GetMemberRank(string key, string member)
+    {
+        return database.SortedSetRankAsync(key, member, Order.Descending);
+    }
 
-        public Task<double?> GetMemberScore(string key, string member)
-        {
-            return database.SortedSetScoreAsync(key, member);
-        }
+    public Task<double?> GetMemberScore(string key, string member)
+    {
+        return database.SortedSetScoreAsync(key, member);
     }
 }
