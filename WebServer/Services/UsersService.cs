@@ -1,7 +1,8 @@
-﻿using WebServer.Common;
+﻿using Microsoft.EntityFrameworkCore;
+using SharedLibrary.Database.EFCore;
+using WebServer.Common;
 using WebServer.DAOs;
 using WebServer.Helpers;
-using WebServer.Infrastructure;
 
 namespace WebServer.Services;
 
@@ -9,9 +10,8 @@ public class UsersService
 {
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
+    private readonly IDbContextFactory<AppDbContext> mDbContextFactory;    
     private readonly UsersDao mUsersDao;
-    private readonly RedisClient mRedisClient;
-    private readonly HttpContext mHttpContext;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
     HashSet<string> bannedEmails = [];
@@ -21,21 +21,13 @@ public class UsersService
     public UsersService(
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
-        UsersDao usersDao, 
-        RedisClient redisClient)
+        IDbContextFactory<AppDbContext> dbContextFactory,
+        UsersDao usersDao)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
+        mDbContextFactory = dbContextFactory;
         mUsersDao = usersDao;
-        mRedisClient = redisClient;
-        
-        if (httpContextAccessor.HttpContext == null)
-        {
-            mLogger.LogCritical("HttpContext is missing required configuration for session-based authentication.");
-            Environment.Exit(1);
-        }
-        
-        mHttpContext = httpContextAccessor.HttpContext;
 
         #region 금지 닉네임과 아이디 설정
         bannedEmails.Add("admin");
@@ -91,7 +83,10 @@ public class UsersService
 
     public async Task<ApiResponse> CheckPassword(string email, string pw)
     {
-        var user = await mUsersDao.FindByEmail(email);
+        //var user = await mUsersDao.FindByEmail(email);
+        await using var db = await mDbContextFactory.CreateDbContextAsync(); 
+        var user = await db.Users
+            .FirstOrDefaultAsync(u => u.Email == email);
 
         if (user == null)
             return new ApiResponse(ResponseStatus.emptyUser);
@@ -99,8 +94,12 @@ public class UsersService
         if (!HashHelper.VerifySha512Hash(pw, user.Pw))
             return new ApiResponse(ResponseStatus.notMatchPw);
         
-        mHttpContext.Session.SetString("userId", $"{user.UserId}");
-        mHttpContext.Session.SetString("nickname", $"{user.Nickname}");
+        var httpContext = mHttpContextAccessor.HttpContext;
+        if (httpContext == null)
+            return new ApiResponse(ResponseStatus.emptyAuth);
+        
+        httpContext.Session.SetString("userId", $"{user.UserId}");
+        httpContext.Session.SetString("nickname", $"{user.Nickname}");
 
         return new ApiResponse(ResponseStatus.success);
     }

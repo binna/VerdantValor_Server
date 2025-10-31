@@ -7,7 +7,8 @@
         public static readonly ResponseStatus successEmptyRanking = new(true, 1001, "요청은 성공했지만 랭킹 데이터가 없습니다.");
 
         // 그 외 에러
-        public static readonly ResponseStatus invalidAuthToken = new(false, 2000, "인증에 실패했습니다.");
+        public static readonly ResponseStatus invalidAuth = new(false, 2000, "인증이 만료되었습니다. 다시 로그인해 주세요.");
+        public static readonly ResponseStatus emptyAuth = new(false, 2001, "요청 컨텍스트를 찾을 수 없습니다.\n세션이 손상되었을 수 있습니다.");
 
         public static readonly ResponseStatus emptyEmail = new(false, 2010, "Id를 입력해주세요.");
         public static readonly ResponseStatus emptyPw = new(false, 2011, "PW를 입력해주세요.");

@@ -1,22 +1,17 @@
-﻿using SharedLibrary.DTOs;
+﻿using SharedLibrary.Database.Redis;
+using SharedLibrary.DTOs;
 using WebServer.Common;
-using WebServer.Infrastructure;
 
 namespace WebServer.Services;
 
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly RedisClient mRedisClient;
-    private readonly ApplicationDbContext mDbContext;
 
     public RankingService(
-        ILogger<RankingService> logger, 
-        RedisClient redisClient, ApplicationDbContext dbContext)
+        ILogger<RankingService> logger)
     {
         mLogger = logger;
-        mRedisClient = redisClient;
-        mDbContext = dbContext;
     }
 
     public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.RankingType rankingType, int limit)
@@ -27,7 +22,7 @@ public class RankingService
         try
         {
             var redisRankings =
-                await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+                await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
             List<RankInfo> rankingList = new(limit);
 
@@ -65,10 +60,10 @@ public class RankingService
 
     public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.RankingType rankingType, string member)
     {
-        var rank = await mRedisClient
+        var rank = await RedisClient.Instance
             .GetMemberRank(CreateRankingKeyName(rankingType), member);
 
-        var score = await mRedisClient
+        var score = await RedisClient.Instance
             .GetMemberScore(CreateRankingKeyName(rankingType), member);
 
         if (rank == null || score == null)
@@ -85,21 +80,25 @@ public class RankingService
 
     public async Task<ApiResponse> AddScore(AppConstant.RankingType rankingType, string member, double score)
     {
-        var result = await mRedisClient
-            .AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score);
-
-        if (result)
+        try
+        {
+            await RedisClient.Instance
+                .AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score);
             return new ApiResponse(ResponseStatus.success);
-
-        return new ApiResponse<RankRes>(ResponseStatus.redisError);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return new ApiResponse<RankRes>(ResponseStatus.redisError);
+        }
     }
 
-    public string CreateMemberFieldName(string userId, string nickname)
+    public static string CreateMemberFieldName(string userId, string nickname)
     {
         return $"{userId}/{nickname}";
     }
 
-    private string CreateRankingKeyName(AppConstant.RankingType rankingType)
+    private static string CreateRankingKeyName(AppConstant.RankingType rankingType)
     {
         return $"{AppConstant.RANKING_ROOT}:{rankingType}";
     }

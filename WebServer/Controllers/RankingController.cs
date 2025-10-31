@@ -9,35 +9,29 @@ namespace WebServer.Controllers;
 [ApiController]
 public class RankingController : Controller
 {
-    private readonly ILogger<RankingController> mLogger;
     private readonly RankingService mRankingService;
-    private readonly HttpContext mHttpContext;
+    private readonly IHttpContextAccessor mHttpContextAccessor;
     
     public RankingController(
-        ILogger<RankingController> logger,
-        RankingService rankingService, 
+        RankingService rankingService,
         IHttpContextAccessor httpContextAccessor)
     {
-        mLogger = logger;
         mRankingService = rankingService;
-
-        if (httpContextAccessor.HttpContext == null)
-        {
-            mLogger.LogCritical("HttpContext is missing required configuration for session-based authentication.");
-            Environment.Exit(1);
-        }
-        
-        mHttpContext = httpContextAccessor.HttpContext;
+        mHttpContextAccessor = httpContextAccessor;
     }
 
     [HttpPost("{type}/GetTopRanking")]
     public async Task<ApiResponse<List<RankInfo>>> GetTopRanking(string type, int limit)
     {
-        var userId = mHttpContext.Session.GetString("userId");
-        var nickname = mHttpContext.Session.GetString("nickname");
+        var httpContext = mHttpContextAccessor.HttpContext;
+        if (httpContext == null)
+            return new ApiResponse<List<RankInfo>>(ResponseStatus.emptyAuth);
+        
+        var userId = httpContext.Session.GetString("userId");
+        var nickname = httpContext.Session.GetString("nickname");
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidAuthToken);
+            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidAuth);
         
         AppConstant.RankingType rankingType;
 
@@ -56,11 +50,15 @@ public class RankingController : Controller
     [HttpPost("{type}/GetRank")]
     public async Task<ApiResponse<RankRes>> GetRank(string type)
     {
-        var userId = mHttpContext.Session.GetString("userId");
-        var nickname = mHttpContext.Session.GetString("nickname");
+        var httpContext = mHttpContextAccessor.HttpContext;
+        if (httpContext == null)
+            return new ApiResponse<RankRes>(ResponseStatus.emptyAuth);
+        
+        var userId = httpContext.Session.GetString("userId");
+        var nickname = httpContext.Session.GetString("nickname");
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse<RankRes>(ResponseStatus.invalidAuthToken);
+            return new ApiResponse<RankRes>(ResponseStatus.invalidAuth);
 
         AppConstant.RankingType rankingType;
 
@@ -75,17 +73,21 @@ public class RankingController : Controller
 
         return await mRankingService.GetRankAsync(
             rankingType, 
-            mRankingService.CreateMemberFieldName(userId, nickname));
+            RankingService.CreateMemberFieldName(userId, nickname));
     }
 
     [HttpPost("{type}/Entries")]
     public async Task<ApiResponse> Entries(string type, [FromBody] CreateScoreReq request)
     {
-        var userId = mHttpContext.Session.GetString("userId");
-        var nickname = mHttpContext.Session.GetString("nickname");
+        var httpContext = mHttpContextAccessor.HttpContext;
+        if (httpContext == null)
+            return new ApiResponse(ResponseStatus.emptyAuth);
+        
+        var userId = httpContext.Session.GetString("userId");
+        var nickname = httpContext.Session.GetString("nickname");
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse(ResponseStatus.invalidAuthToken);
+            return new ApiResponse(ResponseStatus.invalidAuth);
 
         AppConstant.RankingType rankingType;
 
@@ -100,7 +102,7 @@ public class RankingController : Controller
 
         return await mRankingService.AddScore(
             rankingType, 
-            mRankingService.CreateMemberFieldName(userId, nickname),
+            RankingService.CreateMemberFieldName(userId, nickname),
             request.Score);
     }
 }

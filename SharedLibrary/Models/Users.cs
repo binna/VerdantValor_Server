@@ -1,16 +1,27 @@
-﻿using System.Data.Common;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
 
 namespace SharedLibrary.Models;
 
 public class Users
 {
-    public ulong UserId { get; private init; }
-    public string Nickname { get; private init; }
-    public string Email { get; private init; }
-    public string Pw { get; private init; }
-    public string? DeviceId { get; private init; }
-    public DateTime CreatedAt { get; private init; }
-    public DateTime UpdatedAt { get; private init; }
+    public ulong UserId { get; private set; }
+    
+    [MaxLength(20)]
+    public string Nickname { get; private set; } = string.Empty;
+    
+    [MaxLength(50)]
+    public string Email { get; private set; } = string.Empty;
+    
+    [StringLength(128)]
+    public string Pw { get; private set; } = string.Empty;
+    
+    [MaxLength(255)]
+    public string? DeviceId { get; private set; }
+    
+    public DateTime CreatedAt { get; private set; }
+    
+    public DateTime UpdatedAt { get; private set; }
 
 
     public static async Task<Users?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
