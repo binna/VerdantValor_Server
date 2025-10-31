@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedLibrary.DAOs;
 using SharedLibrary.Database.EFCore;
 using WebServer.Common;
-using WebServer.DAOs;
 using WebServer.Helpers;
 
 namespace WebServer.Services;
@@ -83,7 +83,6 @@ public class UsersService
 
     public async Task<ApiResponse> CheckPassword(string email, string pw)
     {
-        //var user = await mUsersDao.FindByEmail(email);
         await using var db = await mDbContextFactory.CreateDbContextAsync(); 
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Email == email);

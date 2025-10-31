@@ -1,25 +1,14 @@
 ﻿using MySql.Data.MySqlClient;
+using SharedLibrary.Database;
 using SharedLibrary.Models;
-using WebServer.Infrastructure;
 
-namespace WebServer.DAOs;
+namespace SharedLibrary.DAOs;
 
 public sealed class UsersDao
 {
-    private readonly ILogger<UsersDao> mLogger;
-    private readonly DbFactory mDbFactory;
-
-    public UsersDao(
-        ILogger<UsersDao> logger, 
-        DbFactory dbFactory)
-    {
-        mLogger = logger;
-        mDbFactory = dbFactory;
-    }
-
     public async Task<bool> ExistsByEmail(string email, CancellationToken token = default)
     {
-        await using var conn = mDbFactory.CreateConnection();
+        await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -35,7 +24,7 @@ public sealed class UsersDao
 
     public async Task<Users?> FindByEmail(string email, CancellationToken token = default)
     {
-        await using var conn = mDbFactory.CreateConnection();
+        await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -51,7 +40,7 @@ public sealed class UsersDao
 
     public async Task<Users?> FindByUserId(ulong userId, CancellationToken token = default)
     {
-        await using var conn = mDbFactory.CreateConnection();
+        await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -67,7 +56,7 @@ public sealed class UsersDao
 
     public async Task<bool> Save(string nickname, string email, string pw)
     {
-        await using var conn = mDbFactory.CreateConnection();
+        await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync();
 
         var cmd = new MySqlCommand(

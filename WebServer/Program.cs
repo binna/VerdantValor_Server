@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using SharedLibrary.DAOs;
+using SharedLibrary.Database;
 using SharedLibrary.Database.EFCore;
 using SharedLibrary.Database.Redis;
-using WebServer.DAOs;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +28,7 @@ var port = builder.Configuration["DB:Redis:Port"];
 
 if (mysqlConnUrl == null ||  host == null || port == null)
 {
-    Console.WriteLine("Redis and DB connection configurations are missing required fields.");
+    Console.WriteLine("[Critical Fail] Redis and DB connection configurations are missing required fields.");
     Environment.Exit(1);
 }
 
@@ -39,19 +40,29 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
 try
 {
     RedisClient.Instance.Init(host, port);
-    Console.WriteLine("Redis connection success.");
+    Console.WriteLine("[info] Redis connection success.");
 }
 catch (Exception e)
 {
-    Console.WriteLine("Redis Connection Fail");
+    Console.WriteLine("[Critical Fail] Redis Connection Fail");
+    Console.WriteLine(e);
+    Environment.Exit(1);;
+}
+
+try
+{
+    DbFactory.Instance.Init(mysqlConnUrl);
+    Console.WriteLine("[info] DB connection success.");
+}
+catch (Exception e)
+{
+    Console.WriteLine("[Critical Fail] DB Connection Fail");
     Console.WriteLine(e);
     Environment.Exit(1);;
 }
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
-    .AddSingleton<WebServer.Infrastructure.DbFactory>()
-    // .AddSingleton<RedisClient>()
     .AddSingleton<UsersDao>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
@@ -77,3 +88,6 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.Run();
+
+// TODO 익셉션 핸들러 만들기
+// show는 일반 문구, 서버에만 디테일 남기기
