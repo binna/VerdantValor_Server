@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database.EFCore;
 using WebServer.Common;
@@ -35,71 +36,89 @@ public class UsersService
         #endregion
     }
 
-    public async Task<ApiResponse> Join(string email, string pw, string nickname)
+    public async Task<ApiResponse> Join(string email, string pw, string nickname, AppConstant.ELanguage language)
     {
         if (!ValidationHelper.IsValidEmail(email))
-            return new ApiResponse(ResponseStatus.emailAlphabetNumericOnly);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmailAlphabetNumericOnly, language));
 
         if (email.Length is 
                 < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
-            return new ApiResponse(ResponseStatus.invalidEmailLength);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidEmailLength, language));
 
         if (nickname.Length is 
                 < AppConstant.NICKNAME_MIN_LENGTH or > AppConstant.NICKNAME_MAX_LENGTH)
-            return new ApiResponse(ResponseStatus.invalidNicknameLength);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidNicknameLength, language));
         
         if (await mUsersDao.ExistsByEmail(email))
-            return new ApiResponse(ResponseStatus.emailAlreadyExists);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmailAlreadyExists, language));
 
         var containsForbiddenWord =
             bannedEmails.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
 
         if (containsForbiddenWord)
-            return new ApiResponse(ResponseStatus.forbiddenEmail);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.ForbiddenEmail, language));
 
         containsForbiddenWord =
            bannedNicknames.Any(word => nickname.Contains(word, StringComparison.OrdinalIgnoreCase));
 
         if (containsForbiddenWord)
-            return new ApiResponse(ResponseStatus.forbiddenNickname);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.ForbiddenNickname, language));
 
         var hashPw = HashHelper.ComputeSha512Hash(pw);
 
         if (!await mUsersDao.Save(nickname, email, hashPw))
         {
             mLogger.LogError("Database error occurred while saving user information.");
-            return new ApiResponse(ResponseStatus.dbError);
-        }
-
-        var user = await mUsersDao.FindByEmail(email);
-        if (user == null)
-        {
-            mLogger.LogError("Database error occurred while finding user information.");
-            return new ApiResponse(ResponseStatus.dbError); 
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.DbError, language));
         }
         
-        return new ApiResponse(ResponseStatus.success);
+        return new ApiResponse(
+            ResponseStatus.FromResponseStatus(
+                EResponseStatus.Success, language));
     }
 
-    public async Task<ApiResponse> CheckPassword(string email, string pw)
+    public async Task<ApiResponse> CheckPassword(string email, string pw, AppConstant.ELanguage language)
     {
         await using var db = await mDbContextFactory.CreateDbContextAsync(); 
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Email == email);
 
         if (user == null)
-            return new ApiResponse(ResponseStatus.emptyUser);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyUser, language));
 
         if (!HashHelper.VerifySha512Hash(pw, user.Pw))
-            return new ApiResponse(ResponseStatus.notMatchPw);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.NotMatchPw, language));
         
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse(ResponseStatus.emptyAuth);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyAuth, language));
         
         httpContext.Session.SetString("userId", $"{user.UserId}");
         httpContext.Session.SetString("nickname", $"{user.Nickname}");
+        httpContext.Session.SetString("Language", $"{language}");
 
-        return new ApiResponse(ResponseStatus.success);
+        return new ApiResponse(
+            ResponseStatus.FromResponseStatus(
+                EResponseStatus.Success, language));
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database;
 using SharedLibrary.Database.EFCore;
@@ -63,6 +64,18 @@ catch (Exception e)
     Environment.Exit(1);;
 }
 
+try
+{
+    ResponseStatus.Instance.Init();
+    Console.WriteLine("[info] ResponseStatus setup success.");
+}
+catch (Exception e)
+{
+    Console.WriteLine("[Critical Fail] ResponseStatus setup Fail");
+    Console.WriteLine(e);
+    Environment.Exit(1);;
+}
+
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<UsersDao>()
@@ -86,7 +99,10 @@ app
 
             Console.WriteLine(ex);
             
-            await context.Response.WriteAsJsonAsync(new ApiResponse(ResponseStatus.unexpectedError));
+            await context.Response.WriteAsJsonAsync(
+                new ApiResponse(
+                    ResponseStatus.FromResponseStatus(
+                        EResponseStatus.UnexpectedError, AppConstant.ELanguage.En)));
         });
     });
 

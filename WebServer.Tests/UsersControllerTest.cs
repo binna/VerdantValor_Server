@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.DTOs;
 using NSubstitute;
+using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database;
 using SharedLibrary.Database.EFCore;
@@ -33,6 +34,7 @@ public class UsersControllerTest
         var usersService = new UsersService(logger, httpContextAccessor, dbContextFactory, usersDao);
         
         DbFactory.Instance.Init(AppSettings.MYSQL_URL);
+        ResponseStatus.Instance.Init();
         
         mUsersController = new UsersController(usersService);
         mOutput = output;
@@ -51,7 +53,7 @@ public class UsersControllerTest
         Assert.NotNull(response);
         Assert.False(response.IsSuccess, $"[{response.Code}] {response.Message}");
         
-        request = new JoinReq { Email = "banana",  Nickname = "", Pw = "" };
+        request = new JoinReq { Email = "banana1",  Nickname = "", Pw = "" };
         response = await mUsersController.Join(request);
         
         mOutput.WriteLine($"{response.IsSuccess}");
@@ -61,7 +63,7 @@ public class UsersControllerTest
         Assert.NotNull(response);
         Assert.False(response.IsSuccess, $"[{response.Code}] {response.Message}");
         
-        request = new JoinReq { Email = "banana",  Nickname = "", Pw = "1234" };
+        request = new JoinReq { Email = "banana1",  Nickname = "", Pw = "1234" };
         response = await mUsersController.Join(request);
         
         mOutput.WriteLine($"{response.IsSuccess}");
@@ -71,7 +73,7 @@ public class UsersControllerTest
         Assert.NotNull(response);
         Assert.False(response.IsSuccess, $"[{response.Code}] {response.Message}");
         
-        request = new JoinReq { Email = "banana",  Nickname = "banana", Pw = "1234" };
+        request = new JoinReq { Email = "banana1",  Nickname = "banana1", Pw = "1234" };
         response = await mUsersController.Join(request);
         
         mOutput.WriteLine($"{response.IsSuccess}");

@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SharedLibrary.Common;
 using SharedLibrary.DTOs;
 using WebServer.Common;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
 
-[Route(AppConstant.Route.API_BASE)]
+[Route(AppConstant.WEB_SERVER_API_BASE)]
 [ApiController]
 public class RankingController : Controller
 {
@@ -25,26 +26,42 @@ public class RankingController : Controller
     {
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.emptyAuth);
-        
-        var userId = httpContext.Session.GetString("userId");
-        var nickname = httpContext.Session.GetString("nickname");
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
 
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidAuth);
+        AppConstant.ELanguage language;
         
-        AppConstant.RankingType rankingType;
-
         try
         {
-            rankingType = Enum.Parse<AppConstant.RankingType>(type);
+            var languageCode = httpContext.Session.GetString("language");
+            
+            if (string.IsNullOrEmpty(languageCode))
+                return new ApiResponse<List<RankInfo>>(
+                    ResponseStatus.FromResponseStatus(
+                        EResponseStatus.ExpireAuth, AppConstant.ELanguage.En));
+            
+            language = Enum.Parse<AppConstant.ELanguage>(languageCode);
         }
         catch (Exception)
         {
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidRankingType);
+            language = AppConstant.ELanguage.En;
+        }
+        
+        AppConstant.ERankingType rankingType;
+
+        try
+        {
+            rankingType = Enum.Parse<AppConstant.ERankingType>(type);
+        }
+        catch (Exception)
+        {
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidRankingType, language));
         }
 
-        return await mRankingService.GetTopRankingAsync(rankingType, limit);
+        return await mRankingService.GetTopRankingAsync(rankingType, limit, language);
     }
 
     [HttpPost("{type}/GetRank")]
@@ -52,28 +69,47 @@ public class RankingController : Controller
     {
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse<RankRes>(ResponseStatus.emptyAuth);
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
         
         var userId = httpContext.Session.GetString("userId");
         var nickname = httpContext.Session.GetString("nickname");
+        var languageCode = httpContext.Session.GetString("language");
 
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse<RankRes>(ResponseStatus.invalidAuth);
-
-        AppConstant.RankingType rankingType;
-
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname) || string.IsNullOrEmpty(languageCode))
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.ExpireAuth, AppConstant.ELanguage.En));
+        
+        AppConstant.ELanguage language;
+        
         try
         {
-            rankingType = Enum.Parse<AppConstant.RankingType>(type);
+            language = Enum.Parse<AppConstant.ELanguage>(languageCode);
         }
         catch (Exception)
         {
-            return new ApiResponse<RankRes>(ResponseStatus.invalidRankingType);
+            language = AppConstant.ELanguage.En;
+        }
+
+        AppConstant.ERankingType rankingType;
+
+        try
+        {
+            rankingType = Enum.Parse<AppConstant.ERankingType>(type);
+        }
+        catch (Exception)
+        {
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidRankingType, language));
         }
 
         return await mRankingService.GetRankAsync(
             rankingType, 
-            RankingService.CreateMemberFieldName(userId, nickname));
+            RankingService.CreateMemberFieldName(userId, nickname), 
+            language);
     }
 
     [HttpPost("{type}/Entries")]
@@ -81,28 +117,47 @@ public class RankingController : Controller
     {
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse(ResponseStatus.emptyAuth);
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
         
         var userId = httpContext.Session.GetString("userId");
         var nickname = httpContext.Session.GetString("nickname");
+        var languageCode = httpContext.Session.GetString("language");
 
-        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname))
-            return new ApiResponse(ResponseStatus.invalidAuth);
-
-        AppConstant.RankingType rankingType;
-
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(nickname) || string.IsNullOrEmpty(languageCode))
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.ExpireAuth, AppConstant.ELanguage.En));
+        
+        AppConstant.ELanguage language;
+        
         try
         {
-            rankingType = Enum.Parse<AppConstant.RankingType>(type);
+            language = Enum.Parse<AppConstant.ELanguage>(languageCode);
         }
         catch (Exception)
         {
-            return new ApiResponse<RankRes>(ResponseStatus.invalidRankingType);
+            language = AppConstant.ELanguage.En;
+        }
+
+        AppConstant.ERankingType eRankingType;
+
+        try
+        {
+            eRankingType = Enum.Parse<AppConstant.ERankingType>(type);
+        }
+        catch (Exception)
+        {
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidRankingType, language));
         }
 
         return await mRankingService.AddScore(
-            rankingType, 
+            eRankingType, 
             RankingService.CreateMemberFieldName(userId, nickname),
-            request.Score);
+            request.Score,
+            language);
     }
 }

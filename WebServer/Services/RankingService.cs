@@ -1,4 +1,5 @@
-﻿using SharedLibrary.Database.Redis;
+﻿using SharedLibrary.Common;
+using SharedLibrary.Database.Redis;
 using SharedLibrary.DTOs;
 using WebServer.Common;
 
@@ -14,15 +15,17 @@ public class RankingService
         mLogger = logger;
     }
 
-    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.RankingType rankingType, int limit)
+    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.ERankingType eRankingType, int limit, AppConstant.ELanguage language)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.invalidRankingRange);
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidRankingRange, language));
         
         try
         {
             var redisRankings =
-                await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+                await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(eRankingType), limit);
 
             List<RankInfo> rankingList = new(limit);
 
@@ -49,25 +52,32 @@ public class RankingService
                 });
             }
 
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.success, rankingList);
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.Success, language), 
+                rankingList);
         }
         catch (Exception ex)
         {
             mLogger.LogError($"[Error] {ex.StackTrace}");
-            return new ApiResponse<List<RankInfo>>(ResponseStatus.redisError);
+            return new ApiResponse<List<RankInfo>>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.RedisError, language));
         }
     }
 
-    public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.RankingType rankingType, string member)
+    public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.ERankingType eRankingType, string member, AppConstant.ELanguage language)
     {
         var rank = await RedisClient.Instance
-            .GetMemberRank(CreateRankingKeyName(rankingType), member);
+            .GetMemberRank(CreateRankingKeyName(eRankingType), member);
 
         var score = await RedisClient.Instance
-            .GetMemberScore(CreateRankingKeyName(rankingType), member);
+            .GetMemberScore(CreateRankingKeyName(eRankingType), member);
 
         if (rank == null || score == null)
-            return new ApiResponse<RankRes>(ResponseStatus.successEmptyRanking);
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.SuccessEmptyRanking, language));
 
         var rankInfo = new RankRes()
         {
@@ -75,21 +85,28 @@ public class RankingService
             Score = (double)score
         };
 
-        return new ApiResponse<RankRes>(ResponseStatus.success, rankInfo);
+        return new ApiResponse<RankRes>(
+            ResponseStatus.FromResponseStatus(
+                EResponseStatus.Success, language), 
+            rankInfo);
     }
 
-    public async Task<ApiResponse> AddScore(AppConstant.RankingType rankingType, string member, double score)
+    public async Task<ApiResponse> AddScore(AppConstant.ERankingType eRankingType, string member, double score, AppConstant.ELanguage language)
     {
         try
         {
             await RedisClient.Instance
-                .AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score);
-            return new ApiResponse(ResponseStatus.success);
+                .AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score);
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.Success, language));
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
-            return new ApiResponse<RankRes>(ResponseStatus.redisError);
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.RedisError, language));
         }
     }
 
@@ -98,8 +115,8 @@ public class RankingService
         return $"{userId}/{nickname}";
     }
 
-    private static string CreateRankingKeyName(AppConstant.RankingType rankingType)
+    private static string CreateRankingKeyName(AppConstant.ERankingType eRankingType)
     {
-        return $"{AppConstant.RANKING_ROOT}:{rankingType}";
+        return $"{AppConstant.RANKING_ROOT}:{eRankingType}";
     }
 }

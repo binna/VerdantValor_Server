@@ -1,4 +1,6 @@
-﻿namespace WebServer.Common;
+﻿using SharedLibrary.Common;
+
+namespace WebServer.Common;
 
 public class ApiResponse(ResponseStatus status)
 {
