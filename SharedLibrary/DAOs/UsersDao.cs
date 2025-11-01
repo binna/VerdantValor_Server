@@ -22,7 +22,7 @@ public sealed class UsersDao
         return await reader.ReadAsync(token);
     }
 
-    public async Task<Users?> FindByEmail(string email, CancellationToken token = default)
+    public async Task<UsersController?> FindByEmail(string email, CancellationToken token = default)
     {
         await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync(token);
@@ -35,10 +35,10 @@ public sealed class UsersDao
 
         await using var reader = await cmd.ExecuteReaderAsync(token);
 
-        return await Users.FromDbDataReaderAsync(reader, token);
+        return await UsersController.FromDbDataReaderAsync(reader, token);
     }
 
-    public async Task<Users?> FindByUserId(ulong userId, CancellationToken token = default)
+    public async Task<UsersController?> FindByUserId(ulong userId, CancellationToken token = default)
     {
         await using var conn = DbFactory.Instance.CreateConnection();
         await conn.OpenAsync(token);
@@ -51,7 +51,7 @@ public sealed class UsersDao
 
         await using var reader = await cmd.ExecuteReaderAsync(token);
 
-        return await Users.FromDbDataReaderAsync(reader, token);
+        return await UsersController.FromDbDataReaderAsync(reader, token);
     }
 
     public async Task<bool> Save(string nickname, string email, string pw)
