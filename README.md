@@ -1,1 +1,1 @@
-# Verdant Valor (2025.10.18 ~ 진행 중)
+# Verdant Valor Server Project (2025.10.18 ~ 진행 중)
