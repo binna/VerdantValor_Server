@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database;
 using SharedLibrary.Database.EFCore;
 using SharedLibrary.Database.Redis;
+using WebServer.Common;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,6 +71,24 @@ builder.Services
     ;
 
 var app = builder.Build();
+
+app
+    .UseExceptionHandler(exceptionHandlerApp =>
+    {
+        exceptionHandlerApp.Run(async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            context.Response.ContentType = "application/json";
+
+            var exceptionHandlerPathFeature =
+                context.Features.Get<IExceptionHandlerPathFeature>();
+            var ex = exceptionHandlerPathFeature?.Error;
+
+            Console.WriteLine(ex);
+            
+            await context.Response.WriteAsJsonAsync(new ApiResponse(ResponseStatus.unexpectedError));
+        });
+    });
 
 app.UseHttpsRedirection();
 
