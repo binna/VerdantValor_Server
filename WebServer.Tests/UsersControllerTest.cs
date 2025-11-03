@@ -87,7 +87,7 @@ public class UsersControllerTest
     [Fact]
     public async Task LoginTest()
     {
-        var request = new LoginReq { Id = "binna", Pw = "1234" };
+        var request = new LoginReq { Email = "binna", Pw = "1234" };
         var response = await mUsersController.Login(request);
 
         mOutput.WriteLine($"{response.IsSuccess}");
@@ -97,7 +97,7 @@ public class UsersControllerTest
         Assert.NotNull(response);
         Assert.True(response.IsSuccess, $"[{response.Code}] {response.Message}");
         
-        request = new LoginReq { Id = "binna", Pw = "12345" };
+        request = new LoginReq { Email = "binna", Pw = "12345" };
         response = await mUsersController.Login(request);
         
         mOutput.WriteLine($"{response.IsSuccess}");
@@ -107,7 +107,7 @@ public class UsersControllerTest
         Assert.NotNull(response);
         Assert.False(response.IsSuccess, $"[{response.Code}] {response.Message}");
         
-        request = new LoginReq { Id = "notNull", Pw = "1234" };
+        request = new LoginReq { Email = "notNull", Pw = "1234" };
         response = await mUsersController.Login(request);
         
         mOutput.WriteLine($"{response.IsSuccess}");

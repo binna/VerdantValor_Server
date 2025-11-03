@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using SharedLibrary.Common;
@@ -10,14 +11,15 @@ using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromSeconds(60);
+    options.IdleTimeout = TimeSpan.FromMinutes(10);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".VerdantValor.Session";
 });
+
+// 현재 HTTP 요청(Context)에 대한 정보
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
@@ -28,10 +30,17 @@ builder.Services
 var mysqlConnUrl = builder.Configuration["DB:MySQL:Url"];
 var host = builder.Configuration["DB:Redis:Host"];
 var port = builder.Configuration["DB:Redis:Port"];
+var serverName = builder.Configuration["Server:Name"];
 
-if (mysqlConnUrl == null ||  host == null || port == null)
+builder.Services.AddStackExchangeRedisCache(options =>
 {
-    Console.WriteLine("[Critical Fail] Redis and DB connection configurations are missing required fields.");
+    options.Configuration = $"{host}:{port},defaultDatabase=3";
+    options.InstanceName = $"{serverName}_";
+});
+
+if (mysqlConnUrl == null ||  host == null || port == null || serverName == null)
+{
+    Console.WriteLine("[Critical Fail] Configurations are missing required fields.");
     Environment.Exit(1);
 }
 
@@ -40,6 +49,7 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
     options.UseMySQL(mysqlConnUrl);
 });
 
+#region 싱글톤
 try
 {
     RedisClient.Instance.Init(host, port);
@@ -75,6 +85,7 @@ catch (Exception e)
     Console.WriteLine(e);
     Environment.Exit(1);;
 }
+#endregion
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
@@ -110,9 +121,10 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseSession();       // 여기서 세션 기능 활성화
+
 app.UseAuthentication();
-app.UseAuthorization();
-app.UseSession();
+app.UseAuthorization(); // 여기서 AuthorizationHandler 실행됨
 
 if (app.Environment.IsDevelopment())
 {

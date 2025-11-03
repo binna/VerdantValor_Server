@@ -7,7 +7,7 @@
         SuccessEmptyRanking = 1001,
         
         // 그 외의 에러
-        ExpireAuth = 2000,
+        InvalidAuth = 2000,
         EmptyAuth = 2001,
 
         EmptyEmail = 2010,
@@ -69,10 +69,10 @@
                 { AppConstant.ELanguage.En, "Request succeeded, but ranking data is empty." }
             }));
 
-            mResponseTable.Add(EResponseStatus.ExpireAuth, (false, new Dictionary<AppConstant.ELanguage, string>
+            mResponseTable.Add(EResponseStatus.InvalidAuth, (false, new Dictionary<AppConstant.ELanguage, string>
             {
-                { AppConstant.ELanguage.Ko, "인증이 만료되었습니다.\n다시 로그인해 주세요." },
-                { AppConstant.ELanguage.En, "Authentication expired.\nPlease log in again." }
+                { AppConstant.ELanguage.Ko, "현재 로그인 정보를 확인할 수 없습니다.\n다시 로그인해 주세요." },
+                { AppConstant.ELanguage.En, "Your login information could not be verified.\nPlease log in again." }
             }));
             mResponseTable.Add(EResponseStatus.EmptyAuth, (false, new Dictionary<AppConstant.ELanguage, string>
             {

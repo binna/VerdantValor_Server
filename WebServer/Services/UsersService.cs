@@ -2,6 +2,7 @@
 using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database.EFCore;
+using SharedLibrary.Database.Redis;
 using WebServer.Common;
 using WebServer.Helpers;
 
@@ -113,9 +114,13 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmptyAuth, language));
         
+        Console.WriteLine("login >>>>>>>>>>>>> " + httpContext.Session.Id);
+
+        await RedisClient.Instance.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
+        
         httpContext.Session.SetString("userId", $"{user.UserId}");
         httpContext.Session.SetString("nickname", $"{user.Nickname}");
-        httpContext.Session.SetString("Language", $"{language}");
+        httpContext.Session.SetString("language", $"{language}");
 
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
