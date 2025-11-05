@@ -69,9 +69,9 @@ try
     Log.Information("Redis connection success. {@context}",
         new { host, port });
 }
-catch (Exception e)
+catch (Exception ex)
 {
-    Log.Fatal(e, "Redis Connection Fail. {@context}",
+    Log.Fatal(ex, "Redis Connection Fail. {@context}",
         new { host, port });
     Environment.Exit(1);;
 }
@@ -82,9 +82,9 @@ try
     Log.Information("DB connection success. {@context}",
         new { mysqlConnUrl });
 }
-catch (Exception e)
+catch (Exception ex)
 {
-    Log.Fatal(e, "DB Connection Fail. {@context}",
+    Log.Fatal(ex, "DB Connection Fail. {@context}",
         new { mysqlConnUrl });
     Environment.Exit(1);;
 }
@@ -94,9 +94,9 @@ try
     ResponseStatus.Instance.Init();
     Log.Information("ResponseStatus setup success.");
 }
-catch (Exception e)
+catch (Exception ex)
 {
-    Log.Fatal(e, "ResponseStatus setup Fail.");
+    Log.Fatal(ex, "ResponseStatus setup Fail.");
     Environment.Exit(1);
 }
 #endregion
@@ -122,7 +122,7 @@ app
                 context.Features.Get<IExceptionHandlerPathFeature>();
             var ex = exceptionHandlerPathFeature?.Error;
 
-            Console.WriteLine(ex);
+            Log.Error(ex, "Unexpected error occurred in global exception handler.");
             
             await context.Response.WriteAsJsonAsync(
                 new ApiResponse(
