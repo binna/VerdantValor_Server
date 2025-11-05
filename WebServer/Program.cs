@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database;
@@ -10,6 +10,13 @@ using WebServer.Common;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration().ReadFrom
+    .Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Logging.ClearProviders();
+builder.Host.UseSerilog();
 
 builder.Services.AddSession(options =>
 {
@@ -40,7 +47,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 if (mysqlConnUrl == null ||  host == null || port == null || serverName == null)
 {
-    Console.WriteLine("[Critical Fail] Configurations are missing required fields.");
+    Log.Fatal("Configurations are missing required fields.");
     Environment.Exit(1);
 }
 
@@ -53,11 +60,11 @@ builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
 try
 {
     RedisClient.Instance.Init(host, port);
-    Console.WriteLine("[info] Redis connection success.");
+    Log.Information("[info] Redis connection success.");
 }
 catch (Exception e)
 {
-    Console.WriteLine("[Critical Fail] Redis Connection Fail");
+    Log.Fatal("Redis Connection Fail");
     Console.WriteLine(e);
     Environment.Exit(1);;
 }
@@ -65,11 +72,11 @@ catch (Exception e)
 try
 {
     DbFactory.Instance.Init(mysqlConnUrl);
-    Console.WriteLine("[info] DB connection success.");
+    Log.Information("DB connection success.");
 }
 catch (Exception e)
 {
-    Console.WriteLine("[Critical Fail] DB Connection Fail");
+    Log.Information("[Critical Fail] DB Connection Fail");
     Console.WriteLine(e);
     Environment.Exit(1);;
 }
@@ -77,11 +84,11 @@ catch (Exception e)
 try
 {
     ResponseStatus.Instance.Init();
-    Console.WriteLine("[info] ResponseStatus setup success.");
+    Log.Information("ResponseStatus setup success.");
 }
 catch (Exception e)
 {
-    Console.WriteLine("[Critical Fail] ResponseStatus setup Fail");
+    Log.Fatal("[Critical Fail] ResponseStatus setup Fail");
     Console.WriteLine(e);
     Environment.Exit(1);;
 }
@@ -136,6 +143,3 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.Run();
-
-// TODO 익셉션 핸들러 만들기
-// show는 일반 문구, 서버에만 디테일 남기기

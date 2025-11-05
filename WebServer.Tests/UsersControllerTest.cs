@@ -21,22 +21,22 @@ public class UsersControllerTest
 
     public UsersControllerTest(ITestOutputHelper output)
     {
-        var dbContextFactory = new ServiceCollection()
-            .AddPooledDbContextFactory<AppDbContext>(opt =>
-                opt.UseMySQL(AppSettings.MYSQL_URL))
-            .BuildServiceProvider()
-            .GetRequiredService<IDbContextFactory<AppDbContext>>();
+        // var dbContextFactory = new ServiceCollection()
+        //     .AddPooledDbContextFactory<AppDbContext>(opt =>
+        //         opt.UseMySQL(AppSettings.MYSQL_URL))
+        //     .BuildServiceProvider()
+        //     .GetRequiredService<IDbContextFactory<AppDbContext>>();
         
         var logger = Substitute.For<ILogger<UsersService>>();
         var httpContextAccessor = Substitute.For<IHttpContextAccessor>();
         var usersDao = new UsersDao();
         
-        var usersService = new UsersService(logger, httpContextAccessor, dbContextFactory, usersDao);
+        //var usersService = new UsersService(logger, httpContextAccessor, dbContextFactory, usersDao);
         
-        DbFactory.Instance.Init(AppSettings.MYSQL_URL);
+        //DbFactory.Instance.Init(AppSettings.MYSQL_URL);
         ResponseStatus.Instance.Init();
         
-        mUsersController = new UsersController(usersService);
+        //mUsersController = new UsersController(usersService);
         mOutput = output;
     }
 
