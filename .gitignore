@@ -806,6 +806,6 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/rider
 
 # ETC
-appsettings.json
-appsettings.*.json
+# appsettings.json
+# appsettings.*.json
 AppSettings.cs
