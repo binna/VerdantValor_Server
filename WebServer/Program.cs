@@ -11,13 +11,16 @@ using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 환경설정에 정의된 Serilog 설정으로 Logger 구성
+// ASP.NET Core의 기본 ILogger를 Serilog로 대체하도록 설정
 Log.Logger = new LoggerConfiguration().ReadFrom
     .Configuration(builder.Configuration)
     .CreateLogger();
 
-builder.Logging.ClearProviders();
-builder.Host.UseSerilog();
+builder.Logging.ClearProviders();   // 기존 기본 로깅 공급자 제거 후
+builder.Host.UseSerilog();          // Serilog를 로거로 사용
 
+// 세션 설정
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(10);
@@ -45,39 +48,44 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = $"{serverName}_";
 });
 
-if (mysqlConnUrl == null ||  host == null || port == null || serverName == null)
+if (string.IsNullOrWhiteSpace(mysqlConnUrl)
+    || string.IsNullOrWhiteSpace(host) 
+    || string.IsNullOrWhiteSpace(port)
+    || string.IsNullOrWhiteSpace(serverName ))
 {
-    Log.Fatal("Configurations are missing required fields.");
+    Log.Fatal("Configurations are missing required fields. {@fields}", 
+        new { mysqlConnUrl, host, port, serverName});
     Environment.Exit(1);
 }
 
-builder.Services.AddPooledDbContextFactory<AppDbContext>(options =>
-{
-    options.UseMySQL(mysqlConnUrl);
-});
+builder.Services
+    .AddPooledDbContextFactory<AppDbContext>(options => 
+        options.UseMySQL(mysqlConnUrl));
 
 #region 싱글톤
 try
 {
     RedisClient.Instance.Init(host, port);
-    Log.Information("[info] Redis connection success.");
+    Log.Information("Redis connection success. {@context}",
+        new { host, port });
 }
 catch (Exception e)
 {
-    Log.Fatal("Redis Connection Fail");
-    Console.WriteLine(e);
+    Log.Fatal(e, "Redis Connection Fail. {@context}",
+        new { host, port });
     Environment.Exit(1);;
 }
 
 try
 {
     DbFactory.Instance.Init(mysqlConnUrl);
-    Log.Information("DB connection success.");
+    Log.Information("DB connection success. {@context}",
+        new { mysqlConnUrl });
 }
 catch (Exception e)
 {
-    Log.Information("[Critical Fail] DB Connection Fail");
-    Console.WriteLine(e);
+    Log.Fatal(e, "DB Connection Fail. {@context}",
+        new { mysqlConnUrl });
     Environment.Exit(1);;
 }
 
@@ -88,9 +96,8 @@ try
 }
 catch (Exception e)
 {
-    Log.Fatal("[Critical Fail] ResponseStatus setup Fail");
-    Console.WriteLine(e);
-    Environment.Exit(1);;
+    Log.Fatal(e, "ResponseStatus setup Fail.");
+    Environment.Exit(1);
 }
 #endregion
 

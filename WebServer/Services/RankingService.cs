@@ -15,55 +15,39 @@ public class RankingService
         mLogger = logger;
     }
 
-    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.ERankingType eRankingType, int limit, AppConstant.ELanguage language)
+    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
             return new ApiResponse<List<RankInfo>>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidRankingRange, language));
-        
-        try
+
+        var redisRankings =
+            await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+
+        List<RankInfo> rankingList = new(limit);
+
+        foreach (var info in redisRankings)
         {
-            var redisRankings =
-                await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(eRankingType), limit);
+            var userInfo = info.Element.ToString().Split("/");
 
-            List<RankInfo> rankingList = new(limit);
-
-            foreach (var info in redisRankings)
+            if (!ulong.TryParse(userInfo[0], out var userId))
             {
-                string[] userInfo = info.Element.ToString().Split("/");
-
-                ulong userId = 0;
-
-                try
-                {
-                    userId = ulong.Parse(userInfo[0]);
-                }
-                catch (Exception)
-                {
-                    mLogger.LogError("Failed to parse userId.\nCheck Redis data.");
-                }
-                
-                rankingList.Add(new()
-                {
-                    UserId = userId,
-                    Nickname = userInfo[1],
-                    Score = info.Score
-                });
+                mLogger.LogError("Failed to parse userId.\nCheck Redis data. {@userId}", 
+                    new { userId = userInfo[0] });
             }
+            
+            rankingList.Add(new RankInfo
+            {
+                Nickname = userInfo[1],
+                Score = info.Score
+            });
+        }
 
-            return new ApiResponse<List<RankInfo>>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.Success, language), 
-                rankingList);
-        }
-        catch (Exception ex)
-        {
-            mLogger.LogError($"[Error] {ex.StackTrace}");
-            return new ApiResponse<List<RankInfo>>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.RedisError, language));
-        }
+        return new ApiResponse<List<RankInfo>>(
+            ResponseStatus.FromResponseStatus(
+                EResponseStatus.Success, language), 
+            rankingList);
     }
 
     public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.ERankingType eRankingType, string member, AppConstant.ELanguage language)
@@ -93,21 +77,12 @@ public class RankingService
 
     public async Task<ApiResponse> AddScore(AppConstant.ERankingType eRankingType, string member, double score, AppConstant.ELanguage language)
     {
-        try
-        {
-            await RedisClient.Instance
-                .AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score);
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.Success, language));
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.RedisError, language));
-        }
+        await RedisClient.Instance
+            .AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score); 
+        
+        return new ApiResponse(
+            ResponseStatus.FromResponseStatus(
+                EResponseStatus.Success, language));
     }
 
     public static string CreateMemberFieldName(string userId, string nickname)

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Database.Redis;
 using SharedLibrary.DTOs;
@@ -23,7 +22,6 @@ public class RankingController : Controller
         mHttpContextAccessor = httpContextAccessor;
     }
 
-    [Authorize(Policy = "AtLeast21")]
     [HttpPost("{type}/GetTopRanking")]
     public async Task<ApiResponse<List<RankInfo>>> GetTopRanking(string type, int limit)
     {
@@ -32,14 +30,10 @@ public class RankingController : Controller
             return new ApiResponse<List<RankInfo>>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
-        
-        
 
         var userId = httpContext.Session.GetString("userId");
         var languageCode = httpContext.Session.GetString("language");
 
-        Console.WriteLine(userId + ", " + languageCode);
-            
         if (!Enum.TryParse<AppConstant.ELanguage>(languageCode, out var language))
             language = AppConstant.ELanguage.En;
         
@@ -49,8 +43,6 @@ public class RankingController : Controller
                     EResponseStatus.InvalidAuth, language));
 
         var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
-        Console.WriteLine("select > " + sessionId);
-        Console.WriteLine("now > " + httpContext.Session.Id);
         
         if (!sessionId.Equals(httpContext.Session.Id))
             return new ApiResponse<List<RankInfo>>(
@@ -81,9 +73,6 @@ public class RankingController : Controller
         if (!Enum.TryParse<AppConstant.ELanguage>(languageCode, out var language))
             language = AppConstant.ELanguage.En;
 
-        Console.WriteLine(userId + ", " + nickname);
-        
-        
         if (userId == null || nickname == null)
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(

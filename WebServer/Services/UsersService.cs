@@ -81,7 +81,9 @@ public class UsersService
 
         if (!await mUsersDao.Save(nickname, email, hashPw))
         {
-            mLogger.LogError("Database error occurred while saving user information.");
+            mLogger.LogError("Database error occurred while saving user information. {@context}",
+                new { nickname, email, hashPw });
+            
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.DbError, language));
@@ -114,8 +116,6 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmptyAuth, language));
         
-        Console.WriteLine("login >>>>>>>>>>>>> " + httpContext.Session.Id);
-
         await RedisClient.Instance.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
         
         httpContext.Session.SetString("userId", $"{user.UserId}");
