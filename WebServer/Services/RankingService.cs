@@ -18,9 +18,11 @@ public class RankingService
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingRange, language));
+                    EResponseStatus.InvalidInput, language));
+        }
 
         var redisRankings =
             await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
@@ -52,8 +54,10 @@ public class RankingService
             new RankRes { Rankings = rankingList });
     }
 
-    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppConstant.ERankingType rankingType, string member, AppConstant.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppConstant.ERankingType rankingType, string userId, string nickname, AppConstant.ELanguage language)
     {
+        var member = CreateMemberFieldName(userId, nickname);
+        
         var rank = await RedisClient.Instance
             .GetMemberRank(CreateRankingKeyName(rankingType), member);
 
@@ -61,9 +65,11 @@ public class RankingService
             .GetMemberScore(CreateRankingKeyName(rankingType), member);
 
         if (rank == null || score == null)
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.SuccessEmptyRanking, language));
+        }
 
         var rankInfo = new RankRes
         {
@@ -71,7 +77,7 @@ public class RankingService
                 new RankInfo
                 {
                     Rank = (int)rank + 1,
-                    Nickname = "",
+                    Nickname = nickname,
                     Score = (double)score
                 }
             ]
@@ -83,8 +89,10 @@ public class RankingService
             rankInfo);
     }
 
-    public async Task<ApiResponse> AddScore(AppConstant.ERankingType eRankingType, string member, double score, AppConstant.ELanguage language)
+    public async Task<ApiResponse> AddScore(AppConstant.ERankingType eRankingType, string userId, string nickname, double score, AppConstant.ELanguage language)
     {
+        var member = CreateMemberFieldName(userId, nickname);
+        
         await RedisClient.Instance
             .AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score); 
         
@@ -93,7 +101,7 @@ public class RankingService
                 EResponseStatus.Success, language));
     }
 
-    public static string CreateMemberFieldName(string userId, string nickname)
+    private static string CreateMemberFieldName(string userId, string nickname)
     {
         return $"{userId}/{nickname}";
     }

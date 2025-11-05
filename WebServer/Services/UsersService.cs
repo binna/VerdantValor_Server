@@ -16,8 +16,8 @@ public class UsersService
     private readonly UsersDao mUsersDao;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
-    HashSet<string> bannedEmails = [];
-    HashSet<string> bannedNicknames = [];
+    private HashSet<string> bannedEmails = ["admin"];
+    private HashSet<string> bannedNicknames = ["admin"];
     #endregion
 
     public UsersService(
@@ -30,11 +30,6 @@ public class UsersService
         mHttpContextAccessor = httpContextAccessor;
         mDbContextFactory = dbContextFactory;
         mUsersDao = usersDao;
-
-        #region 금지 닉네임과 아이디 설정
-        bannedEmails.Add("admin");
-        bannedNicknames.Add("admin");
-        #endregion
     }
 
     public async Task<ApiResponse> Join(string email, string pw, string nickname, AppConstant.ELanguage language)
@@ -79,19 +74,19 @@ public class UsersService
 
         var hashPw = HashHelper.ComputeSha512Hash(pw);
 
-        if (!await mUsersDao.Save(nickname, email, hashPw))
+        if (await mUsersDao.Save(nickname, email, hashPw))
         {
-            mLogger.LogError("Database error occurred while saving user information. {@context}",
-                new { nickname, email, hashPw });
-            
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.DbError, language));
+                    EResponseStatus.Success, language));
         }
         
+        mLogger.LogError("Database error occurred while saving user information. {@context}",
+            new { nickname, email, hashPw });
+            
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
-                EResponseStatus.Success, language));
+                EResponseStatus.DbError, language));
     }
 
     public async Task<ApiResponse> CheckPassword(string email, string pw, AppConstant.ELanguage language)
@@ -103,7 +98,7 @@ public class UsersService
         if (user == null)
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyUser, language));
+                    EResponseStatus.NoData, language));
 
         if (!HashHelper.VerifySha512Hash(pw, user.Pw))
             return new ApiResponse(
@@ -112,9 +107,7 @@ public class UsersService
         
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyAuth, language));
+            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
         
         await RedisClient.Instance.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
         

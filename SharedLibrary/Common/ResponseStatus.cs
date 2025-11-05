@@ -8,25 +8,20 @@
         
         // 그 외의 에러
         InvalidAuth = 2000,
-        EmptyAuth = 2001,
 
-        EmptyEmail = 2010,
-        EmptyPw = 2011,
-        EmptyNickname = 2012,
-        EmptyUser = 2013,
-        NotMatchPw  = 2014,
-        EmailAlreadyExists = 2015,
-        NicknameAlreadyExists = 2016,
-        InvalidEmailLength = 2017,
-        InvalidNicknameLength = 2018,
-        ForbiddenEmail = 2019,
-        ForbiddenNickname = 2020,
-        EmailAlphabetNumericOnly = 2021,
+        EmptyRequiredField = 2010,
+        InvalidInput =  2011,
+        NoData = 2012,
         
-        InvalidRankingScope =  2100,
-        InvalidRankingType =  2101,
-        InvalidRankingRange = 2101,
-
+        EmailAlphabetNumericOnly = 2020,
+        EmailAlreadyExists = 2021,
+        NicknameAlreadyExists = 2022,
+        InvalidEmailLength = 2023,
+        InvalidNicknameLength = 2024,
+        ForbiddenEmail = 2025,
+        ForbiddenNickname = 2026,
+        NotMatchPw  = 2027,
+        
         // 시스템 에러
         RedisError = 9997,
         DbError = 9998,
@@ -75,36 +70,27 @@
                 { AppConstant.ELanguage.Ko, "현재 로그인 정보를 확인할 수 없습니다.\n다시 로그인해 주세요." },
                 { AppConstant.ELanguage.En, "Your login information could not be verified.\nPlease log in again." }
             }));
-            mResponseTable.Add(EResponseStatus.EmptyAuth, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "요청 컨텍스트를 찾을 수 없습니다.\n세션이 손상되었을 수 있습니다." },
-                { AppConstant.ELanguage.En, "Request context not found.\nThe session may be corrupted." }
-            }));
 
-            mResponseTable.Add(EResponseStatus.EmptyEmail, (false, new Dictionary<AppConstant.ELanguage, string>
+            mResponseTable.Add(EResponseStatus.EmptyRequiredField, (false, new Dictionary<AppConstant.ELanguage, string>
             {
-                { AppConstant.ELanguage.Ko, "ID를 입력해주세요." },
-                { AppConstant.ELanguage.En, "Please enter your ID." }
+                { AppConstant.ELanguage.Ko, "필수 입력값이 비어 있습니다." },
+                { AppConstant.ELanguage.En, "A required field is missing or empty." }
             }));
-            mResponseTable.Add(EResponseStatus.EmptyPw, (false, new Dictionary<AppConstant.ELanguage, string>
+            mResponseTable.Add(EResponseStatus.InvalidInput, (false, new Dictionary<AppConstant.ELanguage, string>
             {
-                { AppConstant.ELanguage.Ko, "PW를 입력해주세요." },
-                { AppConstant.ELanguage.En, "Please enter your password." }
+                { AppConstant.ELanguage.Ko, "입력값이 올바르지 않습니다." },
+                { AppConstant.ELanguage.En, "Invalid input value." }
             }));
-            mResponseTable.Add(EResponseStatus.EmptyNickname, (false, new Dictionary<AppConstant.ELanguage, string> 
+            mResponseTable.Add(EResponseStatus.NoData, (false, new Dictionary<AppConstant.ELanguage, string> 
             { 
-                { AppConstant.ELanguage.Ko, "닉네임을 입력해주세요." }, 
-                { AppConstant.ELanguage.En, "Please enter your nickname." } 
+                { AppConstant.ELanguage.Ko, "요청한 데이터를 찾을 수 없습니다." }, 
+                { AppConstant.ELanguage.En, "No data found for the given request." } 
             }));
-            mResponseTable.Add(EResponseStatus.EmptyUser, (false, new Dictionary<AppConstant.ELanguage, string>
+            
+            mResponseTable.Add(EResponseStatus.EmailAlphabetNumericOnly, (false, new Dictionary<AppConstant.ELanguage, string>
             {
-                { AppConstant.ELanguage.Ko, "가입한 유저가 존재하지 않습니다." },
-                { AppConstant.ELanguage.En, "The registered user does not exist." }
-            }));
-            mResponseTable.Add(EResponseStatus.NotMatchPw, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko,"비밀번호가 일치하지 않습니다."}, 
-                { AppConstant.ELanguage.En, "The password does not match." }
+                { AppConstant.ELanguage.Ko, "아이디는 영어와 숫자만 사용할 수 있습니다." },
+                { AppConstant.ELanguage.En, "The ID can only contain English letters and numbers." }
             }));
             mResponseTable.Add(EResponseStatus.EmailAlreadyExists, (false, new Dictionary<AppConstant.ELanguage, string>
             {
@@ -136,26 +122,10 @@
                 { AppConstant.ELanguage.Ko, "금지된 닉네임입니다." },
                 { AppConstant.ELanguage.En, "This nickname is not allowed." }
             }));
-            mResponseTable.Add(EResponseStatus.EmailAlphabetNumericOnly, (false, new Dictionary<AppConstant.ELanguage, string>
+            mResponseTable.Add(EResponseStatus.NotMatchPw, (false, new Dictionary<AppConstant.ELanguage, string>
             {
-                { AppConstant.ELanguage.Ko, "아이디는 영어와 숫자만 사용할 수 있습니다." },
-                { AppConstant.ELanguage.En, "The ID can only contain English letters and numbers." }
-            }));
-
-            mResponseTable.Add(EResponseStatus.InvalidRankingScope, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "유효하지 않은 랭킹 범위입니다." },
-                { AppConstant.ELanguage.En, "Invalid ranking Scope." }
-            }));
-            mResponseTable.Add(EResponseStatus.InvalidRankingType, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "유효하지 않은 랭킹 타입입니다." },
-                { AppConstant.ELanguage.En, "Invalid ranking type." }
-            }));
-            mResponseTable.Add(EResponseStatus.InvalidRankingRange, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "유효하지 않은 랭킹 순위입니다." },
-                { AppConstant.ELanguage.En, "Invalid ranking range." }
+                { AppConstant.ELanguage.Ko,"비밀번호가 일치하지 않습니다."}, 
+                { AppConstant.ELanguage.En, "The password does not match." }
             }));
 
             mResponseTable.Add(EResponseStatus.RedisError, (false, new Dictionary<AppConstant.ELanguage, string>

@@ -27,32 +27,41 @@ public class UsersController : Controller
         {
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyEmail, language));
+                    EResponseStatus.InvalidInput, language));
         }
-        
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyEmail, language));
 
-        if (string.IsNullOrWhiteSpace(request.Pw))
+        if (string.IsNullOrWhiteSpace(request.Email)
+            || string.IsNullOrWhiteSpace(request.Pw))
+        {
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyPw, language));
+                    EResponseStatus.EmptyRequiredField, language));
+        }
 
         switch (authType)
         {
             case AppConstant.EAuthType.Join:
+            {
                 if (string.IsNullOrWhiteSpace(request.Nickname))
+                {
                     return new ApiResponse(
                         ResponseStatus.FromResponseStatus(
-                            EResponseStatus.EmptyNickname, language));
-                return await mUsersService.Join(request.Email, request.Pw, request.Nickname, language);
+                            EResponseStatus.EmptyRequiredField, language));
+                }
+
+                return await mUsersService.Join(
+                    request.Email, request.Pw, request.Nickname, language);
+            }
             case AppConstant.EAuthType.Login:
-                return await mUsersService.CheckPassword(request.Email, request.Pw, language);
+            {
+                return await mUsersService.CheckPassword(
+                    request.Email, request.Pw, language);
+            }
             default:
+            {
                 return new ApiResponse(ResponseStatus.FromResponseStatus(
                     EResponseStatus.Success, language));
+            }
         }
     }
 }

@@ -27,9 +27,7 @@ public class RankingController : Controller
     {
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
+            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
         
         var userId = httpContext.Session.GetString("userId");
         var languageCode = httpContext.Session.GetString("language");
@@ -38,50 +36,54 @@ public class RankingController : Controller
             language = AppConstant.ELanguage.En;
 
         if (userId == null)
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidAuth, language));
-        
-        var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
-        
-        if (!sessionId.Equals(httpContext.Session.Id))
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingType, language));
-        
-        if (!Enum.TryParse<AppConstant.ERankingScope>(request.Scope, out var ERankingScope))
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingScope, language));
-        
-        if (!Enum.TryParse<AppConstant.ERankingType>(request.Type, out var rankingType))
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingType, language));
+        }
 
-        switch (ERankingScope)
+        var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
+        if (!sessionId.Equals(httpContext.Session.Id))
+        {
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidAuth, language));
+        }
+
+        if (!Enum.TryParse<AppConstant.ERankingScope>(request.Scope, out var rankingScope) 
+                || !Enum.TryParse<AppConstant.ERankingType>(request.Type, out var rankingType))
+        {
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidInput, language));
+        }
+
+        switch (rankingScope)
         {
             case AppConstant.ERankingScope.My:
+            {
                 var nickname = httpContext.Session.GetString("nickname");
                 if (nickname == null)
+                {
                     return new ApiResponse<RankRes>(
                         ResponseStatus.FromResponseStatus(
                             EResponseStatus.InvalidAuth, language));
-                
+                }
+
                 return await mRankingService.GetMemberRankAsync(
-                    rankingType, 
-                    RankingService.CreateMemberFieldName(userId, nickname), 
-                    language);
+                    rankingType, userId, nickname, language);
+            }
             case AppConstant.ERankingScope.Global:
+            {
                 return await mRankingService.GetTopRankingAsync(
-                    rankingType, 
-                    request.Limit, 
-                    language);
+                    rankingType, request.Limit, language);
+            }
             default:
+            {
                 return new ApiResponse<RankRes>(
                     ResponseStatus.FromResponseStatus(
-                        EResponseStatus.Success, 
-                        language));
+                        EResponseStatus.Success, language));
+            }
         }
     }
 
@@ -90,9 +92,7 @@ public class RankingController : Controller
     {
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            return new ApiResponse<List<RankInfo>>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyAuth, AppConstant.ELanguage.En));
+            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
 
         var userId = httpContext.Session.GetString("userId");
         var nickname = httpContext.Session.GetString("nickname");
@@ -101,27 +101,30 @@ public class RankingController : Controller
         if (!Enum.TryParse<AppConstant.ELanguage>(languageCode, out var language))
             language = AppConstant.ELanguage.En;
 
-        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(nickname))
+        if (string.IsNullOrWhiteSpace(userId) 
+                || string.IsNullOrWhiteSpace(nickname))
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidAuth, AppConstant.ELanguage.En));
-        
+                    EResponseStatus.InvalidAuth, language));
+        }
+
         var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
-        
         if (!sessionId.Equals(httpContext.Session.Id))
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingType, language));
+                    EResponseStatus.InvalidAuth, language));
+        }
 
         if (!Enum.TryParse<AppConstant.ERankingType>(request.Type, out var rankingType))
+        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidRankingType, language));
+                    EResponseStatus.InvalidInput, language));
+        }
 
         return await mRankingService.AddScore(
-            rankingType, 
-            RankingService.CreateMemberFieldName(userId, nickname),
-            request.Score,
-            language);
+            rankingType, userId, nickname, request.Score, language);
     }
 }
