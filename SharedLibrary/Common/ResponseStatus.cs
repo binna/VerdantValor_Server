@@ -23,7 +23,8 @@
         ForbiddenNickname = 2020,
         EmailAlphabetNumericOnly = 2021,
         
-        InvalidRankingType =  2100,
+        InvalidRankingScope =  2100,
+        InvalidRankingType =  2101,
         InvalidRankingRange = 2101,
 
         // 시스템 에러
@@ -141,6 +142,11 @@
                 { AppConstant.ELanguage.En, "The ID can only contain English letters and numbers." }
             }));
 
+            mResponseTable.Add(EResponseStatus.InvalidRankingScope, (false, new Dictionary<AppConstant.ELanguage, string>
+            {
+                { AppConstant.ELanguage.Ko, "유효하지 않은 랭킹 범위입니다." },
+                { AppConstant.ELanguage.En, "Invalid ranking Scope." }
+            }));
             mResponseTable.Add(EResponseStatus.InvalidRankingType, (false, new Dictionary<AppConstant.ELanguage, string>
             {
                 { AppConstant.ELanguage.Ko, "유효하지 않은 랭킹 타입입니다." },

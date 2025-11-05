@@ -15,9 +15,21 @@ public static class AppConstant
 
     public const string RANKING_ROOT = "Ranking";
 
+    public enum ERankingScope
+    {
+        My = 1,
+        Global = 2
+    }
+
     public enum ERankingType
     {
         All = 1
+    }
+
+    public enum EAuthType
+    {
+        Login = 1,
+        Join = 2
     }
 
     public enum ELanguage
