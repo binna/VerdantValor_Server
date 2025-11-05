@@ -15,10 +15,10 @@ public class RankingService
         mLogger = logger;
     }
 
-    public async Task<ApiResponse<List<RankInfo>>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
-            return new ApiResponse<List<RankInfo>>(
+            return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidRankingRange, language));
 
@@ -27,8 +27,9 @@ public class RankingService
 
         List<RankInfo> rankingList = new(limit);
 
-        foreach (var info in redisRankings)
+        for (var i = 0; i < limit; i++)
         {
+            var info = redisRankings[i];
             var userInfo = info.Element.ToString().Split("/");
 
             if (!ulong.TryParse(userInfo[0], out var userId))
@@ -39,34 +40,41 @@ public class RankingService
             
             rankingList.Add(new RankInfo
             {
+                Rank = i + 1,
                 Nickname = userInfo[1],
                 Score = info.Score
             });
         }
 
-        return new ApiResponse<List<RankInfo>>(
+        return new ApiResponse<RankRes>(
             ResponseStatus.FromResponseStatus(
-                EResponseStatus.Success, language), 
-            rankingList);
+                EResponseStatus.Success, language),
+            new RankRes { Rankings = rankingList });
     }
 
-    public async Task<ApiResponse<RankRes>> GetRankAsync(AppConstant.ERankingType eRankingType, string member, AppConstant.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppConstant.ERankingType rankingType, string member, AppConstant.ELanguage language)
     {
         var rank = await RedisClient.Instance
-            .GetMemberRank(CreateRankingKeyName(eRankingType), member);
+            .GetMemberRank(CreateRankingKeyName(rankingType), member);
 
         var score = await RedisClient.Instance
-            .GetMemberScore(CreateRankingKeyName(eRankingType), member);
+            .GetMemberScore(CreateRankingKeyName(rankingType), member);
 
         if (rank == null || score == null)
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.SuccessEmptyRanking, language));
 
-        var rankInfo = new RankRes()
+        var rankInfo = new RankRes
         {
-            Rank = (long)rank + 1,
-            Score = (double)score
+            Rankings = [
+                new RankInfo
+                {
+                    Rank = (int)rank + 1,
+                    Nickname = "",
+                    Score = (double)score
+                }
+            ]
         };
 
         return new ApiResponse<RankRes>(

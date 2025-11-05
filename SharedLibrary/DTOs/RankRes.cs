@@ -2,6 +2,5 @@
 
 public class RankRes
 {
-    public long Rank { get; set; }
-    public double Score { get; set; }
+    public required List<RankInfo> Rankings { get; set; }
 }
