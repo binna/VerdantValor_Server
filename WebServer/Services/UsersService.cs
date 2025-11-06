@@ -1,9 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibrary.Common;
-using SharedLibrary.DAOs;
-using SharedLibrary.Database.EFCore;
-using SharedLibrary.Database.Redis;
+using SharedLibrary.efcore;
 using SharedLibrary.Models;
+using SharedLibrary.redis;
 using WebServer.Common;
 using WebServer.Helpers;
 

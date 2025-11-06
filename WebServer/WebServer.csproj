@@ -18,6 +18,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\SharedLibrary.ado\SharedLibrary.ado.csproj" />
+      <ProjectReference Include="..\SharedLibrary.efcore\SharedLibrary.efcore.csproj" />
+      <ProjectReference Include="..\SharedLibrary.redis\SharedLibrary.redis.csproj" />
       <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
     </ItemGroup>
 

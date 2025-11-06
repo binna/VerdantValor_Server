@@ -1,6 +1,6 @@
 ﻿using SharedLibrary.Common;
-using SharedLibrary.Database.Redis;
 using SharedLibrary.DTOs;
+using SharedLibrary.redis;
 using WebServer.Common;
 
 namespace WebServer.Services;

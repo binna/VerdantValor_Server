@@ -38,7 +38,7 @@
         
         public bool IsSuccess { get; private init; }
         public int Code { get; private init; }
-        public string Message { get; private init; }
+        public string? Message { get; private init; }
 
         private ResponseStatus() { }
 

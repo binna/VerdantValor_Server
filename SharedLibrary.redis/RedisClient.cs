@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace SharedLibrary.Database.Redis;
+namespace SharedLibrary.redis;
 
 public sealed class RedisClient
 {

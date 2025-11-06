@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using SharedLibrary.ado.DAOs;
 using SharedLibrary.Common;
-using SharedLibrary.DAOs;
-using SharedLibrary.Database;
-using SharedLibrary.Database.EFCore;
-using SharedLibrary.Database.Redis;
+using SharedLibrary.efcore;
+using SharedLibrary.redis;
 using WebServer.Common;
 using WebServer.Services;
 
@@ -75,7 +74,6 @@ catch (Exception ex)
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
-    .AddSingleton<UsersDao>()
     .AddSingleton<RedisClient>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
-using SharedLibrary.Database.Redis;
 using SharedLibrary.DTOs;
+using SharedLibrary.redis;
 using WebServer.Common;
 using WebServer.Services;
 
