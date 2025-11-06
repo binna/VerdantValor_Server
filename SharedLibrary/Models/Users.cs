@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace SharedLibrary.Models;
 
-public class UsersController
+public class Users
 {
     public ulong UserId { get; private set; }
     
@@ -24,7 +24,19 @@ public class UsersController
     public DateTime UpdatedAt { get; private set; }
 
 
-    public static async Task<UsersController?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
+    private Users() { }
+
+    public Users(string nickname, string email, string pw)
+    {
+        var now = DateTime.UtcNow;
+        Nickname = nickname;
+        Email = email;
+        Pw = pw;
+        CreatedAt = now;
+        UpdatedAt = now;
+    }
+
+    public static async Task<Users?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
     {
         if (!await reader.ReadAsync(token))
             return null;
@@ -37,7 +49,7 @@ public class UsersController
         var createdAtIdx = reader.GetOrdinal("createdAt");
         var updatedIdx = reader.GetOrdinal("updatedAt");
 
-        return new UsersController
+        return new Users
         {
             UserId =
                 await reader.GetFieldValueAsync<ulong>(userIdIdx, token),

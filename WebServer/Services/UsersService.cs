@@ -3,6 +3,7 @@ using SharedLibrary.Common;
 using SharedLibrary.DAOs;
 using SharedLibrary.Database.EFCore;
 using SharedLibrary.Database.Redis;
+using SharedLibrary.Models;
 using WebServer.Common;
 using WebServer.Helpers;
 
@@ -12,8 +13,8 @@ public class UsersService
 {
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IDbContextFactory<AppDbContext> mDbContextFactory;    
-    private readonly UsersDao mUsersDao;
+    private readonly IDbContextFactory<AppDbContext> mDbContextFactory;
+    private readonly RedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
     private HashSet<string> bannedEmails = ["admin"];
@@ -24,16 +25,18 @@ public class UsersService
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IDbContextFactory<AppDbContext> dbContextFactory,
-        UsersDao usersDao)
+        RedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mDbContextFactory = dbContextFactory;
-        mUsersDao = usersDao;
+        mRedisClient = redisClient;
     }
 
     public async Task<ApiResponse> Join(string email, string pw, string nickname, AppConstant.ELanguage language)
     {
+        await using var db = await mDbContextFactory.CreateDbContextAsync(); 
+       
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
@@ -51,7 +54,10 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidNicknameLength, language));
         
-        if (await mUsersDao.ExistsByEmail(email))
+        var bExistsUser = await db.Users
+            .AnyAsync(u => u.Email == email);
+        
+        if (bExistsUser)
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmailAlreadyExists, language));
@@ -73,8 +79,11 @@ public class UsersService
                     EResponseStatus.ForbiddenNickname, language));
 
         var hashPw = HashHelper.ComputeSha512Hash(pw);
+        
+        await db.Users.AddAsync(new Users(nickname, email, hashPw));
+        var result = await db.SaveChangesAsync();
 
-        if (await mUsersDao.Save(nickname, email, hashPw))
+        if (result > 0)
         {
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
@@ -109,7 +118,7 @@ public class UsersService
         if (httpContext == null)
             throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
         
-        await RedisClient.Instance.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
+        await mRedisClient.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
         
         httpContext.Session.SetString("userId", $"{user.UserId}");
         httpContext.Session.SetString("nickname", $"{user.Nickname}");

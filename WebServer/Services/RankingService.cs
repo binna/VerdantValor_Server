@@ -8,11 +8,14 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
+    private readonly RedisClient mRedisClient;
 
     public RankingService(
-        ILogger<RankingService> logger)
+        ILogger<RankingService> logger, 
+        RedisClient redisClient)
     {
         mLogger = logger;
+        mRedisClient = redisClient;
     }
 
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
@@ -25,7 +28,7 @@ public class RankingService
         }
 
         var redisRankings =
-            await RedisClient.Instance.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+            await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
         List<RankInfo> rankingList = new(limit);
 
@@ -58,11 +61,11 @@ public class RankingService
     {
         var member = CreateMemberFieldName(userId, nickname);
         
-        var rank = await RedisClient.Instance
-            .GetMemberRank(CreateRankingKeyName(rankingType), member);
+        var rank = 
+            await mRedisClient.GetMemberRank(CreateRankingKeyName(rankingType), member);
 
-        var score = await RedisClient.Instance
-            .GetMemberScore(CreateRankingKeyName(rankingType), member);
+        var score = 
+            await mRedisClient.GetMemberScore(CreateRankingKeyName(rankingType), member);
 
         if (rank == null || score == null)
         {
@@ -93,8 +96,7 @@ public class RankingService
     {
         var member = CreateMemberFieldName(userId, nickname);
         
-        await RedisClient.Instance
-            .AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score); 
+        await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score); 
         
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(

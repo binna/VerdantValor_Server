@@ -6,9 +6,16 @@ namespace SharedLibrary.DAOs;
 
 public sealed class UsersDao
 {
+    private readonly DbFactory mDbFactory;
+    
+    public UsersDao(DbFactory dbFactory)
+    {
+        mDbFactory = dbFactory;
+    }
+    
     public async Task<bool> ExistsByEmail(string email, CancellationToken token = default)
     {
-        await using var conn = DbFactory.Instance.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -22,9 +29,9 @@ public sealed class UsersDao
         return await reader.ReadAsync(token);
     }
 
-    public async Task<UsersController?> FindByEmail(string email, CancellationToken token = default)
+    public async Task<Users?> FindByEmail(string email, CancellationToken token = default)
     {
-        await using var conn = DbFactory.Instance.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -35,12 +42,12 @@ public sealed class UsersDao
 
         await using var reader = await cmd.ExecuteReaderAsync(token);
 
-        return await UsersController.FromDbDataReaderAsync(reader, token);
+        return await Users.FromDbDataReaderAsync(reader, token);
     }
 
-    public async Task<UsersController?> FindByUserId(ulong userId, CancellationToken token = default)
+    public async Task<Users?> FindByUserId(ulong userId, CancellationToken token = default)
     {
-        await using var conn = DbFactory.Instance.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
 
         await using var cmd = new MySqlCommand(
@@ -51,12 +58,12 @@ public sealed class UsersDao
 
         await using var reader = await cmd.ExecuteReaderAsync(token);
 
-        return await UsersController.FromDbDataReaderAsync(reader, token);
+        return await Users.FromDbDataReaderAsync(reader, token);
     }
 
     public async Task<bool> Save(string nickname, string email, string pw)
     {
-        await using var conn = DbFactory.Instance.CreateConnection();
+        await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync();
 
         var cmd = new MySqlCommand(

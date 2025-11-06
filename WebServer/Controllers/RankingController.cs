@@ -13,13 +13,16 @@ public class RankingController : Controller
 {
     private readonly RankingService mRankingService;
     private readonly IHttpContextAccessor mHttpContextAccessor;
+    private readonly RedisClient mRedisClient;
     
     public RankingController(
         RankingService rankingService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor, 
+        RedisClient redisClient)
     {
         mRankingService = rankingService;
         mHttpContextAccessor = httpContextAccessor;
+        mRedisClient = redisClient;
     }
 
     [HttpPost("GetRank")]
@@ -42,7 +45,7 @@ public class RankingController : Controller
                     EResponseStatus.InvalidAuth, language));
         }
 
-        var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
+        var sessionId = (await mRedisClient.GetSessionInfoAsync(userId)).ToString();
         if (!sessionId.Equals(httpContext.Session.Id))
         {
             return new ApiResponse<RankRes>(
@@ -109,7 +112,7 @@ public class RankingController : Controller
                     EResponseStatus.InvalidAuth, language));
         }
 
-        var sessionId = (await RedisClient.Instance.GetSessionInfoAsync(userId)).ToString();
+        var sessionId = (await mRedisClient.GetSessionInfoAsync(userId)).ToString();
         if (!sessionId.Equals(httpContext.Session.Id))
         {
             return new ApiResponse<RankRes>(

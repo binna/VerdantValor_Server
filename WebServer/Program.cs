@@ -62,33 +62,6 @@ builder.Services
     .AddPooledDbContextFactory<AppDbContext>(options => 
         options.UseMySQL(mysqlConnUrl));
 
-#region 싱글톤
-try
-{
-    RedisClient.Instance.Init(host, port);
-    Log.Information("Redis connection success. {@context}",
-        new { host, port });
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Redis Connection Fail. {@context}",
-        new { host, port });
-    Environment.Exit(1);;
-}
-
-try
-{
-    DbFactory.Instance.Init(mysqlConnUrl);
-    Log.Information("DB connection success. {@context}",
-        new { mysqlConnUrl });
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "DB Connection Fail. {@context}",
-        new { mysqlConnUrl });
-    Environment.Exit(1);;
-}
-
 try
 {
     ResponseStatus.Instance.Init();
@@ -99,11 +72,11 @@ catch (Exception ex)
     Log.Fatal(ex, "ResponseStatus setup Fail.");
     Environment.Exit(1);
 }
-#endregion
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<UsersDao>()
+    .AddSingleton<RedisClient>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;

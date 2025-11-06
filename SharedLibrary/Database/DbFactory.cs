@@ -1,4 +1,6 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using MySql.Data.MySqlClient;
 
 namespace SharedLibrary.Database;
 
@@ -9,16 +11,22 @@ namespace SharedLibrary.Database;
 // 해당 클래스는 Config와 팩토리 역할을 동시에 한다
 public sealed class DbFactory
 {
-    private string? mMysqlConnUrl;
-    private static readonly Lazy<DbFactory> mInstance = new(() => new DbFactory());
-    public static DbFactory Instance => mInstance.Value;
+    private readonly string mMysqlConnUrl;
     
-    public void Init(string mysqlConnUrl)
+    public DbFactory(
+        IConfiguration configuration,
+        ILogger<DbFactory> logger)
     {
-        if (mMysqlConnUrl != null)
-            return;
-
-        mMysqlConnUrl = mysqlConnUrl;
+        var mysqlConnUrl = configuration["DB:MySQL:Url"];
+        
+        if (string.IsNullOrWhiteSpace(mysqlConnUrl))
+        {
+            logger.LogCritical("Configurations are missing required fields. {@fields}", 
+                new { mysqlConnUrl });
+            Environment.Exit(1);
+        }
+        
+        logger.LogInformation("DB connection success. {@context}", new { mysqlConnUrl = mMysqlConnUrl });
     }
 
     public MySqlConnection CreateConnection()
