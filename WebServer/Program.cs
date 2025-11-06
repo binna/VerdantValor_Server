@@ -63,8 +63,11 @@ builder.Services
 
 try
 {
-    ResponseStatus.Instance.Init();
-    Log.Information("ResponseStatus setup success.");
+    var baseDir = AppContext.BaseDirectory;
+    var path = Path.GetFullPath(
+        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "ResponseState.json"));
+    ResponseStatus.Init(path);
+    Log.Information("ResponseStatus setup success. {@path}", new { jsonPath = path });
 }
 catch (Exception ex)
 {

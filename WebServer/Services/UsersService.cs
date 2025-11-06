@@ -115,7 +115,7 @@ public class UsersService
         
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
+            throw new InvalidOperationException(Common.ExceptionMessage.EMPTY_HTTP_CONTEXT);
         
         await mRedisClient.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
         

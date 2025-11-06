@@ -1,4 +1,7 @@
-﻿namespace SharedLibrary.Common
+﻿using System.Text.Json;
+using SharedLibrary.GameData.DTO;
+
+namespace SharedLibrary.Common
 {
     public enum EResponseStatus
     {
@@ -33,9 +36,6 @@
         private static readonly Dictionary<EResponseStatus, 
             (bool IsSuccess, Dictionary<AppConstant.ELanguage, string> Messages)> mResponseTable = [];
         
-        private static readonly Lazy<ResponseStatus> mInstance = new(() => new ResponseStatus());
-        public static ResponseStatus Instance => mInstance.Value;
-        
         public bool IsSuccess { get; private init; }
         public int Code { get; private init; }
         public string? Message { get; private init; }
@@ -49,101 +49,28 @@
             Message = message;
         }
 
-        public void Init()
+        public static void Init(string path)
         {
-            // TODO Message 같은 경우는 지금은 하드코딩 되어 있지만, 같이 공유할 수 있도록 나중에 .json과 같은 파일로 확장해보기
-            
-            #region 데이터 세팅
-            mResponseTable.Add(EResponseStatus.Success, (true, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "요청에 성공하였습니다." },
-                { AppConstant.ELanguage.En, "Request succeeded." }
-            }));
-            mResponseTable.Add(EResponseStatus.SuccessEmptyRanking, (true, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "요청은 성공했지만 랭킹 데이터가 없습니다." },
-                { AppConstant.ELanguage.En, "Request succeeded, but ranking data is empty." }
-            }));
+            var jsonText = File.ReadAllText(path);
 
-            mResponseTable.Add(EResponseStatus.InvalidAuth, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "현재 로그인 정보를 확인할 수 없습니다.\n다시 로그인해 주세요." },
-                { AppConstant.ELanguage.En, "Your login information could not be verified.\nPlease log in again." }
-            }));
+            var data = JsonSerializer.Deserialize<ResponseStateDto>(jsonText);
 
-            mResponseTable.Add(EResponseStatus.EmptyRequiredField, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "필수 입력값이 비어 있습니다." },
-                { AppConstant.ELanguage.En, "A required field is missing or empty." }
-            }));
-            mResponseTable.Add(EResponseStatus.InvalidInput, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "입력값이 올바르지 않습니다." },
-                { AppConstant.ELanguage.En, "Invalid input value." }
-            }));
-            mResponseTable.Add(EResponseStatus.NoData, (false, new Dictionary<AppConstant.ELanguage, string> 
-            { 
-                { AppConstant.ELanguage.Ko, "요청한 데이터를 찾을 수 없습니다." }, 
-                { AppConstant.ELanguage.En, "No data found for the given request." } 
-            }));
-            
-            mResponseTable.Add(EResponseStatus.EmailAlphabetNumericOnly, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "아이디는 영어와 숫자만 사용할 수 있습니다." },
-                { AppConstant.ELanguage.En, "The ID can only contain English letters and numbers." }
-            }));
-            mResponseTable.Add(EResponseStatus.EmailAlreadyExists, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "이미 사용 중인 아이디입니다." },
-                { AppConstant.ELanguage.En, "This ID is already in use." }
-            }));
-            mResponseTable.Add(EResponseStatus.NicknameAlreadyExists, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "이미 사용 중인 닉네임입니다." },
-                { AppConstant.ELanguage.En, "This nickname is already in use." }
-            }));
-            mResponseTable.Add(EResponseStatus.InvalidEmailLength, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "아이디 길이 조건을 만족하지 않습니다." },
-                { AppConstant.ELanguage.En, "The ID length does not meet the requirements." }
-            }));
-            mResponseTable.Add(EResponseStatus.InvalidNicknameLength, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "닉네임 길이 조건을 만족하지 않습니다." },
-                { AppConstant.ELanguage.En, "The nickname length does not meet the requirements." }
-            }));
-            mResponseTable.Add(EResponseStatus.ForbiddenEmail, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "금지된 아이디입니다." },
-                { AppConstant.ELanguage.En, "This ID is not allowed." }
-            }));
-            mResponseTable.Add(EResponseStatus.ForbiddenNickname, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "금지된 닉네임입니다." },
-                { AppConstant.ELanguage.En, "This nickname is not allowed." }
-            }));
-            mResponseTable.Add(EResponseStatus.NotMatchPw, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko,"비밀번호가 일치하지 않습니다."}, 
-                { AppConstant.ELanguage.En, "The password does not match." }
-            }));
+            if (data == null || data.Data.Count == 0)
+                throw new NullReferenceException(ExceptionMessage.EMPTY_RESPONSE_STATE);
 
-            mResponseTable.Add(EResponseStatus.RedisError, (false, new Dictionary<AppConstant.ELanguage, string>
+            foreach (var item in data.Data)
             {
-                { AppConstant.ELanguage.Ko, "Redis 에러가 발생했습니다." },
-                { AppConstant.ELanguage.En, "Redis error has occurred." }
-            }));
-            mResponseTable.Add(EResponseStatus.DbError, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "DB 에러가 발생했습니다." },
-                { AppConstant.ELanguage.En, "DB error has occurred." }
-            }));
-            mResponseTable.Add(EResponseStatus.UnexpectedError, (false, new Dictionary<AppConstant.ELanguage, string>
-            {
-                { AppConstant.ELanguage.Ko, "예상하지 못한 오류가 발생했습니다." },
-                { AppConstant.ELanguage.En, "An unexpected error has occurred." }
-            }));
-            #endregion
+                var status = (EResponseStatus)item.Code;
+                var messageList = item.Message;
+                
+                var messageDic = new Dictionary<AppConstant.ELanguage, string>
+                {
+                    { AppConstant.ELanguage.Ko, messageList[0] },
+                    { AppConstant.ELanguage.En, messageList[1] }
+                };
+
+                mResponseTable.Add(status, (item.IsSuccess, messageDic));
+            }
             
             var values = Enum.GetValues<EResponseStatus>();
             foreach (var value in values)

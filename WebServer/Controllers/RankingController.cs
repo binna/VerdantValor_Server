@@ -4,6 +4,7 @@ using SharedLibrary.DTOs;
 using SharedLibrary.redis;
 using WebServer.Common;
 using WebServer.Services;
+using ExceptionMessage = WebServer.Common.ExceptionMessage;
 
 namespace WebServer.Controllers;
 

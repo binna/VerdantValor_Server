@@ -14,6 +14,8 @@ public static class AppConstant
     public const int RANKING_MAX = 100;
 
     public const string RANKING_ROOT = "Ranking";
+    
+    public const string SHARED_LIBRARY_PATH = @"..\..\..\..\SharedLibrary";
 
     public enum ERankingScope
     {
@@ -34,7 +36,7 @@ public static class AppConstant
 
     public enum ELanguage
     {
-        Ko = 1,
-        En = 2,
+        Ko = 0,
+        En = 1,
     }
 }
