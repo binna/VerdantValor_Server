@@ -16,7 +16,7 @@ namespace SharedLibrary.Common
         InvalidInput =  2011,
         NoData = 2012,
         
-        EmailAlphabetNumericOnly = 2020,
+        EmailAlphabetNumberOnly = 2020,
         EmailAlreadyExists = 2021,
         NicknameAlreadyExists = 2022,
         InvalidEmailLength = 2023,
@@ -24,6 +24,7 @@ namespace SharedLibrary.Common
         ForbiddenEmail = 2025,
         ForbiddenNickname = 2026,
         NotMatchPw  = 2027,
+        NicknameAlphabetKoreanNumberOnly = 2028,
         
         // 시스템 에러
         RedisError = 9997,
@@ -53,10 +54,10 @@ namespace SharedLibrary.Common
         {
             var jsonText = File.ReadAllText(path);
 
-            var data = JsonSerializer.Deserialize<ResponseStateDto>(jsonText);
+            var data = JsonSerializer.Deserialize<ResponseStatusDto>(jsonText);
 
             if (data == null || data.Data.Count == 0)
-                throw new NullReferenceException(ExceptionMessage.EMPTY_RESPONSE_STATE);
+                throw new NullReferenceException(ExceptionMessage.EMPTY_RESPONSE_STATUS);
 
             foreach (var item in data.Data)
             {
@@ -82,8 +83,8 @@ namespace SharedLibrary.Common
 
         public static ResponseStatus FromResponseStatus(EResponseStatus status, AppConstant.ELanguage language)
         {
-            var responseState = mResponseTable[status];
-            return new ResponseStatus(responseState.IsSuccess, (int)status, responseState.Messages[language]);
+            var responseStatus = mResponseTable[status];
+            return new ResponseStatus(responseStatus.IsSuccess, (int)status, responseStatus.Messages[language]);
         }
     }
 }

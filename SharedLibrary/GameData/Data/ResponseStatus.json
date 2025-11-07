@@ -53,7 +53,8 @@
       "IsSuccess": false,
       "Message": [
         "아이디는 영어와 숫자만 사용할 수 있습니다.",
-        "The ID can only contain English letters and numbers."]
+        "The ID can only contain English letters and numbers."
+      ]
     },
     {
       "Code": 2021,
@@ -109,6 +110,14 @@
       "Message": [
         "비밀번호가 일치하지 않습니다.",
         "The password does not match."
+      ]
+    },
+    {
+      "Code": 2028,
+      "IsSuccess": false,
+      "Message": [
+        "닉네임은 영어와 숫자, 한글만 사용할 수 있습니다.",
+        "The nickname can only contain English letters and numbers and korean."
       ]
     },
     {

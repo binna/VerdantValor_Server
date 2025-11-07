@@ -8,11 +8,11 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly RedisClient mRedisClient;
+    private readonly IRedisClient mRedisClient;
 
     public RankingService(
         ILogger<RankingService> logger, 
-        RedisClient redisClient)
+        IRedisClient redisClient)
     {
         mLogger = logger;
         mRedisClient = redisClient;

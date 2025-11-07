@@ -14,12 +14,12 @@ public class RankingController : Controller
 {
     private readonly RankingService mRankingService;
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly RedisClient mRedisClient;
+    private readonly IRedisClient mRedisClient;
     
     public RankingController(
         RankingService rankingService,
         IHttpContextAccessor httpContextAccessor, 
-        RedisClient redisClient)
+        IRedisClient redisClient)
     {
         mRankingService = rankingService;
         mHttpContextAccessor = httpContextAccessor;

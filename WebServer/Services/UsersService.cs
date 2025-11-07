@@ -13,7 +13,7 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IDbContextFactory<AppDbContext> mDbContextFactory;
-    private readonly RedisClient mRedisClient;
+    private readonly IRedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
     private HashSet<string> bannedEmails = ["admin"];
@@ -24,7 +24,7 @@ public class UsersService
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IDbContextFactory<AppDbContext> dbContextFactory,
-        RedisClient redisClient)
+        IRedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
@@ -32,14 +32,17 @@ public class UsersService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse> Join(string email, string pw, string nickname, AppConstant.ELanguage language)
+    public async Task<ApiResponse> Join(string email, string password, string nickname, AppConstant.ELanguage language)
     {
-        await using var db = await mDbContextFactory.CreateDbContextAsync(); 
-       
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmailAlphabetNumericOnly, language));
+                    EResponseStatus.EmailAlphabetNumberOnly, language));
+        
+        if (!ValidationHelper.IsValidNickname(nickname))
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.NicknameAlphabetKoreanNumberOnly, language));
 
         if (email.Length is 
                 < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
@@ -52,6 +55,8 @@ public class UsersService
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidNicknameLength, language));
+        
+        await using var db = await mDbContextFactory.CreateDbContextAsync();
         
         var bExistsUser = await db.Users
             .AnyAsync(u => u.Email == email);
@@ -77,7 +82,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.ForbiddenNickname, language));
 
-        var hashPw = HashHelper.ComputeSha512Hash(pw);
+        var hashPw = HashHelper.ComputeSha512Hash(password);
         
         await db.Users.AddAsync(new Users(nickname, email, hashPw));
         var result = await db.SaveChangesAsync();
@@ -97,8 +102,13 @@ public class UsersService
                 EResponseStatus.DbError, language));
     }
 
-    public async Task<ApiResponse> CheckPassword(string email, string pw, AppConstant.ELanguage language)
+    public async Task<ApiResponse> CheckPassword(string email, string password, AppConstant.ELanguage language)
     {
+        if (!ValidationHelper.IsValidEmail(email))
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmailAlphabetNumberOnly, language));
+        
         await using var db = await mDbContextFactory.CreateDbContextAsync(); 
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Email == email);
@@ -108,7 +118,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.NoData, language));
 
-        if (!HashHelper.VerifySha512Hash(pw, user.Pw))
+        if (!HashHelper.VerifySha512Hash(password, user.Pw))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.NotMatchPw, language));

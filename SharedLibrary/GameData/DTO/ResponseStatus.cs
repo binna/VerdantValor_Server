@@ -1,11 +1,11 @@
 ﻿namespace SharedLibrary.GameData.DTO;
 
-public class ResponseStateDto
+public class ResponseStatusDto
 {
-    public List<ResponseStateItemDto> Data { get; set; } = [];
+    public List<ResponseStatusItemDto> Data { get; set; } = [];
 }
 
-public class ResponseStateItemDto
+public class ResponseStatusItemDto
 {
     public int Code { get; set; }
     public bool IsSuccess { get; set; }

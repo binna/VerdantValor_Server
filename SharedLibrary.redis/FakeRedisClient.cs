@@ -1,42 +1,19 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
 namespace SharedLibrary.Redis;
 
-public sealed class RedisClient
+// 모킹에서 쓰려고 상속 가능하게 구현
+public class FakeRedisClient : IRedisClient 
 {
     private readonly IDatabase mDatabase;
     private readonly IDatabase mSessionDatabase;
 
-    public RedisClient(
-        IConfiguration configuration,
-        ILogger<RedisClient> logger)
+    public FakeRedisClient(string host, string port, int defaultDb, int sessionDb)
     {
-        var host = configuration["DB:Redis:Host"];
-        var port = configuration["DB:Redis:Port"];
-
-        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
-        {
-            logger.LogCritical("Configurations are missing required fields. {@fields}", 
-                new { host, port });
-            Environment.Exit(1);
-        }
-
-        try
-        {
-            var endpoint = $"{host}:{port}";
-            var connection = ConnectionMultiplexer.Connect(endpoint);
-            mDatabase = connection.GetDatabase(0);
-            mSessionDatabase = connection.GetDatabase(1);
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "Redis connection Fail. {@context}", new { host, port });
-            Environment.Exit(1);
-        }
-        
-        logger.LogInformation("Redis connection success. {@context}", new { host, port });
+        var endpoint = $"{host}:{port}";
+        var connection = ConnectionMultiplexer.Connect(endpoint);
+        mDatabase = connection.GetDatabase(defaultDb);
+        mSessionDatabase = connection.GetDatabase(sessionDb);
     }
     
     // Set 결과

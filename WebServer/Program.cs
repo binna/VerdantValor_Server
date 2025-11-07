@@ -66,7 +66,7 @@ try
     // 실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
     var baseDir = AppContext.BaseDirectory;
     var path = Path.GetFullPath(
-        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseState.json"));
+        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
     ResponseStatus.Init(path);
     Log.Information("ResponseStatus setup success. {@path}", new { jsonPath = path });
 }
@@ -78,7 +78,7 @@ catch (Exception ex)
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
-    .AddSingleton<RedisClient>()
+    .AddSingleton<IRedisClient, RealRedisClient>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;
