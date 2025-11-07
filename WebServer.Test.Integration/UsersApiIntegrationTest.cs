@@ -26,7 +26,7 @@ public class UsersApiIntegrationTest
 
     [Theory]
     [InlineData($"{AppConstant.WEB_SERVER_API_BASE}/Users/Auth")]
-    public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
+    public async Task AuthLogin(string url)
     {
         var request = new AuthReq
         {

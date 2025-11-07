@@ -25,7 +25,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="WebServer.Test.Unit" />
         <InternalsVisibleTo Include="WebServer.Test.Integration" />
     </ItemGroup>
 
