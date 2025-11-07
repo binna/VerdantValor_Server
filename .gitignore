@@ -809,3 +809,5 @@ fabric.properties
 # appsettings.json
 # appsettings.*.json
 /SharedClient/
+SharedClient/
+SharedClient/*
