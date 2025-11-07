@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 
-namespace SharedLibrary.ado;
+namespace SharedLibrary.Ado;
 
 // DbConfig
 //      DB 설정(환경 정보)을 관리

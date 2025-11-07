@@ -6,13 +6,13 @@ using WebServer.Services;
 
 namespace WebServer.Controllers;
 
-[Route(AppConstant.WEB_SERVER_API_BASE)]
+[Route($"{AppConstant.WEB_SERVER_API_BASE}/[controller]")]
 [ApiController]
-public class UsersController : Controller
+public class UsersApiIntegration : Controller
 {
     private readonly UsersService mUsersService;
 
-    public UsersController(UsersService usersService)
+    public UsersApiIntegration(UsersService usersService)
     {
         mUsersService = usersService;
     }

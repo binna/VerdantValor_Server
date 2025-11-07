@@ -2,15 +2,17 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer", "WebServer\WebServer.csproj", "{3FAD1A12-E084-4AD8-91FC-FFD0B9CDB757}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Tests", "WebServer.Tests\WebServer.Tests.csproj", "{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Integration", "WebServer.Test.Integration\WebServer.Test.Integration.csproj", "{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{267D816F-2DE7-454B-A9A5-7D1BA2E357DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.ado", "SharedLibrary.ado\SharedLibrary.ado.csproj", "{1BB8315F-7B71-481E-8CA8-EC059DEFB46B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Ado", "SharedLibrary.Ado\SharedLibrary.Ado.csproj", "{1BB8315F-7B71-481E-8CA8-EC059DEFB46B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.efcore", "SharedLibrary.efcore\SharedLibrary.efcore.csproj", "{C1F0D539-6EBE-471B-A6E5-866219C0176A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Efcore", "SharedLibrary.Efcore\SharedLibrary.Efcore.csproj", "{C1F0D539-6EBE-471B-A6E5-866219C0176A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.redis", "SharedLibrary.redis\SharedLibrary.redis.csproj", "{468718E0-9C58-494A-9215-0A8EFF72888F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Redis", "SharedLibrary.Redis\SharedLibrary.Redis.csproj", "{468718E0-9C58-494A-9215-0A8EFF72888F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Unit", "WebServer.Test.Unit\WebServer.Test.Unit.csproj", "{20DAC27A-23BF-418B-B218-1FE747D87073}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,5 +44,9 @@ Global
 		{468718E0-9C58-494A-9215-0A8EFF72888F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{468718E0-9C58-494A-9215-0A8EFF72888F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{468718E0-9C58-494A-9215-0A8EFF72888F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20DAC27A-23BF-418B-B218-1FE747D87073}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20DAC27A-23BF-418B-B218-1FE747D87073}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20DAC27A-23BF-418B-B218-1FE747D87073}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20DAC27A-23BF-418B-B218-1FE747D87073}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -2,7 +2,7 @@
 
 public static class AppConstant
 {
-    public const string WEB_SERVER_API_BASE = "api/[controller]";
+    public const string WEB_SERVER_API_BASE = "api";
 
     public const int EAMIL_MIN_LENGTH = 5;
     public const int EAMIL_MAX_LENGTH = 50;

@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using SharedLibrary.ado.DAOs;
 using SharedLibrary.Common;
-using SharedLibrary.efcore;
-using SharedLibrary.redis;
+using SharedLibrary.Efcore;
+using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Services;
 
@@ -63,9 +62,11 @@ builder.Services
 
 try
 {
+    // AppContext.BaseDirectory
+    // 실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
     var baseDir = AppContext.BaseDirectory;
     var path = Path.GetFullPath(
-        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "ResponseState.json"));
+        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseState.json"));
     ResponseStatus.Init(path);
     Log.Information("ResponseStatus setup success. {@path}", new { jsonPath = path });
 }
@@ -124,3 +125,5 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

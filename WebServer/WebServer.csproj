@@ -18,10 +18,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SharedLibrary.ado\SharedLibrary.ado.csproj" />
-      <ProjectReference Include="..\SharedLibrary.efcore\SharedLibrary.efcore.csproj" />
-      <ProjectReference Include="..\SharedLibrary.redis\SharedLibrary.redis.csproj" />
+      <ProjectReference Include="..\SharedLibrary.Ado\SharedLibrary.Ado.csproj" />
+      <ProjectReference Include="..\SharedLibrary.Efcore\SharedLibrary.Efcore.csproj" />
+      <ProjectReference Include="..\SharedLibrary.Redis\SharedLibrary.Redis.csproj" />
       <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="WebServer.Test.Unit" />
+        <InternalsVisibleTo Include="WebServer.Test.Integration" />
     </ItemGroup>
 
     <ItemGroup>

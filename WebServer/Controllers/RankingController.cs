@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.DTOs;
-using SharedLibrary.redis;
+using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Services;
 using ExceptionMessage = WebServer.Common.ExceptionMessage;
 
 namespace WebServer.Controllers;
 
-[Route(AppConstant.WEB_SERVER_API_BASE)]
+[Route($"{AppConstant.WEB_SERVER_API_BASE}/[controller]")]
 [ApiController]
 public class RankingController : Controller
 {

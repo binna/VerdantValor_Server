@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibrary.Models;
 
-namespace SharedLibrary.efcore;
+namespace SharedLibrary.Efcore;
 
 public sealed class AppDbContext : DbContext
 {
