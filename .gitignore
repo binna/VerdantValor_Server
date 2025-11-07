@@ -808,6 +808,3 @@ fabric.properties
 # ETC
 # appsettings.json
 # appsettings.*.json
-/SharedClient/
-SharedClient/
-SharedClient/*
