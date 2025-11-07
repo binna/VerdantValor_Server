@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using SharedLibrary.GameData.DTO;
+using SharedLibrary.Protocol.Common;
 
 namespace SharedLibrary.Common
 {
@@ -35,7 +36,7 @@ namespace SharedLibrary.Common
     public sealed class ResponseStatus
     {
         private static readonly Dictionary<EResponseStatus, 
-            (bool IsSuccess, Dictionary<AppConstant.ELanguage, string> Messages)> mResponseTable = [];
+            (bool IsSuccess, Dictionary<AppEnum.ELanguage, string> Messages)> mResponseTable = [];
         
         public bool IsSuccess { get; private init; }
         public int Code { get; private init; }
@@ -64,10 +65,10 @@ namespace SharedLibrary.Common
                 var status = (EResponseStatus)item.Code;
                 var messageList = item.Message;
                 
-                var messageDic = new Dictionary<AppConstant.ELanguage, string>
+                var messageDic = new Dictionary<AppEnum.ELanguage, string>
                 {
-                    { AppConstant.ELanguage.Ko, messageList[0] },
-                    { AppConstant.ELanguage.En, messageList[1] }
+                    { AppEnum.ELanguage.Ko, messageList[0] },
+                    { AppEnum.ELanguage.En, messageList[1] }
                 };
 
                 mResponseTable.Add(status, (item.IsSuccess, messageDic));
@@ -81,7 +82,7 @@ namespace SharedLibrary.Common
             }
         }
 
-        public static ResponseStatus FromResponseStatus(EResponseStatus status, AppConstant.ELanguage language)
+        public static ResponseStatus FromResponseStatus(EResponseStatus status, AppEnum.ELanguage language)
         {
             var responseStatus = mResponseTable[status];
             return new ResponseStatus(responseStatus.IsSuccess, (int)status, responseStatus.Messages[language]);

@@ -2,6 +2,7 @@
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Models;
+using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Helpers;
@@ -32,7 +33,7 @@ public class UsersService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse> Join(string email, string password, string nickname, AppConstant.ELanguage language)
+    public async Task<ApiResponse> Join(string email, string password, string nickname, AppEnum.ELanguage language)
     {
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(
@@ -102,7 +103,7 @@ public class UsersService
                 EResponseStatus.DbError, language));
     }
 
-    public async Task<ApiResponse> CheckPassword(string email, string password, AppConstant.ELanguage language)
+    public async Task<ApiResponse> CheckPassword(string email, string password, AppEnum.ELanguage language)
     {
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(

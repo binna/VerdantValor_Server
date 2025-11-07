@@ -1,5 +1,6 @@
 ﻿using SharedLibrary.Common;
-using SharedLibrary.DTOs;
+using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.DTOs;
 using SharedLibrary.Redis;
 using WebServer.Common;
 
@@ -18,7 +19,7 @@ public class RankingService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppConstant.ERankingType rankingType, int limit, AppConstant.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppEnum.ERankingType rankingType, int limit, AppEnum.ELanguage language)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
         {
@@ -57,7 +58,7 @@ public class RankingService
             new RankRes { Rankings = rankingList });
     }
 
-    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppConstant.ERankingType rankingType, string userId, string nickname, AppConstant.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppEnum.ERankingType rankingType, string userId, string nickname, AppEnum.ELanguage language)
     {
         var member = CreateMemberFieldName(userId, nickname);
         
@@ -92,7 +93,7 @@ public class RankingService
             rankInfo);
     }
 
-    public async Task<ApiResponse> AddScore(AppConstant.ERankingType eRankingType, string userId, string nickname, double score, AppConstant.ELanguage language)
+    public async Task<ApiResponse> AddScore(AppEnum.ERankingType eRankingType, string userId, string nickname, double score, AppEnum.ELanguage language)
     {
         var member = CreateMemberFieldName(userId, nickname);
         
@@ -108,7 +109,7 @@ public class RankingService
         return $"{userId}/{nickname}";
     }
 
-    private static string CreateRankingKeyName(AppConstant.ERankingType eRankingType)
+    private static string CreateRankingKeyName(AppEnum.ERankingType eRankingType)
     {
         return $"{AppConstant.RANKING_ROOT}:{eRankingType}";
     }

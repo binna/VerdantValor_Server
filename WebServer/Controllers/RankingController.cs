@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
-using SharedLibrary.DTOs;
+using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.DTOs;
 using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Services;
@@ -36,8 +37,8 @@ public class RankingController : Controller
         var userId = httpContext.Session.GetString("userId");
         var languageCode = httpContext.Session.GetString("language");
         
-        if (!Enum.TryParse<AppConstant.ELanguage>(languageCode, out var language))
-            language = AppConstant.ELanguage.En;
+        if (!Enum.TryParse<AppEnum.ELanguage>(languageCode, out var language))
+            language = AppEnum.ELanguage.En;
 
         if (userId == null)
         {
@@ -54,8 +55,8 @@ public class RankingController : Controller
                     EResponseStatus.InvalidAuth, language));
         }
 
-        if (!Enum.TryParse<AppConstant.ERankingScope>(request.Scope, out var rankingScope) 
-                || !Enum.TryParse<AppConstant.ERankingType>(request.Type, out var rankingType))
+        if (!Enum.TryParse<AppEnum.ERankingScope>(request.Scope, out var rankingScope) 
+                || !Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
         {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
@@ -64,7 +65,7 @@ public class RankingController : Controller
 
         switch (rankingScope)
         {
-            case AppConstant.ERankingScope.My:
+            case AppEnum.ERankingScope.My:
             {
                 var nickname = httpContext.Session.GetString("nickname");
                 if (nickname == null)
@@ -77,7 +78,7 @@ public class RankingController : Controller
                 return await mRankingService.GetMemberRankAsync(
                     rankingType, userId, nickname, language);
             }
-            case AppConstant.ERankingScope.Global:
+            case AppEnum.ERankingScope.Global:
             {
                 return await mRankingService.GetTopRankingAsync(
                     rankingType, request.Limit, language);
@@ -102,8 +103,8 @@ public class RankingController : Controller
         var nickname = httpContext.Session.GetString("nickname");
         var languageCode = httpContext.Session.GetString("language");
         
-        if (!Enum.TryParse<AppConstant.ELanguage>(languageCode, out var language))
-            language = AppConstant.ELanguage.En;
+        if (!Enum.TryParse<AppEnum.ELanguage>(languageCode, out var language))
+            language = AppEnum.ELanguage.En;
 
         if (string.IsNullOrWhiteSpace(userId) 
                 || string.IsNullOrWhiteSpace(nickname))
@@ -121,7 +122,7 @@ public class RankingController : Controller
                     EResponseStatus.InvalidAuth, language));
         }
 
-        if (!Enum.TryParse<AppConstant.ERankingType>(request.Type, out var rankingType))
+        if (!Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
         {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(

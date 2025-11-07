@@ -3,7 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using SharedLibrary.Common;
-using SharedLibrary.DTOs;
+using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.DTOs;
 using Xunit.Abstractions;
 
 namespace WebServer.Test.Integration;
@@ -30,7 +31,7 @@ public class UsersApiIntegrationTest
     {
         var request = new AuthReq
         {
-            AuthType = $"{AppConstant.EAuthType.Login}", 
+            AuthType = $"{AppEnum.EAuthType.Login}", 
             Email = "binna", 
             Pw = "1234"
         };

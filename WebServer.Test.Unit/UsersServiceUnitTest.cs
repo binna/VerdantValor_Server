@@ -6,6 +6,7 @@ using NSubstitute;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Models;
+using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Helpers;
@@ -77,7 +78,7 @@ public class UsersServiceUnitTest
         string email;
         string nickname;
         string password;
-        var language = AppConstant.ELanguage.Ko;
+        var language = AppEnum.ELanguage.Ko;
         
         //  1. 이메일은 영어 숫자
         email = "돼지꾸륵";

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
+using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer.Common;
 using WebServer.Services;
@@ -102,7 +103,7 @@ app
             await context.Response.WriteAsJsonAsync(
                 new ApiResponse(
                     ResponseStatus.FromResponseStatus(
-                        EResponseStatus.UnexpectedError, AppConstant.ELanguage.En)));
+                        EResponseStatus.UnexpectedError, AppEnum.ELanguage.En)));
         });
     });
 

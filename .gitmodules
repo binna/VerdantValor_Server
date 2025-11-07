@@ -1,0 +1,3 @@
+[submodule "SharedClient"]
+	path = SharedClient
+	url = https://github.com/binna/VerdantValor_Shared.git

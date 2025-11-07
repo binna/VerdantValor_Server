@@ -12,4 +12,8 @@
         <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\SharedClient\SharedLibrary.Protocol\SharedLibrary.Protocol.csproj" />
+    </ItemGroup>
+
 </Project>
