@@ -31,8 +31,17 @@ public class UsersService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse> Join(string email, string password, string nickname, AppEnum.ELanguage language)
+    public async Task<ApiResponse> Join(
+        string email, string password, string nickname, 
+        AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
+        if (string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(password)
+            || string.IsNullOrWhiteSpace(nickname))
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyRequiredField, language));
+
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
@@ -84,11 +93,9 @@ public class UsersService
         var result = await mUsersRepository.SaveAsync();
 
         if (result > 0)
-        {
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.Success, language));
-        }
         
         mLogger.LogError("Database error occurred while saving user information. {@context}",
             new { nickname, email, hashPw });
@@ -98,7 +105,9 @@ public class UsersService
                 EResponseStatus.DbError, language));
     }
 
-    public async Task<ApiResponse> CheckPassword(string email, string password, AppEnum.ELanguage language)
+    public async Task<ApiResponse> Login(
+        string email, string password, 
+        AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(

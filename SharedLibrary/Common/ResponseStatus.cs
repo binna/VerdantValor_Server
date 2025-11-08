@@ -27,6 +27,8 @@ namespace SharedLibrary.Common
         NotMatchPw  = 2027,
         NicknameAlphabetKoreanNumberOnly = 2028,
         
+        ScoreCannotBeNegative = 2030,
+        
         // 시스템 에러
         RedisError = 9997,
         DbError = 9998,

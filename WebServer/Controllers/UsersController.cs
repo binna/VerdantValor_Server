@@ -9,11 +9,11 @@ namespace WebServer.Controllers;
 
 [Route($"{AppConstant.WEB_SERVER_API_BASE}/[controller]")]
 [ApiController]
-public class UsersApiIntegration : Controller
+public class UsersController : Controller
 {
     private readonly UsersService mUsersService;
 
-    public UsersApiIntegration(UsersService usersService)
+    public UsersController(UsersService usersService)
     {
         mUsersService = usersService;
     }
@@ -31,31 +31,16 @@ public class UsersApiIntegration : Controller
                     EResponseStatus.InvalidInput, language));
         }
 
-        if (string.IsNullOrWhiteSpace(request.Email)
-            || string.IsNullOrWhiteSpace(request.Pw))
-        {
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.EmptyRequiredField, language));
-        }
-
         switch (authType)
         {
             case AppEnum.EAuthType.Join:
             {
-                if (string.IsNullOrWhiteSpace(request.Nickname))
-                {
-                    return new ApiResponse(
-                        ResponseStatus.FromResponseStatus(
-                            EResponseStatus.EmptyRequiredField, language));
-                }
-
                 return await mUsersService.Join(
                     request.Email, request.Pw, request.Nickname, language);
             }
             case AppEnum.EAuthType.Login:
             {
-                return await mUsersService.CheckPassword(
+                return await mUsersService.Login(
                     request.Email, request.Pw, language);
             }
             default:

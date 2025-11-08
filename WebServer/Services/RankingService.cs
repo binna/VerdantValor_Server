@@ -19,14 +19,14 @@ public class RankingService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(AppEnum.ERankingType rankingType, int limit, AppEnum.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
+        AppEnum.ERankingType rankingType, int limit, 
+        AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidInput, language));
-        }
 
         var redisRankings =
             await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
@@ -58,7 +58,10 @@ public class RankingService
             new RankRes { Rankings = rankingList });
     }
 
-    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(AppEnum.ERankingType rankingType, string userId, string nickname, AppEnum.ELanguage language)
+    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(
+        AppEnum.ERankingType rankingType, 
+        string userId, string nickname, 
+        AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
         var member = CreateMemberFieldName(userId, nickname);
         
@@ -93,11 +96,19 @@ public class RankingService
             rankInfo);
     }
 
-    public async Task<ApiResponse> AddScore(AppEnum.ERankingType eRankingType, string userId, string nickname, double score, AppEnum.ELanguage language)
+    public async Task<ApiResponse> AddScore(
+        AppEnum.ERankingType rankingType, 
+        string userId, string nickname, double score, 
+        AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
+        if (score <= 0)
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.ScoreCannotBeNegative, language));
+        
         var member = CreateMemberFieldName(userId, nickname);
         
-        await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(eRankingType), member, score); 
+        await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
