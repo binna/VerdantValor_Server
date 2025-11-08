@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SharedLibrary.Common;
-using SharedLibrary.Efcore;
-using SharedLibrary.Models;
+﻿using SharedLibrary.Common;
+using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer.Common;
@@ -13,7 +11,7 @@ public class UsersService
 {
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IDbContextFactory<AppDbContext> mDbContextFactory;
+    private readonly IUsersRepository mUsersRepository;
     private readonly IRedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
@@ -24,12 +22,12 @@ public class UsersService
     public UsersService(
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
-        IDbContextFactory<AppDbContext> dbContextFactory,
+        IUsersRepository usersRepository,
         IRedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
-        mDbContextFactory = dbContextFactory;
+        mUsersRepository = usersRepository;
         mRedisClient = redisClient;
     }
 
@@ -57,10 +55,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidNicknameLength, language));
         
-        await using var db = await mDbContextFactory.CreateDbContextAsync();
-        
-        var bExistsUser = await db.Users
-            .AnyAsync(u => u.Email == email);
+        var bExistsUser = await mUsersRepository.ExistsUserAsync(email);
         
         if (bExistsUser)
             return new ApiResponse(
@@ -85,8 +80,8 @@ public class UsersService
 
         var hashPw = HashHelper.ComputeSha512Hash(password);
         
-        await db.Users.AddAsync(new Users(nickname, email, hashPw));
-        var result = await db.SaveChangesAsync();
+        await mUsersRepository.AddAsync(nickname, email, hashPw);
+        var result = await mUsersRepository.SaveAsync();
 
         if (result > 0)
         {
@@ -110,9 +105,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmailAlphabetNumberOnly, language));
         
-        await using var db = await mDbContextFactory.CreateDbContextAsync(); 
-        var user = await db.Users
-            .FirstOrDefaultAsync(u => u.Email == email);
+        var user = await mUsersRepository.FindUserByEmailAsync(email);
 
         if (user == null)
             return new ApiResponse(

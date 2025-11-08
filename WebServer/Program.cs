@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
+using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer.Common;
@@ -80,6 +81,7 @@ catch (Exception ex)
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
     .AddSingleton<IRedisClient, RealRedisClient>()
+    .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;
