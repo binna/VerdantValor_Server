@@ -15,5 +15,5 @@ public static class AppConstant
 
     public const string RANKING_ROOT = "Ranking";
     
-    public const string SHARED_LIBRARY_PATH = @"..\..\..\..\SharedClient\SharedLibrary.Protocol";
+    public const string SHARED_LIBRARY_PATH = @"..\..\..\..\SharedLibrary.Protocol";
 }

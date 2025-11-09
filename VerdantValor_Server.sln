@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Redis", "Shar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Unit", "WebServer.Test.Unit\WebServer.Test.Unit.csproj", "{20DAC27A-23BF-418B-B218-1FE747D87073}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Protocol", "SharedClient\SharedLibrary.Protocol\SharedLibrary.Protocol.csproj", "{96439E7C-1050-46C5-B35B-89DD43798BF5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Protocol", "SharedLibrary.Protocol\SharedLibrary.Protocol.csproj", "{96439E7C-1050-46C5-B35B-89DD43798BF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
