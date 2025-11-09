@@ -89,7 +89,7 @@ public class UsersService
 
         var hashPw = HashHelper.ComputeSha512Hash(password);
         
-        await mUsersRepository.AddAsync(nickname, email, hashPw);
+        await mUsersRepository.AddAsync(email, nickname, hashPw);
         var result = await mUsersRepository.SaveAsync();
 
         if (result > 0)
@@ -98,7 +98,7 @@ public class UsersService
                     EResponseStatus.Success, language));
         
         mLogger.LogError("Database error occurred while saving user information. {@context}",
-            new { nickname, email, hashPw });
+            new { email, nickname, hashPw });
             
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(

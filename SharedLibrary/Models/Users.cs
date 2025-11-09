@@ -26,7 +26,7 @@ public class Users
 
     private Users() { }
 
-    public Users(string nickname, string email, string pw)
+    public Users(string email, string nickname, string pw)
     {
         var now = DateTime.UtcNow;
         Nickname = nickname;
