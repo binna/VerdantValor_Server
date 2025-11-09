@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SharedClient\SharedLibrary.Protocol\SharedLibrary.Protocol.csproj" />
+      <ProjectReference Include="..\SharedLibrary.Protocol\SharedLibrary.Protocol.csproj" />
     </ItemGroup>
 
 </Project>
