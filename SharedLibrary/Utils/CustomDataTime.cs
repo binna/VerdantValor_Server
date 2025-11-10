@@ -16,11 +16,16 @@ public readonly struct CustomDateTime
         new(DateTime.UtcNow
             .AddTicks(mUtcDiffTicks));
 
-    public DateTime DateTime => mDateTime;
+    public DateTime DateTime => mDateTime.AddTicks(mUtcDiffTicks);
 
     public static void SetCustomNow(DateTime dateTime)
     {
         var diffDateTime = dateTime - DateTime.UtcNow;
         mUtcDiffTicks = diffDateTime.Ticks;
+    }
+    
+    public static void ResetCustomNow()
+    {
+        mUtcDiffTicks = 0;
     }
 }

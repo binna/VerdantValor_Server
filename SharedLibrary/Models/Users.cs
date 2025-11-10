@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
+using SharedLibrary.Utils;
 
 namespace SharedLibrary.Models;
 
@@ -19,16 +20,16 @@ public class Users
     [MaxLength(255)]
     public string? DeviceId { get; private set; }
     
-    public DateTime CreatedAt { get; private set; }
+    public CustomDateTime CreatedAt { get; private set; }
     
-    public DateTime UpdatedAt { get; private set; }
+    public CustomDateTime UpdatedAt { get; private set; }
 
 
     private Users() { }
 
     public Users(string email, string nickname, string password)
     {
-        var now = DateTime.UtcNow;
+        var now = CustomDateTime.Now;
         Nickname = nickname;
         Email = email;
         Pw = password;
@@ -63,9 +64,9 @@ public class Users
                 await reader.IsDBNullAsync(deviceIdIdx, token) ?
                     null : await reader.GetFieldValueAsync<string>(deviceIdIdx, token),
             CreatedAt =
-                await reader.GetFieldValueAsync<DateTime>(createdAtIdx, token),
+                new CustomDateTime(await reader.GetFieldValueAsync<DateTime>(createdAtIdx, token)),
             UpdatedAt =
-                await reader.GetFieldValueAsync<DateTime>(updatedIdx, token)
+                new CustomDateTime(await reader.GetFieldValueAsync<DateTime>(updatedIdx, token))
         };
     }
 }
