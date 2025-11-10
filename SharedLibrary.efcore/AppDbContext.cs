@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SharedLibrary.Models;
+using SharedLibrary.Utils;
 
 namespace SharedLibrary.Efcore;
 
@@ -15,4 +16,10 @@ public sealed class AppDbContext : DbContext
             .Entity<Users>()
             .HasKey(u => u.UserId);
     }
-}
+
+     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+     {
+         configurationBuilder
+             .Properties<CustomDateTime>().HaveConversion<CustomDateTimeConverter>();
+     }
+}   
