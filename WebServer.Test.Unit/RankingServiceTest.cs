@@ -25,7 +25,6 @@ public class RankingServiceTest
     }
 
     #region TOP 랭킹 조회
-
     [Theory]
     [InlineData(10)]
     [InlineData(20)]
