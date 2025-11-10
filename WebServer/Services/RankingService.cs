@@ -33,7 +33,7 @@ public class RankingService
 
         List<RankInfo> rankingList = new(limit);
 
-        for (var i = 0; i < limit; i++)
+        for (var i = 0; i < redisRankings.Length; i++)
         {
             var info = redisRankings[i];
             var userInfo = info.Element.ToString().Split("/");
@@ -64,12 +64,13 @@ public class RankingService
         AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
         var member = CreateMemberFieldName(userId, nickname);
+        var rankingKey = CreateRankingKeyName(rankingType);
         
         var rank = 
-            await mRedisClient.GetMemberRank(CreateRankingKeyName(rankingType), member);
+            await mRedisClient.GetMemberRank(rankingKey, member);
 
         var score = 
-            await mRedisClient.GetMemberScore(CreateRankingKeyName(rankingType), member);
+            await mRedisClient.GetMemberScore(rankingKey, member);
 
         if (rank == null || score == null)
         {
@@ -120,8 +121,8 @@ public class RankingService
         return $"{userId}/{nickname}";
     }
 
-    private static string CreateRankingKeyName(AppEnum.ERankingType eRankingType)
+    private static string CreateRankingKeyName(AppEnum.ERankingType rankingType)
     {
-        return $"{AppConstant.RANKING_ROOT}:{eRankingType}";
+        return $"{AppConstant.RANKING_ROOT}:{rankingType}";
     }
 }

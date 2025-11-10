@@ -26,12 +26,12 @@ public class Users
 
     private Users() { }
 
-    public Users(string email, string nickname, string pw)
+    public Users(string email, string nickname, string password)
     {
         var now = DateTime.UtcNow;
         Nickname = nickname;
         Email = email;
-        Pw = pw;
+        Pw = password;
         CreatedAt = now;
         UpdatedAt = now;
     }

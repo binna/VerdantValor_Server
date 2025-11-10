@@ -2,13 +2,12 @@
 
 namespace SharedLibrary.Redis;
 
-// 모킹에서 쓰려고 상속 가능하게 구현
-public class FakeRedisClient : IRedisClient 
+public sealed class CustomRedisClient : IRedisClient 
 {
     private readonly IDatabase mDatabase;
     private readonly IDatabase mSessionDatabase;
 
-    public FakeRedisClient(string host, string port, int defaultDb, int sessionDb)
+    public CustomRedisClient(string host, string port, int defaultDb, int sessionDb)
     {
         var endpoint = $"{host}:{port}";
         var connection = ConnectionMultiplexer.Connect(endpoint);

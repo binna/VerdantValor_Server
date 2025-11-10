@@ -109,10 +109,22 @@ public class UsersService
         string email, string password, 
         AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
+        if (string.IsNullOrWhiteSpace(email)
+            || string.IsNullOrWhiteSpace(password))
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.EmptyRequiredField, language));
+
         if (!ValidationHelper.IsValidEmail(email))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.EmailAlphabetNumberOnly, language));
+        
+        if (email.Length is 
+            < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
+            return new ApiResponse(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.InvalidEmailLength, language));
         
         var user = await mUsersRepository.FindUserByEmailAsync(email);
 

@@ -4,12 +4,12 @@ using StackExchange.Redis;
 
 namespace SharedLibrary.Redis;
 
-public sealed class RealRedisClient : IRedisClient
+public sealed class ConfigRedisClient : IRedisClient
 {
     private readonly IDatabase mDatabase;
     private readonly IDatabase mSessionDatabase;
 
-    public RealRedisClient(
+    public ConfigRedisClient(
         IConfiguration configuration,
         ILogger<IRedisClient> logger)
     {

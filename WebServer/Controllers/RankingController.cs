@@ -41,27 +41,21 @@ public class RankingController : Controller
             language = AppEnum.ELanguage.En;
 
         if (userId == null)
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidAuth, language));
-        }
 
         var sessionId = (await mRedisClient.GetSessionInfoAsync(userId)).ToString();
         if (!sessionId.Equals(httpContext.Session.Id))
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidAuth, language));
-        }
 
         if (!Enum.TryParse<AppEnum.ERankingScope>(request.Scope, out var rankingScope) 
                 || !Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidInput, language));
-        }
 
         switch (rankingScope)
         {
@@ -79,16 +73,12 @@ public class RankingController : Controller
                     rankingType, userId, nickname, language);
             }
             case AppEnum.ERankingScope.Global:
-            {
                 return await mRankingService.GetTopRankingAsync(
                     rankingType, request.Limit, language);
-            }
             default:
-            {
                 return new ApiResponse<RankRes>(
                     ResponseStatus.FromResponseStatus(
                         EResponseStatus.Success, language));
-            }
         }
     }
 
@@ -108,11 +98,9 @@ public class RankingController : Controller
 
         if (string.IsNullOrWhiteSpace(userId) 
                 || string.IsNullOrWhiteSpace(nickname))
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidAuth, language));
-        }
 
         var sessionId = (await mRedisClient.GetSessionInfoAsync(userId)).ToString();
         if (!sessionId.Equals(httpContext.Session.Id))
@@ -123,11 +111,9 @@ public class RankingController : Controller
         }
 
         if (!Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
-        {
             return new ApiResponse<RankRes>(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.InvalidInput, language));
-        }
 
         return await mRankingService.AddScore(
             rankingType, userId, nickname, request.Score, language);
