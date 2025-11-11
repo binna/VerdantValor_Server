@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
+using SharedLibrary.Efcore.Transaction;
 using SharedLibrary.Models;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
@@ -17,6 +18,7 @@ public class UsersServiceTest
     private readonly ITestOutputHelper mOutput;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
+    private readonly IUsersServiceTransaction mUsersTransaction;
     private readonly UsersService mUsersService;
     
 
@@ -26,9 +28,10 @@ public class UsersServiceTest
         var logger = Substitute.For<ILogger<UsersService>>();
         mHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
         mUsersRepository = Substitute.For<IUsersRepository>();
+        mUsersTransaction = Substitute.For<IUsersServiceTransaction>();
         var redisClient = Substitute.For<IRedisClient>();
         mUsersService = Substitute.For<UsersService>(
-            logger, mHttpContextAccessor, mUsersRepository, redisClient);
+            logger, mHttpContextAccessor, mUsersRepository, mUsersTransaction, redisClient);
     }
 
     #region 회원가입
@@ -159,7 +162,9 @@ public class UsersServiceTest
         mUsersRepository.ExistsUserAsync("binna")
             .Returns(Task.FromResult(false));
         
-        mUsersRepository.SaveAsync()
+        mUsersTransaction.CreateUserAsync(
+                "binna", "shine", 
+                "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db")
             .Returns(Task.FromResult(1));
         
         var response = await mUsersService.Join("binna", "1234", "shine");

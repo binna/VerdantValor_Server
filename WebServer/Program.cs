@@ -81,6 +81,7 @@ catch (Exception ex)
 builder.Services
     .AddSingleton<IRedisClient, ConfigRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
+    .AddSingleton<IUsersServiceTransaction, UsersServiceTransaction>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;

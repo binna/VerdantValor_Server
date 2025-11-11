@@ -1,5 +1,6 @@
 ﻿using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
+using SharedLibrary.Efcore.Transaction;
 using SharedLibrary.Helpers;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
@@ -11,6 +12,7 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
+    private readonly IUsersServiceTransaction mUsersTransaction;
     private readonly IRedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
@@ -22,11 +24,13 @@ public class UsersService
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IUsersRepository usersRepository,
+        IUsersServiceTransaction usersTransaction,
         IRedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mUsersRepository = usersRepository;
+        mUsersTransaction = usersTransaction;
         mRedisClient = redisClient;
     }
 
@@ -87,9 +91,7 @@ public class UsersService
                     EResponseStatus.ForbiddenNickname, language));
 
         var hashPw = HashHelper.ComputeSha512Hash(password);
-        
-        await mUsersRepository.AddAsync(email, nickname, hashPw);
-        var result = await mUsersRepository.SaveAsync();
+        var result = await mUsersTransaction.CreateUserAsync(email, nickname, hashPw);
 
         if (result > 0)
             return new ApiResponse(

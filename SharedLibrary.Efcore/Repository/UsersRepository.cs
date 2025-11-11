@@ -33,10 +33,4 @@ public class UsersRepository : IUsersRepository
         await dbContext.Users.AddAsync(new Users(email, nickname, password));
         return await dbContext.SaveChangesAsync();
     }
-
-    // public async Task<int> SaveAsync()
-    // {
-    //     await using var dbContext = await mDbContextFactory.CreateDbContextAsync();
-    //     return await dbContext.SaveChangesAsync();
-    // }
 }
