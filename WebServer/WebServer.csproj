@@ -4,6 +4,8 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <Configurations>Debug;Release;Development;Live</Configurations>
+        <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,6 +29,14 @@
     <ItemGroup>
         <InternalsVisibleTo Include="WebServer.Test.Integration" />
     </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Development'">
+        <DefineConstants>DEVELOPMENT</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Live'">
+        <DefineConstants>LIVE</DefineConstants>
+    </PropertyGroup>
 
     <ItemGroup>
       <Folder Include="Logs\" />

@@ -6,7 +6,6 @@ using SharedLibrary.Efcore;
 using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
-using WebServer.Common;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);

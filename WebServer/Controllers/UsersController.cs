@@ -2,7 +2,6 @@
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
-using WebServer.Common;
 using WebServer.Services;
 
 namespace WebServer.Controllers;

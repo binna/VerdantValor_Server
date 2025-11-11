@@ -2,7 +2,6 @@
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
 using SharedLibrary.Redis;
-using WebServer.Common;
 
 namespace WebServer.Services;
 

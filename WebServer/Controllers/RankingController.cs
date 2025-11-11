@@ -3,9 +3,7 @@ using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
 using SharedLibrary.Redis;
-using WebServer.Common;
 using WebServer.Services;
-using ExceptionMessage = WebServer.Common.ExceptionMessage;
 
 namespace WebServer.Controllers;
 

@@ -1,9 +1,8 @@
 ﻿using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
+using SharedLibrary.Helpers;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
-using WebServer.Common;
-using WebServer.Helpers;
 
 namespace WebServer.Services;
 
@@ -140,7 +139,7 @@ public class UsersService
         
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
-            throw new InvalidOperationException(Common.ExceptionMessage.EMPTY_HTTP_CONTEXT);
+            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
         
         await mRedisClient.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
         
