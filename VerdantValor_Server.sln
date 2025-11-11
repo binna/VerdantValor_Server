@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer", "WebServer\WebServer.csproj", "{3FAD1A12-E084-4AD8-91FC-FFD0B9CDB757}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Integration", "WebServer.Test.Integration\WebServer.Test.Integration.csproj", "{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary", "SharedLibrary\SharedLibrary.csproj", "{267D816F-2DE7-454B-A9A5-7D1BA2E357DF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Ado", "SharedLibrary.Ado\SharedLibrary.Ado.csproj", "{1BB8315F-7B71-481E-8CA8-EC059DEFB46B}"
@@ -32,14 +30,6 @@ Global
 		{3FAD1A12-E084-4AD8-91FC-FFD0B9CDB757}.Development|Any CPU.Build.0 = Development|Any CPU
 		{3FAD1A12-E084-4AD8-91FC-FFD0B9CDB757}.Live|Any CPU.ActiveCfg = Live|Any CPU
 		{3FAD1A12-E084-4AD8-91FC-FFD0B9CDB757}.Live|Any CPU.Build.0 = Live|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Development|Any CPU.ActiveCfg = Development|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Development|Any CPU.Build.0 = Development|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Live|Any CPU.ActiveCfg = Live|Any CPU
-		{3DB3A3C7-738A-40C0-B5B1-2E633B656F7D}.Live|Any CPU.Build.0 = Live|Any CPU
 		{267D816F-2DE7-454B-A9A5-7D1BA2E357DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{267D816F-2DE7-454B-A9A5-7D1BA2E357DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{267D816F-2DE7-454B-A9A5-7D1BA2E357DF}.Release|Any CPU.ActiveCfg = Release|Any CPU

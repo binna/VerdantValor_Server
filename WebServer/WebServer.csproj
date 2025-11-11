@@ -26,10 +26,6 @@
       <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <InternalsVisibleTo Include="WebServer.Test.Integration" />
-    </ItemGroup>
-
     <PropertyGroup Condition="'$(Configuration)' == 'Development'">
         <DefineConstants>DEVELOPMENT</DefineConstants>
     </PropertyGroup>
