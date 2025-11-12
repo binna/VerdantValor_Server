@@ -34,7 +34,7 @@ public class UsersService
         mRedisClient = redisClient;
     }
 
-    public async Task<ApiResponse> Join(
+    public async Task<ApiResponse> JoinAsync(
         string email, string password, string nickname, 
         AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
@@ -90,7 +90,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.ForbiddenNickname, language));
 
-        var hashPw = HashHelper.ComputeSha512Hash(password);
+        var hashPw = SecurityHelper.ComputeSha512Hash(password);
         var result = await mUsersTransaction.CreateUserAsync(email, nickname, hashPw);
 
         if (result > 0)
@@ -106,7 +106,7 @@ public class UsersService
                 EResponseStatus.DbError, language));
     }
 
-    public async Task<ApiResponse> Login(
+    public async Task<ApiResponse> LoginAsync(
         string email, string password, 
         AppEnum.ELanguage language = AppEnum.ELanguage.En)
     {
@@ -134,7 +134,7 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.NoData, language));
 
-        if (!HashHelper.VerifySha512Hash(password, user.Pw))
+        if (!SecurityHelper.VerifySha512Hash(password, user.Pw))
             return new ApiResponse(
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.NotMatchPw, language));
@@ -142,9 +142,9 @@ public class UsersService
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
             throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
-        
+
         await mRedisClient.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
-        
+
         httpContext.Session.SetString("userId", $"{user.UserId}");
         httpContext.Session.SetString("nickname", $"{user.Nickname}");
         httpContext.Session.SetString("language", $"{language}");

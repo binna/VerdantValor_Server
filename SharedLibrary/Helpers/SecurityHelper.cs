@@ -1,9 +1,12 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using SharedLibrary.Protocol.DTOs;
+using WebServer;
 
 namespace SharedLibrary.Helpers;
 
-public static class HashHelper
+public static class SecurityHelper
 {
     public static string ComputeSha512Hash(string plainText)
     {
@@ -32,4 +35,22 @@ public static class HashHelper
             hashText, 
             StringComparison.OrdinalIgnoreCase);
     }
+
+#if LIVE
+    public static T? DecryptRequest<T>(EncryptReq request)  
+    {
+        using var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY);
+        
+        var nonceBytes = Convert.FromBase64String(request.Nonce);
+        var dataBytes = Convert.FromBase64String(request.Data);
+        var tagBytes = Convert.FromBase64String(request.Tag);
+        var plainBytes = new byte[dataBytes.Length];
+    
+        aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
+
+        var plaintext = Encoding.UTF8.GetString(plainBytes);
+    
+        return JsonSerializer.Deserialize<T>(plaintext);
+    }
+#endif
 }

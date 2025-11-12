@@ -58,12 +58,33 @@ builder.Services.AddStackExchangeRedisCache(options =>
 if (string.IsNullOrWhiteSpace(mysqlConnUrl)
     || string.IsNullOrWhiteSpace(host) 
     || string.IsNullOrWhiteSpace(port)
-    || string.IsNullOrWhiteSpace(serverName ))
+    || string.IsNullOrWhiteSpace(serverName))
 {
     Log.Fatal("Configurations are missing required fields. {@fields}", 
         new { mysqlConnUrl, host, port, serverName });
     Environment.Exit(1);
 }
+
+#if LIVE
+var reqEncryptKey = builder.Configuration["ReqEncryptKey"];
+if (string.IsNullOrWhiteSpace(reqEncryptKey))
+{
+    Log.Fatal("Configurations are missing required fields. {@fields}", 
+        new { reqEncryptKey });
+    Environment.Exit(1);
+}
+
+try
+{
+    AppReadonly.Init(reqEncryptKey);
+    Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "ResponseStatus setup Fail.");
+    Environment.Exit(1);
+}
+#endif
 
 builder.Services
     .AddPooledDbContextFactory<AppDbContext>(options => 
@@ -77,7 +98,7 @@ try
     var path = Path.GetFullPath(
         Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
     ResponseStatus.Init(path);
-    Log.Information("ResponseStatus setup success. {@path}", new { jsonPath = path });
+    Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
 }
 catch (Exception ex)
 {
@@ -87,7 +108,6 @@ catch (Exception ex)
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
-    .AddSingleton<AppReadonly>()
     .AddSingleton<IRedisClient, ConfigRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<IUsersServiceTransaction, UsersServiceTransaction>()

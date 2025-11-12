@@ -1,8 +1,6 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Helpers;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
 using SharedLibrary.Redis;
@@ -35,25 +33,11 @@ public class RankingController : Controller
 #elif LIVE
     public async Task<ApiResponse<RankRes>> GetRank([FromBody] EncryptReq encryptReq)
     {
-        GetRankReq? request;
-        using (var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY))
-        {
-            var nonceBytes = Convert.FromBase64String(encryptReq.Nonce);
-            var dataBytes = Convert.FromBase64String(encryptReq.Data);
-            var tagBytes = Convert.FromBase64String(encryptReq.Tag);
-            var plainBytes = new byte[nonceBytes.Length];
-        
-            aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
-
-            var plaintext = Encoding.UTF8.GetString(plainBytes);
-        
-            request = JsonSerializer.Deserialize<GetRankReq>(plaintext);
-            
-            if (request == null)
-                return new ApiResponse<RankRes>(
-                    ResponseStatus.FromResponseStatus(
-                        EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
-        }
+        var request = SecurityHelper.DecryptRequest<GetRankReq>(encryptReq);
+        if (request == null)
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
 #endif
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
@@ -114,25 +98,11 @@ public class RankingController : Controller
 #elif LIVE
     public async Task<ApiResponse> Entries([FromBody] EncryptReq encryptReq)
     {
-        CreateScoreReq? request;
-        using (var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY))
-        {
-            var nonceBytes = Convert.FromBase64String(encryptReq.Nonce);
-            var dataBytes = Convert.FromBase64String(encryptReq.Data);
-            var tagBytes = Convert.FromBase64String(encryptReq.Tag);
-            var plainBytes = new byte[nonceBytes.Length];
-        
-            aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
-
-            var plaintext = Encoding.UTF8.GetString(plainBytes);
-        
-            request = JsonSerializer.Deserialize<CreateScoreReq>(plaintext);
-            
-            if (request == null)
-                return new ApiResponse<RankRes>(
-                    ResponseStatus.FromResponseStatus(
-                        EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
-        }
+        var request = SecurityHelper.DecryptRequest<CreateScoreReq>(encryptReq);
+        if (request == null)
+            return new ApiResponse<RankRes>(
+                ResponseStatus.FromResponseStatus(
+                    EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
 #endif
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
