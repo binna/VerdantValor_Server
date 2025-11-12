@@ -4,8 +4,10 @@ using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Efcore.Repository;
+using SharedLibrary.Efcore.Transaction;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
+using WebServer;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,12 @@ Log.Logger = new LoggerConfiguration().ReadFrom
 
 builder.Logging.ClearProviders();   // 기존 기본 로깅 공급자 제거 후
 builder.Host.UseSerilog();          // Serilog를 로거로 사용
+
+// 내가 사용할 환경 설정 이름
+builder.Configuration
+    .AddJsonFile(
+        $"appsettings.{builder.Environment.EnvironmentName}.json", 
+        optional: false, reloadOnChange: true);
 
 // 세션 설정
 builder.Services.AddSession(options =>
@@ -53,7 +61,7 @@ if (string.IsNullOrWhiteSpace(mysqlConnUrl)
     || string.IsNullOrWhiteSpace(serverName ))
 {
     Log.Fatal("Configurations are missing required fields. {@fields}", 
-        new { mysqlConnUrl, host, port, serverName});
+        new { mysqlConnUrl, host, port, serverName });
     Environment.Exit(1);
 }
 
@@ -79,6 +87,7 @@ catch (Exception ex)
 
 // service 등록(DI 관리 대상 싱글톤 등록)
 builder.Services
+    .AddSingleton<AppReadonly>()
     .AddSingleton<IRedisClient, ConfigRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<IUsersServiceTransaction, UsersServiceTransaction>()

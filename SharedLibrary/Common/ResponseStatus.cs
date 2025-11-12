@@ -16,6 +16,7 @@ namespace SharedLibrary.Common
         EmptyRequiredField = 2010,
         InvalidInput =  2011,
         NoData = 2012,
+        FailDecrypt = 2013,
         
         EmailAlphabetNumberOnly = 2020,
         EmailAlreadyExists = 2021,

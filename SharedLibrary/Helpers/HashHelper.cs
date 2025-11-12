@@ -7,7 +7,7 @@ public static class HashHelper
 {
     public static string ComputeSha512Hash(string plainText)
     {
-        using SHA512 sha512 = SHA512.Create();
+        using var sha512 = SHA512.Create();
         
         var utf8Bytes = Encoding.UTF8.GetBytes(plainText);
         var hashBytes = sha512.ComputeHash(utf8Bytes);

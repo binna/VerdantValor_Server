@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
@@ -17,7 +20,7 @@ public class RankingController : Controller
     
     public RankingController(
         RankingService rankingService,
-        IHttpContextAccessor httpContextAccessor, 
+        IHttpContextAccessor httpContextAccessor,
         IRedisClient redisClient)
     {
         mRankingService = rankingService;
@@ -26,8 +29,32 @@ public class RankingController : Controller
     }
 
     [HttpPost("GetRank")]
+#if DEVELOPMENT
     public async Task<ApiResponse<RankRes>> GetRank([FromBody] GetRankReq request)
     {
+#elif LIVE
+    public async Task<ApiResponse<RankRes>> GetRank([FromBody] EncryptReq encryptReq)
+    {
+        GetRankReq? request;
+        using (var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY))
+        {
+            var nonceBytes = Convert.FromBase64String(encryptReq.Nonce);
+            var dataBytes = Convert.FromBase64String(encryptReq.Data);
+            var tagBytes = Convert.FromBase64String(encryptReq.Tag);
+            var plainBytes = new byte[nonceBytes.Length];
+        
+            aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
+
+            var plaintext = Encoding.UTF8.GetString(plainBytes);
+        
+            request = JsonSerializer.Deserialize<GetRankReq>(plaintext);
+            
+            if (request == null)
+                return new ApiResponse<RankRes>(
+                    ResponseStatus.FromResponseStatus(
+                        EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
+        }
+#endif
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
             throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
@@ -81,8 +108,32 @@ public class RankingController : Controller
     }
 
     [HttpPost("Entries")]
+#if DEVELOPMENT
     public async Task<ApiResponse> Entries([FromBody] CreateScoreReq request)
     {
+#elif LIVE
+    public async Task<ApiResponse> Entries([FromBody] EncryptReq encryptReq)
+    {
+        CreateScoreReq? request;
+        using (var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY))
+        {
+            var nonceBytes = Convert.FromBase64String(encryptReq.Nonce);
+            var dataBytes = Convert.FromBase64String(encryptReq.Data);
+            var tagBytes = Convert.FromBase64String(encryptReq.Tag);
+            var plainBytes = new byte[nonceBytes.Length];
+        
+            aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
+
+            var plaintext = Encoding.UTF8.GetString(plainBytes);
+        
+            request = JsonSerializer.Deserialize<CreateScoreReq>(plaintext);
+            
+            if (request == null)
+                return new ApiResponse<RankRes>(
+                    ResponseStatus.FromResponseStatus(
+                        EResponseStatus.FailDecrypt, AppEnum.ELanguage.Ko)); 
+        }
+#endif
         var httpContext = mHttpContextAccessor.HttpContext;
         if (httpContext == null)
             throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
