@@ -11,7 +11,13 @@ public class GlobalSetupResponseStatus
         var path = Path.GetFullPath(
             Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
         ResponseStatus.Init(path);
-        Log.Information("ResponseStatus setup success. {@path}", new { jsonPath = path });
+        Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
+        
+#if LIVE
+        var reqEncryptKey = "ABCDEFGHIJKLMNOP";
+        AppReadonly.Init(reqEncryptKey);
+        Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
+#endif
     }
 }
 
