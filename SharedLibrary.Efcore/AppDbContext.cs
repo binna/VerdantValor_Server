@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharedLibrary.Efcore.Converter;
 using SharedLibrary.Models;
-using SharedLibrary.Utils;
+using SharedLibrary.Types;
 
 namespace SharedLibrary.Efcore;
 
@@ -20,6 +21,6 @@ public sealed class AppDbContext : DbContext
      protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
      {
          configurationBuilder
-             .Properties<ServerDateTime>().HaveConversion<CustomDateTimeConverter>();
+             .Properties<ServerDateTime>().HaveConversion<ServerDateTimeConverter>();
      }
 }   

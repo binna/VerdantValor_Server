@@ -2,7 +2,7 @@
 using SharedLibrary.Common;
 using SharedLibrary.Helpers;
 
-namespace SharedLibrary.Utils;
+namespace SharedLibrary.Types;
 
 // 시간을 미래나 과거로 바꿀 수 있는 기능(UTC를 기준)
 public readonly struct ServerDateTime
