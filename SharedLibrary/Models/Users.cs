@@ -20,16 +20,16 @@ public class Users
     [MaxLength(255)]
     public string? DeviceId { get; private set; }
     
-    public CustomDateTime CreatedAt { get; private set; }
+    public ServerDateTime CreatedAt { get; private set; }
     
-    public CustomDateTime UpdatedAt { get; private set; }
+    public ServerDateTime UpdatedAt { get; private set; }
 
 
     private Users() { }
 
     public Users(string email, string nickname, string password)
     {
-        var now = CustomDateTime.Now;
+        var now = ServerDateTime.Now;
         Nickname = nickname;
         Email = email;
         Pw = password;
@@ -64,9 +64,9 @@ public class Users
                 await reader.IsDBNullAsync(deviceIdIdx, token) ?
                     null : await reader.GetFieldValueAsync<string>(deviceIdIdx, token),
             CreatedAt =
-                new CustomDateTime(await reader.GetFieldValueAsync<DateTime>(createdAtIdx, token)),
+                new ServerDateTime(await reader.GetFieldValueAsync<DateTime>(createdAtIdx, token)),
             UpdatedAt =
-                new CustomDateTime(await reader.GetFieldValueAsync<DateTime>(updatedIdx, token))
+                new ServerDateTime(await reader.GetFieldValueAsync<DateTime>(updatedIdx, token))
         };
     }
 }

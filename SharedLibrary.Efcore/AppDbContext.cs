@@ -20,6 +20,6 @@ public sealed class AppDbContext : DbContext
      protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
      {
          configurationBuilder
-             .Properties<CustomDateTime>().HaveConversion<CustomDateTimeConverter>();
+             .Properties<ServerDateTime>().HaveConversion<CustomDateTimeConverter>();
      }
 }   
