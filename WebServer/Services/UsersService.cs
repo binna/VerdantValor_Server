@@ -127,15 +127,13 @@ public class UsersService
                 ResponseStatus.FromResponseStatus(
                     EResponseStatus.NotMatchPw, language));
         
-        var httpContext = mHttpContextAccessor.HttpContext;
-        if (httpContext == null)
-            throw new InvalidOperationException(ExceptionMessage.EMPTY_HTTP_CONTEXT);
+        await mRedisClient.AddSessionInfoAsync(
+            $"{user.UserId}", 
+            mHttpContextAccessor.HttpContext!.Session.Id);
 
-        await mRedisClient.AddSessionInfoAsync($"{user.UserId}", httpContext.Session.Id);
-
-        httpContext.Session.SetString("userId", $"{user.UserId}");
-        httpContext.Session.SetString("nickname", $"{user.Nickname}");
-        httpContext.Session.SetString("language", $"{language}");
+        mHttpContextAccessor.HttpContext!.Session.SetString("userId", $"{user.UserId}");
+        mHttpContextAccessor.HttpContext!.Session.SetString("nickname", $"{user.Nickname}");
+        mHttpContextAccessor.HttpContext!.Session.SetString("language", $"{language}");
 
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
