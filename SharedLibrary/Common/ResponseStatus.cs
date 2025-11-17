@@ -11,24 +11,22 @@ namespace SharedLibrary.Common
         SuccessEmptyRanking = 1001,
         
         // 그 외의 에러
-        InvalidAuth = 2000,
-
-        EmptyRequiredField = 2010,
-        InvalidInput =  2011,
-        NoData = 2012,
-        FailDecrypt = 2013,
+        EmptyRequiredField = 2000,
+        InvalidInput =  2001,
+        NoData = 2002,
+        FailDecrypt = 2003,
         
-        EmailAlphabetNumberOnly = 2020,
-        EmailAlreadyExists = 2021,
-        NicknameAlreadyExists = 2022,
-        InvalidEmailLength = 2023,
-        InvalidNicknameLength = 2024,
-        ForbiddenEmail = 2025,
-        ForbiddenNickname = 2026,
-        NotMatchPw  = 2027,
-        NicknameAlphabetKoreanNumberOnly = 2028,
+        EmailAlphabetNumberOnly = 2010,
+        EmailAlreadyExists = 2011,
+        NicknameAlreadyExists = 2012,
+        InvalidEmailLength = 2013,
+        InvalidNicknameLength = 2014,
+        ForbiddenEmail = 2015,
+        ForbiddenNickname = 2016,
+        NotMatchPw  = 2017,
+        NicknameAlphabetKoreanNumberOnly = 2018,
         
-        ScoreCannotBeNegative = 2030,
+        ScoreCannotBeNegative = 2020,
         
         // 시스템 에러
         RedisError = 9997,
