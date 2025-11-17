@@ -36,8 +36,7 @@ public static class SecurityHelper
             StringComparison.OrdinalIgnoreCase);
     }
 
-#if LIVE
-    public static T? DecryptRequest<T>(EncryptReq request)  
+    public static T? DecryptPayload<T>(EncryptReq request)  
     {
         using var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY);
         
@@ -52,5 +51,18 @@ public static class SecurityHelper
     
         return JsonSerializer.Deserialize<T>(plaintext);
     }
-#endif
+    
+    public static byte[] DecryptPayloadToBytes(EncryptReq request)  
+    {
+        using var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY);
+        
+        var nonceBytes = Convert.FromBase64String(request.Nonce);
+        var dataBytes = Convert.FromBase64String(request.Data);
+        var tagBytes = Convert.FromBase64String(request.Tag);
+        var plainBytes = new byte[dataBytes.Length];
+    
+        aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
+
+        return plainBytes;
+    }
 }

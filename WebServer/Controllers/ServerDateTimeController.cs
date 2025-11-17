@@ -1,21 +1,22 @@
-﻿#if DEVELOPMENT
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Protocol.DTOs;
-using SharedLibrary.Utils;
+using SharedLibrary.Types;
 
 namespace WebServer.Controllers;
 
 [Route($"{AppConstant.WEB_SERVER_API_BASE}/[controller]")]
 [ApiController]
-public class CustomDateTimeController : Controller
+public class ServerDateTimeController : Controller
 {
     [HttpPost("set")]
-    public ApiResponse SetCustomNow([FromBody] SetCustomNowReq req)
+    [AllowAnonymous]
+    public ApiResponse SetServerTimeNow([FromBody] SetCustomNowReq req)
     {
-        CustomDateTime.SetCustomNow(
-            CustomDateTime.ToCustomDateTime(req.TargetNow)
+        ServerDateTime.SetServerTimeNow(
+            ServerDateTime.ToCustomDateTime(req.TargetNow)
         );
         
         return new ApiResponse(ResponseStatus.FromResponseStatus(
@@ -23,12 +24,12 @@ public class CustomDateTimeController : Controller
     }
     
     [HttpPost("reset")]
-    public ApiResponse ResetCustomNow()
+    [AllowAnonymous]
+    public ApiResponse ResetServerTimeNow()
     {
-        CustomDateTime.ResetCustomNow();
+        ServerDateTime.ResetServerTimeNow();
         
         return new ApiResponse(ResponseStatus.FromResponseStatus(
             EResponseStatus.Success, AppEnum.ELanguage.Ko));
     }
 }
-#endif

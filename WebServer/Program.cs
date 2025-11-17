@@ -1,13 +1,14 @@
-using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Efcore.Transaction;
-using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
 using WebServer;
+using WebServer.Pipeline;
 using WebServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,7 +28,6 @@ builder.Configuration
         $"appsettings.{builder.Environment.EnvironmentName}.json", 
         optional: false, reloadOnChange: true);
 
-// 세션 설정
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(10);
@@ -36,10 +36,15 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".VerdantValor.Session";
 });
 
-// 현재 HTTP 요청(Context)에 대한 정보
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Conventions.Add(
+        new ExcludeControllerConvention(
+            builder.Environment, "ServerDateTime"));
+});
+
 builder.Services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen();
@@ -65,31 +70,11 @@ if (string.IsNullOrWhiteSpace(mysqlConnUrl)
     Environment.Exit(1);
 }
 
-#if LIVE
-var reqEncryptKey = builder.Configuration["ReqEncryptKey"];
-if (string.IsNullOrWhiteSpace(reqEncryptKey))
-{
-    Log.Fatal("Configurations are missing required fields. {@fields}", 
-        new { reqEncryptKey });
-    Environment.Exit(1);
-}
-
-try
-{
-    AppReadonly.Init(reqEncryptKey);
-    Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "ResponseStatus setup Fail.");
-    Environment.Exit(1);
-}
-#endif
-
 builder.Services
     .AddPooledDbContextFactory<AppDbContext>(options => 
         options.UseMySQL(mysqlConnUrl));
 
+#region Init
 try
 {
     // AppContext.BaseDirectory
@@ -106,8 +91,41 @@ catch (Exception ex)
     Environment.Exit(1);
 }
 
-// service 등록(DI 관리 대상 싱글톤 등록)
+if (!builder.Environment.IsDevelopment())
+{
+    var reqEncryptKey = builder.Configuration["ReqEncryptKey"];
+    if (string.IsNullOrWhiteSpace(reqEncryptKey))
+    {
+        Log.Fatal("Configurations are missing required fields. {@fields}", 
+            new { reqEncryptKey });
+        Environment.Exit(1);
+    }
+
+    try
+    {
+        AppReadonly.Init(reqEncryptKey);
+        Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "ResponseStatus setup Fail.");
+        Environment.Exit(1);
+    }
+}
+#endregion
+
+builder.Services.AddAuthentication("PassThroughAuth")
+     .AddScheme<AuthenticationSchemeOptions, PassThroughAuthHandler>(
+         "PassThroughAuth", null);
+
+builder.Services.AddAuthorization(options => 
+    options.AddPolicy(
+        "SessionPolicy", 
+        policy => policy.Requirements.Add(new SessionAuthRequirement())));
+
+// DI 관리 대상 싱글톤 등록
 builder.Services
+    .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IRedisClient, ConfigRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<IUsersServiceTransaction, UsersServiceTransaction>()
@@ -117,37 +135,21 @@ builder.Services
 
 var app = builder.Build();
 
-app
-    .UseExceptionHandler(exceptionHandlerApp =>
-    {
-        exceptionHandlerApp.Run(async context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status200OK;
-            context.Response.ContentType = "application/json";
-
-            var exceptionHandlerPathFeature =
-                context.Features.Get<IExceptionHandlerPathFeature>();
-            var ex = exceptionHandlerPathFeature?.Error;
-
-            Log.Error(ex, "Unexpected error occurred in global exception handler.");
-            
-            await context.Response.WriteAsJsonAsync(
-                new ApiResponse(
-                    ResponseStatus.FromResponseStatus(
-                        EResponseStatus.UnexpectedError, AppEnum.ELanguage.En)));
-        });
-    });
-
 app.UseHttpsRedirection();
+
+// 미들웨어 등록
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+if (!app.Environment.IsDevelopment())
+    app.UseMiddleware<DecryptReqMiddleware>();
 
 app.UseRouting();
 
-app.UseSession();       // 여기서 세션 기능 활성화
-
+app.UseSession();
 app.UseAuthentication();
-app.UseAuthorization(); // 여기서 AuthorizationHandler 실행됨
+app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
