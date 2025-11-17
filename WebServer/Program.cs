@@ -5,7 +5,6 @@ using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Efcore.Repository;
-using SharedLibrary.Efcore.Transaction;
 using SharedLibrary.Redis;
 using WebServer;
 using WebServer.Pipeline;
@@ -43,6 +42,7 @@ builder.Services.AddControllers(options =>
     options.Conventions.Add(
         new ExcludeControllerConvention(
             builder.Environment, "ServerDateTime"));
+    options.Filters.Add<DBContextActionFilter>();
 });
 
 builder.Services
@@ -128,7 +128,6 @@ builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IRedisClient, ConfigRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
-    .AddSingleton<IUsersServiceTransaction, UsersServiceTransaction>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;

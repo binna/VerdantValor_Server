@@ -6,5 +6,5 @@ public interface IUsersRepository
 {
     Task<Users?> FindUserByEmailAsync(string email);
     Task<bool> ExistsUserAsync(string email);
-    Task<int> SaveAsync(string email, string nickname, string password);
+    Task AddAsync(string email, string nickname, string password);
 }

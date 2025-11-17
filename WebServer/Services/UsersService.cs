@@ -1,6 +1,5 @@
 ﻿using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
-using SharedLibrary.Efcore.Transaction;
 using SharedLibrary.Helpers;
 using SharedLibrary.Protocol.Common;
 using SharedLibrary.Redis;
@@ -12,7 +11,6 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
-    private readonly IUsersServiceTransaction mUsersTransaction;
     private readonly IRedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
@@ -24,13 +22,11 @@ public class UsersService
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IUsersRepository usersRepository,
-        IUsersServiceTransaction usersTransaction,
         IRedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mUsersRepository = usersRepository;
-        mUsersTransaction = usersTransaction;
         mRedisClient = redisClient;
     }
 
@@ -91,19 +87,11 @@ public class UsersService
                     EResponseStatus.ForbiddenNickname, language));
 
         var hashPw = SecurityHelper.ComputeSha512Hash(password);
-        var result = await mUsersTransaction.CreateUserAsync(email, nickname, hashPw);
-
-        if (result > 0)
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.Success, language));
+        await mUsersRepository.AddAsync(email, nickname, hashPw);
         
-        mLogger.LogError("Database error occurred while saving user information. {@context}",
-            new { email, nickname, hashPw });
-            
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
-                EResponseStatus.DbError, language));
+                EResponseStatus.Success, language));
     }
 
     public async Task<ApiResponse> LoginAsync(
