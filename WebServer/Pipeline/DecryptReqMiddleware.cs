@@ -2,8 +2,8 @@
 using System.Text.Json;
 using SharedLibrary.Common;
 using SharedLibrary.Helpers;
-using SharedLibrary.Protocol.Common;
-using SharedLibrary.Protocol.DTOs;
+using SharedLibrary.Protocol.Common.Web;
+using SharedLibrary.Protocol.DTOs.Web;
 
 namespace WebServer.Pipeline;
 

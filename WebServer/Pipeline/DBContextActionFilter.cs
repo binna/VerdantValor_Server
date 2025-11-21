@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 
 namespace WebServer.Pipeline;
 

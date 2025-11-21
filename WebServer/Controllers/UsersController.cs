@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
-using SharedLibrary.Protocol.Common;
-using SharedLibrary.Protocol.DTOs;
+using SharedLibrary.Protocol.Common.Web;
+using SharedLibrary.Protocol.DTOs.Web;
 using WebServer.Services;
 
 namespace WebServer.Controllers;

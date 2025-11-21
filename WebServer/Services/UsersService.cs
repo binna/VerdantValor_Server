@@ -1,7 +1,7 @@
 ﻿using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Helpers;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Redis;
 
 namespace WebServer.Services;

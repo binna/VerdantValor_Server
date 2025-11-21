@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Redis;
 
 namespace WebServer.Pipeline;

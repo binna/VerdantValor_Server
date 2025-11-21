@@ -28,7 +28,7 @@ public class UsersRepository : IUsersRepository
     public async Task AddAsync(string email, string nickname, string password)
     {
         var dbContext = (AppDbContext)mHttpContextAccessor.HttpContext!.Items["dbContext"]!;
-        mHttpContextAccessor.HttpContext!.Items["isChange"] = true;
+        mHttpContextAccessor.HttpContext!.Items["isChange"] = true; 
         await dbContext.Users.AddAsync(new Users(nickname, email, password));
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using SharedLibrary.GameData.DTO;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 
 namespace SharedLibrary.Common
 {

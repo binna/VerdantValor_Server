@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SharedLibrary.Common;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Redis;
 using StackExchange.Redis;
 using WebServer.Services;

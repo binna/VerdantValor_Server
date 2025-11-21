@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using SharedLibrary.Protocol.DTOs;
+using SharedLibrary.Protocol.DTOs.Web;
 using WebServer;
 
 namespace SharedLibrary.Helpers;

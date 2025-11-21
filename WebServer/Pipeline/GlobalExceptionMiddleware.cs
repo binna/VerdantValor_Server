@@ -1,6 +1,6 @@
 ﻿using Serilog;
 using SharedLibrary.Common;
-using SharedLibrary.Protocol.Common;
+using SharedLibrary.Protocol.Common.Web;
 
 namespace WebServer.Pipeline;
 
