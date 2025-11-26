@@ -28,7 +28,7 @@ public class DBContextActionFilter : ActionFilterAttribute
         
         await next();
 
-        if ((bool)context.HttpContext.Items["isChange"]!)
+        if (dbContext.ChangeTracker.HasChanges())
         {
             var result = await dbContext.SaveChangesAsync();
 
