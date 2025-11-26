@@ -3,6 +3,7 @@ using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Helpers;
 using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Redis;
+using WebServer.Common;
 
 namespace WebServer.Services;
 
@@ -131,10 +132,11 @@ public class UsersService
             $"{user.UserId}", 
             mHttpContextAccessor.HttpContext!.Session.Id);
 
-        mHttpContextAccessor.HttpContext!.Session.SetString("userId", $"{user.UserId}");
-        mHttpContextAccessor.HttpContext!.Session.SetString("nickname", $"{user.Nickname}");
-        mHttpContextAccessor.HttpContext!.Session.SetString("language", $"{language}");
-
+        mHttpContextAccessor.SetUserSession(
+            $"{user.UserId}",
+            $"{user.Nickname}",
+            $"{language}");
+        
         return new ApiResponse(
             ResponseStatus.FromResponseStatus(
                 EResponseStatus.Success, language));

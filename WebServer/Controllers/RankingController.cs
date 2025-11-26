@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Protocol.DTOs.Web;
-using SharedLibrary.Redis;
+using WebServer.Common;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -13,25 +13,18 @@ namespace WebServer.Controllers;
 public class RankingController : Controller
 {
     private readonly RankingService mRankingService;
-    private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IRedisClient mRedisClient;
     
-    public RankingController(
-        RankingService rankingService,
-        IHttpContextAccessor httpContextAccessor,
-        IRedisClient redisClient)
+    public RankingController(RankingService rankingService)
     {
         mRankingService = rankingService;
-        mHttpContextAccessor = httpContextAccessor;
-        mRedisClient = redisClient;
     }
 
     [HttpPost("GetRank")]
     [Authorize(Policy = "SessionPolicy")]
     public async Task<ApiResponse<RankRes>> GetRank([FromBody] GetRankReq request)
     {
-        var userId = (string)mHttpContextAccessor.HttpContext!.Items["userId"]!;
-        var language = (AppEnum.ELanguage)mHttpContextAccessor.HttpContext!.Items["language"]!;
+        var userId = this.GetUserId();
+        var language = this.GetLanguage();
         
         if (!Enum.TryParse<AppEnum.ERankingScope>(request.Scope, out var rankingScope) 
                 || !Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
@@ -43,7 +36,7 @@ public class RankingController : Controller
         {
             case AppEnum.ERankingScope.My:
             {
-                var nickname = (string)mHttpContextAccessor.HttpContext!.Items["nickname"]!;
+                var nickname = this.GetNickname();
                 return await mRankingService.GetMemberRankAsync(
                     rankingType, userId, nickname, language);
             }
@@ -62,9 +55,9 @@ public class RankingController : Controller
     [Authorize(Policy = "SessionPolicy")]
     public async Task<ApiResponse> Entries([FromBody] CreateScoreReq request)
     {
-        var userId = (string)mHttpContextAccessor.HttpContext!.Items["userId"]!;
-        var language = (AppEnum.ELanguage)mHttpContextAccessor.HttpContext!.Items["language"]!;
-        var nickname = (string)mHttpContextAccessor.HttpContext!.Items["nickname"]!;
+        var userId = this.GetUserId();
+        var language = this.GetLanguage();
+        var nickname = this.GetNickname();
 
         if (!Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
             return new ApiResponse<RankRes>(
