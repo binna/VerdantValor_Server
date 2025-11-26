@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Protocol.Common.Web;
 
-namespace WebServer.Common;
+namespace WebServer;
 
-public static class Extension
+public static class HttpContextExtension
 {
     public static string GetUserId(this Controller controller)
     {

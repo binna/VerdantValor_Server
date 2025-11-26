@@ -23,4 +23,4 @@ public sealed class AppDbContext : DbContext
          configurationBuilder
              .Properties<ServerDateTime>().HaveConversion<ServerDateTimeConverter>();
      }
-}   
+}

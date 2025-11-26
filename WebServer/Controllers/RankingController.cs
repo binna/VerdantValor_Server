@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Protocol.DTOs.Web;
-using WebServer.Common;
+using WebServer;
 using WebServer.Services;
 
 namespace WebServer.Controllers;

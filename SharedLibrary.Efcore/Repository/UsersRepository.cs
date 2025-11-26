@@ -15,13 +15,13 @@ public class UsersRepository : IUsersRepository
 
     public async Task<Users?> FindUserByEmailAsync(string email)
     {
-        var dbContext = (AppDbContext)mHttpContextAccessor.HttpContext!.Items["dbContext"]!;
+        var dbContext = mHttpContextAccessor.GetAppDbContext();
         return await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
     }
     
     public async Task<bool> ExistsUserAsync(string email)
     {
-        var dbContext = (AppDbContext)mHttpContextAccessor.HttpContext!.Items["dbContext"]!;
+        var dbContext = mHttpContextAccessor.GetAppDbContext();
         return await dbContext.Users.AnyAsync(u => u.Email == email);
     }
     
