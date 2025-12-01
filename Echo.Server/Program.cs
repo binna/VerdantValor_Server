@@ -28,17 +28,53 @@ Console.WriteLine($"연결됨: {clientSocket.RemoteEndPoint}");
 
 while (true)
 {
-    var buffer = new byte[256];
-    var totalBytes = clientSocket.Receive(buffer);
+    var headerBuffer = new byte[sizeof(short)];
+    var headerLength = clientSocket.Receive(headerBuffer);
 
-    if (totalBytes < 1)
+    // SocketFlags.None
+    //  기본 모드로 보내라/받아라
+    if (headerLength == 1)
+        clientSocket.Receive(headerBuffer, 1, 1, SocketFlags.None);
+    
+    var dataLength = 
+        IPAddress.HostToNetworkOrder(BitConverter.ToInt16(headerBuffer));
+    
+    var dataBuffer = new byte[dataLength];
+
+    var totalSize = 0;
+
+    while (totalSize < dataLength)
     {
-        Console.WriteLine("클라이언트의 종료");
-        return;
+        // 주의!!
+        //  Receive의 size 파라미터(세 번째 인자)는
+        //  최대로 읽을 수 있는 길이를 의미할 뿐
+        //  반드시 그만큼 읽는다는 의미가 아니다
+        var readLength = clientSocket.Receive(
+            dataBuffer, totalSize, dataLength - totalSize, SocketFlags.None);
+        
+        totalSize += readLength;
     }
 
-    var str = Encoding.UTF8.GetString(buffer);
-    Console.WriteLine(str);
+    var data = Encoding.UTF8.GetString(dataBuffer);
     
-    clientSocket.Send(buffer);
+    if (string.IsNullOrWhiteSpace(data))
+        continue;         
+
+    if (data.Equals("exit", StringComparison.OrdinalIgnoreCase))
+        return;
+    
+    Console.WriteLine(data);
+
+    var messageBuffer = new byte[headerBuffer.Length + dataLength];
+    
+    Array.Copy(
+        headerBuffer, 0, 
+        messageBuffer, 0, 
+        headerBuffer.Length);
+    Array.Copy(
+        dataBuffer, 0, 
+        messageBuffer, headerBuffer.Length, 
+        dataBuffer.Length);
+    
+    clientSocket.Send(messageBuffer);
 }
