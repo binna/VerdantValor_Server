@@ -10,7 +10,7 @@ List<Task> tasks = [];
 
 for (var i = 0; i < CLIENT_MAX; i++)
 {
-    var clientNum = i;
+    var clientNum = i + 1;
     var newSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     //var endPoint = new IPEndPoint(IPAddress.Loopback, 20000);
     var endPoint = new IPEndPoint(IPAddress.Parse("211.46.62.188"), 20000);
