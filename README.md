@@ -12,3 +12,8 @@
     |------|------|
     | **Framework** | ASP.NET Core(.NET 9.0), EF Core |
     | **DB** | MySQL, Redis |
+
+2. 채팅 서버
+    | 구분 | 기술 |
+    |------|------|
+    | **** |  |
