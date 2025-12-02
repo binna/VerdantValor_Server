@@ -15,7 +15,7 @@ while (true)
 {
     var data = Console.ReadLine();
 
-    if (string.IsNullOrWhiteSpace(data))
+    if (string.IsNullOrEmpty(data))
         continue;         
 
     if (data.Equals("exit", StringComparison.OrdinalIgnoreCase))
@@ -30,7 +30,8 @@ while (true)
     
     // 우리가 사용하는 대부분의 서버는 리틀 엔디안이고,
     // 네트워크 프로토콜은 빅 엔디안을 사용하므로, 메시지 길이를 전송하기 전에 네트워크 표준으로 변환
-    var headerBuffer = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)dataBuffer.Length));
+    var headerBuffer = 
+        BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)dataBuffer.Length));
     
     var messageBuffer = new byte[headerBuffer.Length + dataBuffer.Length];
     
@@ -48,11 +49,17 @@ while (true)
     var receiveHeaderBuffer = new byte[sizeof(short)];
     var receiveHeaderLength = clientSocket.Receive(receiveHeaderBuffer);
 
+    if (receiveHeaderLength == 0)
+    {
+        Console.WriteLine("클라: 서버 연결 종료");
+        return;
+    }
+
     if (receiveHeaderLength == 1)
         clientSocket.Receive(receiveHeaderBuffer, 1, 1, SocketFlags.None);
     
     var receiveDataLength = 
-        IPAddress.HostToNetworkOrder(BitConverter.ToInt16(receiveHeaderBuffer));
+        IPAddress.NetworkToHostOrder(BitConverter.ToInt16(receiveHeaderBuffer));
     
     var receiveDataBuffer = new byte[receiveDataLength];
 
@@ -63,10 +70,16 @@ while (true)
         var readLength = clientSocket.Receive(
             receiveDataBuffer, totalSize, receiveDataLength - totalSize, SocketFlags.None);
         
+        if (readLength == 0)
+        {
+            Console.WriteLine("클라: 서버 연결 종료");
+            return;
+        }
+        
         totalSize += readLength;
     }
 
     var receiveData = Encoding.UTF8.GetString(receiveDataBuffer);
     
-    Console.WriteLine($"받음 : {receiveData}");
+    Console.WriteLine($"클라 받음: {receiveData}");
 }

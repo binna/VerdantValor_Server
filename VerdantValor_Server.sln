@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Echo.Client", "Echo.Client\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Echo.Server", "Echo.Server\Echo.Server.csproj", "{D2AEEB0B-99C0-4136-90E2-EC5F1848A3B9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Echo.LoadTester", "Echo.LoadTester\Echo.LoadTester.csproj", "{9798FFC7-0D82-47CB-9DC6-57673EDE336C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,5 +130,13 @@ Global
 		{D2AEEB0B-99C0-4136-90E2-EC5F1848A3B9}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{D2AEEB0B-99C0-4136-90E2-EC5F1848A3B9}.Live|Any CPU.ActiveCfg = Debug|Any CPU
 		{D2AEEB0B-99C0-4136-90E2-EC5F1848A3B9}.Live|Any CPU.Build.0 = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Live|Any CPU.ActiveCfg = Debug|Any CPU
+		{9798FFC7-0D82-47CB-9DC6-57673EDE336C}.Live|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

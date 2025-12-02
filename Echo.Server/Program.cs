@@ -5,8 +5,8 @@ using System.Text;
 using var serverSocket =
     new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-var endPoint = 
-    new IPEndPoint(IPAddress.Loopback, 20000);
+//var endPoint = new IPEndPoint(IPAddress.Loopback, 20000);
+var endPoint = new IPEndPoint(IPAddress.Any, 20000);
 
 // 서버 소켓에 ip, port 할당
 serverSocket.Bind(endPoint);
@@ -24,20 +24,29 @@ Console.WriteLine("서버: Accept 대기");
 // 클라이언트와 데이터 통신을 위해 소켓 만듦
 using var clientSocket = serverSocket.Accept();
 Console.WriteLine("서버: 클라 접속됨");
-Console.WriteLine($"연결됨: {clientSocket.RemoteEndPoint}");
+Console.WriteLine($"서버 연결됨: {clientSocket.RemoteEndPoint}");
 
 while (true)
 {
     var headerBuffer = new byte[sizeof(short)];
     var headerLength = clientSocket.Receive(headerBuffer);
+    
+    if (headerLength == 0)
+    {
+        Console.WriteLine("서버: 클라 연결 종료");
+        return;
+    }
 
     // SocketFlags.None
     //  기본 모드로 보내라/받아라
     if (headerLength == 1)
+    {
         clientSocket.Receive(headerBuffer, 1, 1, SocketFlags.None);
-    
+        Console.WriteLine("서버 in - 1");
+    }
+
     var dataLength = 
-        IPAddress.HostToNetworkOrder(BitConverter.ToInt16(headerBuffer));
+        IPAddress.NetworkToHostOrder(BitConverter.ToInt16(headerBuffer));
     
     var dataBuffer = new byte[dataLength];
 
@@ -52,13 +61,19 @@ while (true)
         var readLength = clientSocket.Receive(
             dataBuffer, totalSize, dataLength - totalSize, SocketFlags.None);
         
+        if (readLength == 0)
+        {
+            Console.WriteLine("서버: 클라 연결 종료");
+            return;
+        }
+        
         totalSize += readLength;
+        
+        if (totalSize != dataLength)
+            Console.WriteLine("서버 in - 2");
     }
 
     var data = Encoding.UTF8.GetString(dataBuffer);
-    
-    if (string.IsNullOrWhiteSpace(data))
-        continue;         
 
     if (data.Equals("exit", StringComparison.OrdinalIgnoreCase))
         return;
