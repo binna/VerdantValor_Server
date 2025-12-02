@@ -12,12 +12,12 @@
     | 구분 | 기술 |
     |------|------|
     | **Framework** | ASP.NET Core(.NET 9.0), EF Core |
-    | **DB** | MySQL, Redis |
+    | **DB** | MySQL, Redis |    
 
 2. 채팅 서버
     | 구분 | 기술 |
     |------|------|
-    | **Network** | TCP Socket(TcpClient/TcpListener 기반 예정) |
+    | **Network** | TCP Socket(TcpClient/TcpListener 기반 예정) |    
 
 <br><br>
 
@@ -33,8 +33,6 @@
      <summary>이미지보기</summary>
      <img width="800" height="1400" alt="image" src="https://github.com/user-attachments/assets/46423cc8-b74b-4971-b620-87aac8450785" />
    </details>
-
-<br>
 
 2. 클라이언트 100개를 동시에 서버에 연결한 뒤,  
    서버가 수신한 메시지를 모든 클라이언트에게 브로드캐스트하여    
