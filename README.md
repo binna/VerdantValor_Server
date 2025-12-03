@@ -3,6 +3,16 @@
 서버 프로젝트 입니다.   
 웹 서버, 게임 서버, 채팅 서버를 구축하는 것을 목표로 만들고 있습니다.   
 
+<details>
+  <summary>이 프로젝트와 관련된 레파지토리</summary>
+
+  - [클라이언트](https://github.com/binna/VerdantValor_Client)
+  - [서버-클라이언트 공통 모듈(Shared)](https://github.com/binna/VerdantValor_Shared)
+  - [개발 스케줄 보드](https://github.com/users/binna/projects/1)
+
+</details>
+  
+
 <br><br>
 
 ## 기술스택
