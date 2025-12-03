@@ -6,9 +6,12 @@
 <details>
   <summary>이 프로젝트와 관련된 레파지토리</summary>
 
-  - [클라이언트](https://github.com/binna/VerdantValor_Client)
-  - [서버-클라이언트 공통 모듈(Shared)](https://github.com/binna/VerdantValor_Shared)
-  - [개발 스케줄 보드](https://github.com/users/binna/projects/1)
+  - [클라이언트](https://github.com/binna/VerdantValor_Client)    
+    Unity 기반 게임 클라이언트입니다.  
+  - [서버-클라이언트 공통 모듈(Shared)](https://github.com/binna/VerdantValor_Shared)    
+    서버와 클라이언트가 공유하는 파일을 관리합니다.    
+  - [개발 스케줄 보드](https://github.com/users/binna/projects/1)    
+    프로젝트 일정과 작업 계획을 정리한 보드입니다.  
 
 </details>
   
