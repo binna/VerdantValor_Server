@@ -3,18 +3,13 @@
 서버 프로젝트 입니다.   
 웹 서버, 게임 서버, 채팅 서버를 구축하는 것을 목표로 만들고 있습니다.   
 
-<details>
-  <summary>이 프로젝트와 관련된 레파지토리</summary>
-
-  - [클라이언트](https://github.com/binna/VerdantValor_Client)    
-    Unity 기반 게임 클라이언트입니다.  
-  - [서버-클라이언트 공통 모듈(Shared)](https://github.com/binna/VerdantValor_Shared)    
-    서버와 클라이언트가 공유하는 파일을 관리합니다.    
-  - [개발 스케줄 보드](https://github.com/users/binna/projects/1)    
-    프로젝트 일정과 작업 계획을 정리한 보드입니다.  
-
-</details>
-  
+▼ 이 프로젝트와 관련된 레파지토리   
+- [클라이언트](https://github.com/binna/VerdantValor_Client)    
+  Unity 기반 게임 클라이언트입니다.  
+- [서버-클라이언트 공통 모듈](https://github.com/binna/VerdantValor_Shared)    
+  서버와 클라이언트가 공유하는 파일을 관리합니다.    
+- [개발 스케줄 보드](https://github.com/users/binna/projects/1)    
+  프로젝트 일정과 작업 계획을 정리한 보드입니다.    
 
 <br><br>
 
