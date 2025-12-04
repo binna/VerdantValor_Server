@@ -3,11 +3,11 @@
 서버 프로젝트입니다.   
 웹 서버, 게임 서버, 채팅 서버를 구축하는 것을 목표로 만들고 있습니다.   
 
-▼ 이 프로젝트와 관련된 레파지토리   
+▼ 이 프로젝트와 관련된 레포지토리   
 - [클라이언트](https://github.com/binna/VerdantValor_Client)    
   Unity 기반 게임 클라이언트입니다.  
-- [서버-클라이언트 공통 모듈](https://github.com/binna/VerdantValor_Shared)    
-  서버와 클라이언트가 공유하는 파일을 관리합니다.    
+- [서버-클라이언트 공용 코](https://github.com/binna/VerdantValor_Shared)    
+  서버와 클라이언트가 함께 사용하는 코드와 파일을 관리합니다.    
 - [개발 스케줄 보드](https://github.com/users/binna/projects/1)    
   프로젝트 일정과 작업 계획을 정리한 보드입니다.    
 
@@ -23,6 +23,7 @@
     | **DB** | MySQL, Redis |    
 
 2. 채팅 서버
+
     | 구분 | 기술 |
     |------|------|
     | **Network** | TCP Socket(TcpClient/TcpListener 기반 예정) |    
@@ -82,6 +83,6 @@
 
 OS는 소켓의 읽기/쓰기 가능 상태를 이벤트로 알려주고  
 소수의 워커 스레드는 이 이벤트를 받아 여러 소켓을 처리합니다.   
- > Windows 환경에서는 IOCP로 구현됩니다.
+> Windows 환경에서는 IOCP로 구현됩니다.
 
 이 방식은 대규모 동접 환경에서도 안정적으로 확장됩니다.
