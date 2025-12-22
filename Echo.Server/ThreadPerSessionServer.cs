@@ -1,0 +1,136 @@
+﻿using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+namespace Echo.Server;
+
+public class ThreadPerSessionServer
+{
+    static ConcurrentDictionary<string, Socket> connectedClients = [];
+    
+    static Socket serverSocket = 
+        new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+    static IPEndPoint endPoint = new(IPAddress.Any, 20000);
+
+    public static void Start(int backlogSize)
+    {
+        // 서버 소켓에 ip, port 할당
+        serverSocket.Bind(endPoint);
+        Console.WriteLine("서버: Listen 시작");
+        
+        // 클라이언트들의 연결 요청을 대기하는 상태로 만듦
+        // 백로그큐 = 클라이언트들의 연결 요청 대기실
+        serverSocket.Listen(backlogSize);
+        Console.WriteLine("서버: Accept 대기");
+
+        while (true)
+        {
+            // 백로그큐에서 하나 꺼내와서 연결 요청을 수락
+            // 클라이언트와 데이터 통신을 위해 소켓 만듦
+            var newSocket = serverSocket.Accept();
+            string newSessionId;
+            
+            do
+            {
+                newSessionId = $"{Guid.NewGuid()}";
+            } while (!connectedClients.TryAdd(newSessionId, newSocket));
+    
+            Console.WriteLine("서버: 클라 접속됨");
+            Console.WriteLine($"서버 연결됨: {newSocket.RemoteEndPoint}/{newSessionId}");
+            
+            // fire and forget
+            //  일단 시작한 후에는 결과를 기다리거나 더 이상 신경 쓰지 않아도 되는 작업 
+            _ = Task.Run(() =>
+            {
+                using var clientSocket = newSocket;
+                var sessionId = newSessionId;
+
+                try
+                {
+                    while (true)
+                    {
+                        var headerBuffer = new byte[sizeof(short)];
+                        var headerLength = clientSocket.Receive(headerBuffer);
+
+                        if (headerLength == 0)
+                        {
+                            Console.WriteLine("서버: 클라 연결 종료");
+                            break;
+                        }
+
+                        // SocketFlags.None
+                        //  기본 모드로 보내라/받아라
+                        if (headerLength == 1)
+                            clientSocket.Receive(headerBuffer, 1, 1, SocketFlags.None);
+
+                        var dataLength =
+                            IPAddress.NetworkToHostOrder(BitConverter.ToInt16(headerBuffer));
+
+                        var dataBuffer = new byte[dataLength];
+
+                        var totalSize = 0;
+
+                        while (totalSize < dataLength)
+                        {
+                            // 주의!!
+                            //  Receive의 size 파라미터(세 번째 인자)는
+                            //  최대로 읽을 수 있는 길이를 의미할 뿐
+                            //  반드시 그만큼 읽는다는 의미가 아니다
+                            var readLength = clientSocket.Receive(
+                                dataBuffer, totalSize, dataLength - totalSize, SocketFlags.None);
+
+                            if (readLength == 0)
+                            {
+                                Console.WriteLine("서버: 클라 연결 종료");
+                                break;
+                            }
+
+                            totalSize += readLength;
+                        }
+
+                        var data = Encoding.UTF8.GetString(dataBuffer);
+
+                        if (data.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine("서버: 클라 연결 종료");
+                            break;
+                        }
+
+                        Console.WriteLine(data);
+
+                        var messageBuffer = new byte[headerBuffer.Length + dataLength];
+
+                        Array.Copy(
+                            headerBuffer, 0,
+                            messageBuffer, 0,
+                            headerBuffer.Length);
+                        Array.Copy(
+                            dataBuffer, 0,
+                            messageBuffer, headerBuffer.Length,
+                            dataBuffer.Length);
+
+                        foreach (var client in connectedClients)
+                        {
+                            client.Value.Send(messageBuffer);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                finally
+                {
+                    // _는 discard(버리는 변수) 라는 뜻
+                    connectedClients.TryRemove(sessionId, out _);
+                    
+                    clientSocket.Shutdown(SocketShutdown.Both);
+                    clientSocket.Close();
+
+                    Console.WriteLine($"정리 완료: {sessionId}");
+                }
+            });
+        }
+    }
+}
