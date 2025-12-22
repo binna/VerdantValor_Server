@@ -48,13 +48,13 @@ while (true)
 
     var receiveHeaderBuffer = new byte[sizeof(short)];
     var receiveHeaderLength = clientSocket.Receive(receiveHeaderBuffer);
-
+    
     if (receiveHeaderLength == 0)
     {
         Console.WriteLine("클라: 서버 연결 종료");
         return;
     }
-
+    
     if (receiveHeaderLength == 1)
         clientSocket.Receive(receiveHeaderBuffer, 1, 1, SocketFlags.None);
     
@@ -62,9 +62,9 @@ while (true)
         IPAddress.NetworkToHostOrder(BitConverter.ToInt16(receiveHeaderBuffer));
     
     var receiveDataBuffer = new byte[receiveDataLength];
-
+    
     var totalSize = 0;
-
+    
     while (totalSize < receiveDataLength)
     {
         var readLength = clientSocket.Receive(
@@ -78,7 +78,7 @@ while (true)
         
         totalSize += readLength;
     }
-
+    
     var receiveData = Encoding.UTF8.GetString(receiveDataBuffer);
     
     Console.WriteLine($"클라 받음: {receiveData}");

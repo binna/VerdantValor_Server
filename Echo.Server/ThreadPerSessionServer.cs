@@ -12,17 +12,25 @@ public class ThreadPerSessionServer
     static Socket serverSocket = 
         new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     static IPEndPoint endPoint = new(IPAddress.Any, 20000);
+    
+    static long msgsPerSec;
+
+    static readonly Timer mpsTimer = new Timer(_ =>
+    {
+        var count = Interlocked.Exchange(ref msgsPerSec, 0);
+        Console.WriteLine($"MPS: {count}");
+    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
     public static void Start(int backlogSize)
     {
         // 서버 소켓에 ip, port 할당
         serverSocket.Bind(endPoint);
-        Console.WriteLine("서버: Listen 시작");
+        //Console.WriteLine("서버: Listen 시작");
         
         // 클라이언트들의 연결 요청을 대기하는 상태로 만듦
         // 백로그큐 = 클라이언트들의 연결 요청 대기실
         serverSocket.Listen(backlogSize);
-        Console.WriteLine("서버: Accept 대기");
+        //Console.WriteLine("서버: Accept 대기");
 
         while (true)
         {
@@ -36,8 +44,8 @@ public class ThreadPerSessionServer
                 newSessionId = $"{Guid.NewGuid()}";
             } while (!connectedClients.TryAdd(newSessionId, newSocket));
     
-            Console.WriteLine("서버: 클라 접속됨");
-            Console.WriteLine($"서버 연결됨: {newSocket.RemoteEndPoint}/{newSessionId}");
+            //Console.WriteLine("서버: 클라 접속됨");
+            //Console.WriteLine($"서버 연결됨: {newSocket.RemoteEndPoint}/{newSessionId}");
             
             // fire and forget
             //  일단 시작한 후에는 결과를 기다리거나 더 이상 신경 쓰지 않아도 되는 작업 
@@ -55,7 +63,7 @@ public class ThreadPerSessionServer
 
                         if (headerLength == 0)
                         {
-                            Console.WriteLine("서버: 클라 연결 종료");
+                            //Console.WriteLine("서버: 클라 연결 종료");
                             break;
                         }
 
@@ -82,7 +90,7 @@ public class ThreadPerSessionServer
 
                             if (readLength == 0)
                             {
-                                Console.WriteLine("서버: 클라 연결 종료");
+                                //Console.WriteLine("서버: 클라 연결 종료");
                                 break;
                             }
 
@@ -93,11 +101,12 @@ public class ThreadPerSessionServer
 
                         if (data.Equals("exit", StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine("서버: 클라 연결 종료");
+                            //Console.WriteLine("서버: 클라 연결 종료");
                             break;
                         }
 
-                        Console.WriteLine(data);
+                        //Console.WriteLine(data);
+                        Interlocked.Increment(ref msgsPerSec);
 
                         var messageBuffer = new byte[headerBuffer.Length + dataLength];
 
@@ -118,7 +127,7 @@ public class ThreadPerSessionServer
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    //Console.WriteLine(e);
                 }
                 finally
                 {
@@ -128,7 +137,7 @@ public class ThreadPerSessionServer
                     clientSocket.Shutdown(SocketShutdown.Both);
                     clientSocket.Close();
 
-                    Console.WriteLine($"정리 완료: {sessionId}");
+                    //Console.WriteLine($"정리 완료: {sessionId}");
                 }
             });
         }
