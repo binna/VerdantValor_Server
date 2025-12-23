@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace Echo.Server;
 
@@ -25,7 +24,7 @@ public class SessionInfo
     }
 }
 
-public class IocpServer
+public class IocpStyleServer
 {
     static ConcurrentDictionary<string, Socket> connectedClients = [];
     
