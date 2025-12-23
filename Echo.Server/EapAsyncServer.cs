@@ -24,7 +24,7 @@ public class SessionInfo
     }
 }
 
-public class IocpStyleServer
+public class EapAsyncServer
 {
     static ConcurrentDictionary<string, Socket> connectedClients = [];
     
