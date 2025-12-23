@@ -162,7 +162,7 @@ RTT와 초당 메시지 처리량에 대한 성능 테스트를 진행했습니�
             
      ▼ 테스트 결과
      - 평균 RTT: 2.589244 ms
-     - 로그 분포
+     - RTT 분포
        - 대부분 0.5 ~ 3ms 구간
        - 일부 요청에서 4 ~ 8ms 지연 발생
      - [Rtt_IocpStyle.txt 파일](./Echo.LoadTester/Results)
