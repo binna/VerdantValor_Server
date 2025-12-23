@@ -150,7 +150,7 @@ RTT와 초당 메시지 처리량에 대한 성능 테스트를 진행했습니�
      - RTT 분포
        - 0~5ms 구간도 일부 존재
        - 500ms / 1000ms 지연이 매우 빈번하게 발생  
-     - [Rtt_ThreadPerSession.txt 파일](./Echo.LoadTester/Results)
+     - [Rtt_ThreadPerSession.txt 파일](./Echo.LoadTester/Results/Rtt_ThreadPerSession.txt)
      - [동영상보기](https://youtu.be/iwqOOLmP0ks)
       
    </details>
@@ -165,7 +165,7 @@ RTT와 초당 메시지 처리량에 대한 성능 테스트를 진행했습니�
      - RTT 분포
        - 대부분 0.5 ~ 3ms 구간
        - 일부 요청에서 4 ~ 8ms 지연 발생
-     - [Rtt_IocpStyle.txt 파일](./Echo.LoadTester/Results)
+     - [Rtt_IocpStyle.txt 파일](./Echo.LoadTester/Results/Rtt_IocpStyle.txt)
      - [동영상보기](https://youtu.be/PLIAcw_uxQo)
 
 <br>
