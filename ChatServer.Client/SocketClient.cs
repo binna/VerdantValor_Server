@@ -2,18 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using SharedLibrary.Protocol.Common.ChatSocket;
 
 namespace ChatServer.Client;
-
-public enum Type
-{
-    Login = 0,
-    CreateRoom = 1,
-    EnterRoom = 2,
-    ExitRoom = 3,
-    SendMessage = 4,
-    Disconnect = 5,
-}
 
 public class SocketClient
 {
@@ -46,7 +37,7 @@ public class SocketClient
         var sessionId = Encoding.UTF8.GetBytes($"{Guid.NewGuid()}");
         var userId = new byte[8];
         
-        BinaryPrimitives.WriteInt32BigEndian(header, (int)Type.Login);
+        BinaryPrimitives.WriteInt32BigEndian(header, (int)AppEnum.PacketType.Login);
         BinaryPrimitives.WriteUInt64BigEndian(userId, 1UL);
         
         var messageBuffer = new byte[4 + 36 + 8];
@@ -67,7 +58,7 @@ public class SocketClient
         
         // 방 만들기
         var header2 = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(header2, (int)Type.CreateRoom);
+        BinaryPrimitives.WriteInt32BigEndian(header2, (int)AppEnum.PacketType.CreateRoom);
         
         await stream.WriteAsync(header2, cancellationToken);
 
@@ -91,7 +82,7 @@ public class SocketClient
                 return;
             
             var header = new byte[4];
-            BinaryPrimitives.WriteInt32BigEndian(header, (int)Type.SendMessage);
+            BinaryPrimitives.WriteInt32BigEndian(header, (int)AppEnum.PacketType.SendMessage);
             var buffer = Encoding.UTF8.GetBytes(str);
             var messageBuffer = new byte[4 + buffer.Length];
             Array.Copy(

@@ -3,37 +3,9 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using SharedLibrary.Protocol.Common.ChatSocket;
 
 namespace SharedLibrary.Tcp;
-
-public sealed class Session
-{
-    private readonly TcpClient mClient;
-    
-    public string SessionId { get; }
-    public ulong UserId { get; }
-    public int RoomId { get; set; }
-
-    public Session(string sessionId, ulong userId, TcpClient client)
-    {
-        SessionId = sessionId;
-        UserId = userId;
-        mClient = client;
-    }
-
-    public NetworkStream Stream => mClient.GetStream();
-    public void Disconnect() => mClient.Dispose();
-}
-
-public enum Type
-{
-    Login = 0,
-    CreateRoom = 1,
-    EnterRoom = 2,
-    ExitRoom = 3,
-    SendMessage = 4,
-    Disconnect = 5,
-}
 
 public class SocketServer
 {
@@ -105,7 +77,7 @@ public class SocketServer
 
             switch (type)
             {
-                case (int)Type.Login:
+                case (int)AppEnum.PacketType.Login:
                 {
                     var sessionId = Encoding.UTF8.GetString(buffer, 4, 36);
                     var userId = BinaryPrimitives.ReadUInt64BigEndian(buffer.AsSpan(4 + 36, 8));
@@ -116,7 +88,7 @@ public class SocketServer
                     Console.WriteLine("연결된 유저: " + mConnectedSessions.Count);
                     break;
                 }
-                case (int)Type.CreateRoom:
+                case (int)AppEnum.PacketType.CreateRoom:
                 {
                     Console.WriteLine("in?");
                     if (session == null)
@@ -133,7 +105,7 @@ public class SocketServer
                     }
                     break;
                 }
-                case (int)Type.EnterRoom:
+                case (int)AppEnum.PacketType.EnterRoom:
                 {
                     if (session == null)
                         break;
@@ -152,7 +124,7 @@ public class SocketServer
 
                     break;
                 }
-                case (int)Type.ExitRoom:
+                case (int)AppEnum.PacketType.ExitRoom:
                 {
                     if (session == null || session.RoomId == 0)
                         break;
@@ -165,7 +137,7 @@ public class SocketServer
                     }
                     break;
                 }
-                case (int)Type.SendMessage:
+                case (int)AppEnum.PacketType.SendMessage:
                 {
                     if (session == null)
                         break;
@@ -178,7 +150,7 @@ public class SocketServer
                     }
                     break;
                 }
-                case (int)Type.Disconnect:
+                case (int)AppEnum.PacketType.Disconnect:
                 {
                     Console.WriteLine("[SERVER] Client disconnected");
                     if (session != null)

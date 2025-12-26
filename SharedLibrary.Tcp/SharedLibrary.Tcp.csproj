@@ -7,4 +7,8 @@
         <RootNamespace>SharedLibrary.Tcp</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\SharedLibrary.Protocol\SharedLibrary.Protocol.csproj" />
+    </ItemGroup>
+
 </Project>
