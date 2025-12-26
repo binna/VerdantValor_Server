@@ -1,32 +1,75 @@
-﻿using System.Net;
+﻿using System.Buffers.Binary;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 namespace ChatServer.Client;
 
+public enum Type
+{
+    Login = 0,
+    CreateRoom = 1,
+    EnterRoom = 2,
+    ExitRoom = 3,
+    SendMessage = 4,
+    Disconnect = 5,
+}
+
 public class SocketClient
 {
+    private readonly IPAddress mIpAddress;
     private readonly int mPort;
     
     private TcpClient? mTcpClient;
     private CancellationTokenSource mCts = new();
     
-    public SocketClient(int port)
+    public SocketClient(IPAddress ipAddress, int port)
     {
+        mIpAddress = ipAddress;
         mPort = port;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (mTcpClient != null)
-        {
             throw new InvalidOperationException("Client is already running.");
-        }
         
         mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var cancelToken = mCts.Token;
         
-        mTcpClient = new TcpClient(IPAddress.Loopback.ToString(), mPort);;
+        mTcpClient = new TcpClient(mIpAddress.ToString(), mPort);
+
+        var stream = mTcpClient.GetStream();
+
+        // 로그인
+        var header = new byte[4];
+        var sessionId = Encoding.UTF8.GetBytes($"{Guid.NewGuid()}");
+        var userId = new byte[8];
+        
+        BinaryPrimitives.WriteInt32BigEndian(header, (int)Type.Login);
+        BinaryPrimitives.WriteUInt64BigEndian(userId, 1UL);
+        
+        var messageBuffer = new byte[4 + 36 + 8];
+        Array.Copy(
+            header, 0, 
+            messageBuffer, 0, 
+            header.Length);
+        Array.Copy(
+            sessionId, 0, 
+            messageBuffer, header.Length, 
+            sessionId.Length);
+        Array.Copy(
+            userId, 0, 
+            messageBuffer, header.Length + sessionId.Length, 
+            userId.Length);
+        
+        await stream.WriteAsync(messageBuffer, cancellationToken);
+        
+        // 방 만들기
+        var header2 = new byte[4];
+        BinaryPrimitives.WriteInt32BigEndian(header2, (int)Type.CreateRoom);
+        
+        await stream.WriteAsync(header2, cancellationToken);
 
         var readTask  = HandleClientSendAsync(mTcpClient, cancelToken);
         var writeTask = Task.Run(() => HandleClientWriteAsync(mTcpClient, cancelToken), cancelToken);
@@ -38,15 +81,29 @@ public class SocketClient
     {
         var stream = tcpClient.GetStream();
         
+        
+        
         while (!cancellationToken.IsCancellationRequested)
         {
             var str = Console.ReadLine();
 
             if (str == null)
                 return;
-
+            
+            var header = new byte[4];
+            BinaryPrimitives.WriteInt32BigEndian(header, (int)Type.SendMessage);
             var buffer = Encoding.UTF8.GetBytes(str);
-            stream.WriteAsync(buffer, cancellationToken);
+            var messageBuffer = new byte[4 + buffer.Length];
+            Array.Copy(
+                header, 0, 
+                messageBuffer, 0, 
+                header.Length);
+            Array.Copy(
+                buffer, 0, 
+                messageBuffer, 4, 
+                buffer.Length);
+            
+            stream.WriteAsync(messageBuffer, cancellationToken);
         }
     }
     
@@ -62,6 +119,7 @@ public class SocketClient
             if (read == 0)
             {
                 Console.WriteLine("[SERVER] Client disconnected");
+                StopAsync();
                 break;
             }
             
