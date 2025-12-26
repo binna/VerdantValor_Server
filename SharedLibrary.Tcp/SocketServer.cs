@@ -20,7 +20,6 @@ public class SocketServer
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
     #endregion
 
-    // TODO 길이가 필요함
     // TODO 나중에 동기화 고려 필요
     // 타임스템프 + userId 조합으로 string으로 변경 예정
     private static int roomCount = 1;
@@ -51,24 +50,24 @@ public class SocketServer
             _ = HandleClientAsync(tcpClient, cancelToken);
         }
     }
-    
+
     private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
         Session? session = null;
         
         var stream = tcpClient.GetStream();
-        var buffer = new byte[1024];
         
-        var header = new byte[2];
-        var headerRead = 0;
+        var readBuffer = new byte[1024];
+        var lengthBuffer = new byte[AppEnum.LENGTH_FIELD_SIZE];
+        byte[] payloadBuffer = [];
         
-        byte[] data = [];
-        var dataLength = 0;
-        var dataRead = 0;
+        var lengthRead = 0;
+        var payloadLength = 0;
+        var payloadRead = 0;
         
         while (!cancellationToken.IsCancellationRequested)
         {
-            var read = await stream.ReadAsync(buffer, cancellationToken);
+            var read = await stream.ReadAsync(readBuffer, cancellationToken);
         
             if (read == 0)
             {
@@ -86,54 +85,54 @@ public class SocketServer
 
             while (remaining > 0)
             {
-                if (headerRead < 2)
+                if (lengthRead < AppEnum.LENGTH_FIELD_SIZE)
                 {
-                    var needHead = 2 - headerRead;
+                    var needHead = AppEnum.LENGTH_FIELD_SIZE - lengthRead;
                     var takeHead = Math.Min(needHead, read);
 
                     Buffer.BlockCopy(
-                        buffer, offset,
-                        header, headerRead,
+                        readBuffer, offset,
+                        lengthBuffer, lengthRead,
                         takeHead);
 
-                    headerRead += takeHead;
+                    lengthRead += takeHead;
                     offset += takeHead;
                     remaining -= takeHead;
 
-                    if (headerRead < 2)
+                    if (lengthRead < AppEnum.LENGTH_FIELD_SIZE)
                         break;
 
-                    var beforeLength = dataLength;
-                    dataLength = BinaryPrimitives.ReadInt16BigEndian(header);
+                    var beforeLength = payloadLength;
+                    payloadLength = BinaryPrimitives.ReadInt16BigEndian(lengthBuffer);
 
-                    if (beforeLength < dataLength)
-                        data = new byte[dataLength];
+                    if (beforeLength < payloadLength)
+                        payloadBuffer = new byte[payloadLength];
                 }
 
-                var needData = dataLength - dataRead;
+                var needData = payloadLength - payloadRead;
                 var takeData = Math.Min(needData, read);
 
                 Buffer.BlockCopy(
-                    buffer, offset,
-                    data, dataRead,
+                    readBuffer, offset,
+                    payloadBuffer, payloadRead,
                     takeData);
 
-                dataRead += takeData;
+                payloadRead += takeData;
                 offset += takeData;
                 remaining -= takeData;
 
-                if (dataRead < dataLength)
+                if (payloadRead < payloadLength)
                     break;
 
-                var type = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(0, 4));
+                var type = BinaryPrimitives.ReadInt32BigEndian(payloadBuffer.AsSpan(0, 4));
 
                 switch (type)
                 {
                     case (int)AppEnum.PacketType.Login:
                     {
                         Console.WriteLine("in? - 1");
-                        var sessionId = Encoding.UTF8.GetString(data, 4, 36);
-                        var userId = BinaryPrimitives.ReadUInt64BigEndian(data.AsSpan(4 + 36, 8));
+                        var sessionId = Encoding.UTF8.GetString(payloadBuffer, 4, 36);
+                        var userId = BinaryPrimitives.ReadUInt64BigEndian(payloadBuffer.AsSpan(4 + 36, 8));
                         session = new Session(sessionId, userId, tcpClient);
                         Console.WriteLine($"sessionId:{sessionId}//userId:{userId}");
 
@@ -166,7 +165,7 @@ public class SocketServer
 
                         if (session.RoomId == 0)
                         {
-                            var roomId = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(4, 4));
+                            var roomId = BinaryPrimitives.ReadInt32BigEndian(payloadBuffer.AsSpan(4, 4));
 
                             if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
                             {
@@ -199,7 +198,7 @@ public class SocketServer
 
                         if (session.RoomId != 0)
                         {
-                            var message = Encoding.UTF8.GetString(data, 4, dataLength - 4);
+                            var message = Encoding.UTF8.GetString(payloadBuffer, 4, payloadLength - 4);
                             Console.WriteLine($"받음 : {message}");
                             _ = BroadcastToRoomAsync(session.RoomId, message, cancellationToken);
                         }
@@ -219,9 +218,9 @@ public class SocketServer
                     }
                 }
 
-                headerRead = 0;
-                dataLength = 0;
-                dataRead = 0;
+                lengthRead = 0;
+                payloadLength = 0;
+                payloadRead = 0;
             }
         }
     }
