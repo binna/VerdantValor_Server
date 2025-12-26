@@ -20,6 +20,7 @@ public class SocketServer
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
     #endregion
 
+    // TODO 길이가 필요함
     // TODO 나중에 동기화 고려 필요
     // 타임스템프 + userId 조합으로 string으로 변경 예정
     private static int roomCount = 1;
@@ -56,10 +57,17 @@ public class SocketServer
         Session? session = null;
         
         var stream = tcpClient.GetStream();
-
+        var buffer = new byte[1024];
+        
+        var header = new byte[2];
+        var headerRead = 0;
+        
+        byte[] data = [];
+        var dataLength = 0;
+        var dataRead = 0;
+        
         while (!cancellationToken.IsCancellationRequested)
         {
-            var buffer = new byte[1024];
             var read = await stream.ReadAsync(buffer, cancellationToken);
         
             if (read == 0)
@@ -73,93 +81,147 @@ public class SocketServer
                 return;
             }
             
-            var type = BinaryPrimitives.ReadInt32BigEndian(buffer.AsSpan(0, 4));
+            var offset = 0;
+            var remaining = read;
 
-            switch (type)
+            while (remaining > 0)
             {
-                case (int)AppEnum.PacketType.Login:
+                if (headerRead < 2)
                 {
-                    var sessionId = Encoding.UTF8.GetString(buffer, 4, 36);
-                    var userId = BinaryPrimitives.ReadUInt64BigEndian(buffer.AsSpan(4 + 36, 8));
-                    session = new Session(sessionId, userId, tcpClient);
-                    Console.WriteLine($"sessionId:{sessionId}//userId:{userId}");
-                    
-                    mConnectedSessions.TryAdd(userId, session);
-                    Console.WriteLine("연결된 유저: " + mConnectedSessions.Count);
-                    break;
-                }
-                case (int)AppEnum.PacketType.CreateRoom:
-                {
-                    Console.WriteLine("in?");
-                    if (session == null)
+                    var needHead = 2 - headerRead;
+                    var takeHead = Math.Min(needHead, read);
+
+                    Buffer.BlockCopy(
+                        buffer, offset,
+                        header, headerRead,
+                        takeHead);
+
+                    headerRead += takeHead;
+                    offset += takeHead;
+                    remaining -= takeHead;
+
+                    if (headerRead < 2)
                         break;
 
-                    if (session.RoomId == 0)
+                    var beforeLength = dataLength;
+                    dataLength = BinaryPrimitives.ReadInt16BigEndian(header);
+
+                    if (beforeLength < dataLength)
+                        data = new byte[dataLength];
+                }
+
+                var needData = dataLength - dataRead;
+                var takeData = Math.Min(needData, read);
+
+                Buffer.BlockCopy(
+                    buffer, offset,
+                    data, dataRead,
+                    takeData);
+
+                dataRead += takeData;
+                offset += takeData;
+                remaining -= takeData;
+
+                if (dataRead < dataLength)
+                    break;
+
+                var type = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(0, 4));
+
+                switch (type)
+                {
+                    case (int)AppEnum.PacketType.Login:
                     {
-                        var sessions = new ConcurrentDictionary<ulong, Session>();
-                        sessions.TryAdd(session.UserId, session);
-                        mRoomSessions.TryAdd(roomCount, sessions);
-                        session.RoomId = roomCount;
-                        roomCount++;
-                        Console.WriteLine($"방 만들기 성공 {session.RoomId}");
+                        Console.WriteLine("in? - 1");
+                        var sessionId = Encoding.UTF8.GetString(data, 4, 36);
+                        var userId = BinaryPrimitives.ReadUInt64BigEndian(data.AsSpan(4 + 36, 8));
+                        session = new Session(sessionId, userId, tcpClient);
+                        Console.WriteLine($"sessionId:{sessionId}//userId:{userId}");
+
+                        mConnectedSessions.TryAdd(userId, session);
+                        Console.WriteLine("연결된 유저: " + mConnectedSessions.Count);
+                        break;
                     }
-                    break;
-                }
-                case (int)AppEnum.PacketType.EnterRoom:
-                {
-                    if (session == null)
-                        break;
-
-                    if (session.RoomId == 0)
+                    case (int)AppEnum.PacketType.CreateRoom:
                     {
-                        var roomId = BinaryPrimitives.ReadInt32BigEndian(buffer.AsSpan(4, 4));
+                        Console.WriteLine("in? - 2");
+                        if (session == null)
+                            break;
 
-                        if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
+                        if (session.RoomId == 0)
                         {
-                            roomSessions.TryAdd(session.UserId, session);
-                            session.RoomId = roomId;
-                            Console.WriteLine($"방 들어가기 성공 {session.RoomId}");
+                            var sessions = new ConcurrentDictionary<ulong, Session>();
+                            sessions.TryAdd(session.UserId, session);
+                            mRoomSessions.TryAdd(roomCount, sessions);
+                            session.RoomId = roomCount;
+                            roomCount++;
+                            Console.WriteLine($"방 만들기 성공 {session.RoomId}");
                         }
-                    }
 
-                    break;
-                }
-                case (int)AppEnum.PacketType.ExitRoom:
-                {
-                    if (session == null || session.RoomId == 0)
                         break;
-
-                    if (mRoomSessions.TryGetValue(session.RoomId, out var roomSessions))
-                    {
-                        roomSessions.TryRemove(session.UserId, out _);
-                        session.RoomId = 0;
-                        Console.WriteLine($"방 삭제 성공 {session.RoomId}");
                     }
-                    break;
-                }
-                case (int)AppEnum.PacketType.SendMessage:
-                {
-                    if (session == null)
+                    case (int)AppEnum.PacketType.EnterRoom:
+                    {
+                        if (session == null)
+                            break;
+
+                        if (session.RoomId == 0)
+                        {
+                            var roomId = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(4, 4));
+
+                            if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
+                            {
+                                roomSessions.TryAdd(session.UserId, session);
+                                session.RoomId = roomId;
+                                Console.WriteLine($"방 들어가기 성공 {session.RoomId}");
+                            }
+                        }
+
                         break;
-
-                    if (session.RoomId != 0)
-                    {
-                        var message = Encoding.UTF8.GetString(buffer, 0, read);
-                        Console.WriteLine($"받음 : {message}");
-                        _ = BroadcastToRoomAsync(session.RoomId, message, cancellationToken);
                     }
-                    break;
-                }
-                case (int)AppEnum.PacketType.Disconnect:
-                {
-                    Console.WriteLine("[SERVER] Client disconnected");
-                    if (session != null)
+                    case (int)AppEnum.PacketType.ExitRoom:
                     {
+                        if (session == null || session.RoomId == 0)
+                            break;
+
                         if (mRoomSessions.TryGetValue(session.RoomId, out var roomSessions))
+                        {
                             roomSessions.TryRemove(session.UserId, out _);
+                            session.RoomId = 0;
+                            Console.WriteLine($"방 삭제 성공 {session.RoomId}");
+                        }
+
+                        break;
                     }
-                    return;
+                    case (int)AppEnum.PacketType.SendMessage:
+                    {
+                        if (session == null)
+                            break;
+
+                        if (session.RoomId != 0)
+                        {
+                            var message = Encoding.UTF8.GetString(data, 4, dataLength - 4);
+                            Console.WriteLine($"받음 : {message}");
+                            _ = BroadcastToRoomAsync(session.RoomId, message, cancellationToken);
+                        }
+
+                        break;
+                    }
+                    case (int)AppEnum.PacketType.Disconnect:
+                    {
+                        Console.WriteLine("[SERVER] Client disconnected");
+                        if (session != null)
+                        {
+                            if (mRoomSessions.TryGetValue(session.RoomId, out var roomSessions))
+                                roomSessions.TryRemove(session.UserId, out _);
+                        }
+
+                        return;
+                    }
                 }
+
+                headerRead = 0;
+                dataLength = 0;
+                dataRead = 0;
             }
         }
     }

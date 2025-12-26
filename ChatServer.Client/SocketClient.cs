@@ -33,46 +33,66 @@ public class SocketClient
         var stream = mTcpClient.GetStream();
 
         // 로그인
-        var header = new byte[4];
+        var type = new byte[4];
         var sessionId = Encoding.UTF8.GetBytes($"{Guid.NewGuid()}");
         var userId = new byte[8];
         
-        BinaryPrimitives.WriteInt32BigEndian(header, (int)AppEnum.PacketType.Login);
+        BinaryPrimitives.WriteInt32BigEndian(type, (int)AppEnum.PacketType.Login);
         BinaryPrimitives.WriteUInt64BigEndian(userId, 1UL);
+
+        var length = new byte[2];
         
-        var messageBuffer = new byte[4 + 36 + 8];
+        BinaryPrimitives.WriteInt16BigEndian(length, 4 + 36 + 8);
+        
+        var messageBuffer = new byte[2 + 4 + 36 + 8];
         Array.Copy(
-            header, 0, 
+            length, 0, 
             messageBuffer, 0, 
-            header.Length);
+            2);
+        Array.Copy(
+            type, 0, 
+            messageBuffer, 2, 
+            type.Length);
         Array.Copy(
             sessionId, 0, 
-            messageBuffer, header.Length, 
+            messageBuffer, 2 + type.Length, 
             sessionId.Length);
         Array.Copy(
             userId, 0, 
-            messageBuffer, header.Length + sessionId.Length, 
+            messageBuffer, 2 + type.Length + sessionId.Length, 
             userId.Length);
         
         await stream.WriteAsync(messageBuffer, cancellationToken);
+
+        Console.WriteLine("1");
         
         // 방 만들기
-        var header2 = new byte[4];
-        BinaryPrimitives.WriteInt32BigEndian(header2, (int)AppEnum.PacketType.CreateRoom);
+        BinaryPrimitives.WriteInt32BigEndian(type, (int)AppEnum.PacketType.CreateRoom);
+        BinaryPrimitives.WriteInt16BigEndian(length, 2 + 4);
         
-        await stream.WriteAsync(header2, cancellationToken);
-
+        messageBuffer = new byte[2 + 4];
+        Array.Copy(
+            length, 0, 
+            messageBuffer, 0, 
+            2);
+        Array.Copy(
+            type, 0, 
+            messageBuffer, 2, 
+            type.Length);
+        
+        await stream.WriteAsync(messageBuffer, cancellationToken);
+        
+        Console.WriteLine("2");
+        
         var readTask  = HandleClientSendAsync(mTcpClient, cancelToken);
         var writeTask = Task.Run(() => HandleClientWriteAsync(mTcpClient, cancelToken), cancelToken);
-
+        
         await Task.WhenAny(readTask, writeTask);
     }
     
     private void HandleClientWriteAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
         var stream = tcpClient.GetStream();
-        
-        
         
         while (!cancellationToken.IsCancellationRequested)
         {
