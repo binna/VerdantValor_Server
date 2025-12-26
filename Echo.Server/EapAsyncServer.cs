@@ -147,7 +147,7 @@ public class EapAsyncServer
                         break;
 
                     var beforeLength = sessionInfo.DataLength;
-                    sessionInfo.DataLength = BinaryPrimitives.ReadUInt16BigEndian(sessionInfo.Header);
+                    sessionInfo.DataLength = BinaryPrimitives.ReadInt16BigEndian(sessionInfo.Header);
                     
                     if (beforeLength < sessionInfo.DataLength)
                         sessionInfo.Data = new byte[sessionInfo.DataLength];
