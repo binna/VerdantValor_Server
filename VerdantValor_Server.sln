@@ -16,7 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Protocol", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer", "ChatServer\ChatServer.csproj", "{4849EEC1-F310-48B9-8141-B4B5E1E673D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.TcpServer", "SharedLibrary.TcpServer\SharedLibrary.TcpServer.csproj", "{4D39A7AA-D6DB-4702-99B5-FEA31D93E8A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Tcp", "SharedLibrary.Tcp\SharedLibrary.Tcp.csproj", "{4D39A7AA-D6DB-4702-99B5-FEA31D93E8A3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Echo.Client", "Echo.Client\Echo.Client.csproj", "{8B8A0B57-2BF8-4F52-941D-CFB2BC98FEE3}"
 EndProject
