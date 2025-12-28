@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Protocol.DTOs.Web;
-using WebServer;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -28,9 +27,8 @@ public class RankingController : Controller
         
         if (!Enum.TryParse<AppEnum.ERankingScope>(request.Scope, out var rankingScope) 
                 || !Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidInput, language));
+            return ApiResponse<RankRes>
+                .From(AppEnum.EResponseStatus.InvalidInput, language);
         
         switch (rankingScope)
         {
@@ -46,9 +44,8 @@ public class RankingController : Controller
                     rankingType, request.Limit, language);
             }
         }
-        return new ApiResponse<RankRes>(
-            ResponseStatus.FromResponseStatus(
-                EResponseStatus.Success, language));
+        return ApiResponse<RankRes>
+            .From(AppEnum.EResponseStatus.Success, language);
     }
 
     [HttpPost("Entries")]
@@ -60,9 +57,8 @@ public class RankingController : Controller
         var nickname = this.GetNickname();
 
         if (!Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
-            return new ApiResponse<RankRes>(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidInput, language));
+            return ApiResponse<RankRes>
+                .From(AppEnum.EResponseStatus.InvalidInput, language);
 
         return await mRankingService.AddScore(
             rankingType, userId, nickname, request.Score, language);

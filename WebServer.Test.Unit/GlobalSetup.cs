@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using SharedLibrary.Common;
+using SharedLibrary.GameData;
 
 namespace WebServer.Test.Unit;
 
@@ -10,7 +11,7 @@ public class GlobalSetupResponseStatus
         var baseDir = AppContext.BaseDirectory;
         var path = Path.GetFullPath(
             Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
-        ResponseStatus.Init(path);
+        ResponseStatusTable.Init(path);
         Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
         
 #if LIVE

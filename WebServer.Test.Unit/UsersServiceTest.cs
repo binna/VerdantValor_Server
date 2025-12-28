@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using SharedLibrary.Common;
 using SharedLibrary.Efcore.Repository;
 using SharedLibrary.Models;
+using SharedLibrary.Protocol.Common.Web;
 using SharedLibrary.Redis;
 using WebServer.Services;
 using Xunit.Abstractions;
@@ -38,7 +38,7 @@ public class UsersServiceTest
     public async Task Test_Join_Email_파라메터가_비었을때_Fail(string? email)
     {
         var response = await mUsersService.JoinAsync(email, "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmptyRequiredField}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -49,7 +49,7 @@ public class UsersServiceTest
     public async Task Test_Join_Password_파라메터가_비었을때_Fail(string? password)
     {
         var response = await mUsersService.JoinAsync("binna", password, "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmptyRequiredField}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -60,7 +60,7 @@ public class UsersServiceTest
     public async Task Test_Join_Nickname_파라메터가_비었을때_Fail(string? nickname)
     {
         var response = await mUsersService.JoinAsync("binna", "1234", nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmptyRequiredField}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -72,7 +72,7 @@ public class UsersServiceTest
     public async Task Test_Join_Email_유효하지않는문자_사용할때_Fail(string email)
     {
         var response = await mUsersService.JoinAsync(email, "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmailAlphabetNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmailAlphabetNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -82,7 +82,7 @@ public class UsersServiceTest
     public async Task Test_Join_Nickname_유효하지않는문자_사용할때_Fail(string nickname)
     {
         var response = await mUsersService.JoinAsync("binna", "1234", nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.NicknameAlphabetKoreanNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.NicknameAlphabetKoreanNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -97,7 +97,7 @@ public class UsersServiceTest
     public async Task Test_Join_Email_길이가_범위_밖일때_Fail(string email)
     {
         var response = await mUsersService.JoinAsync(email, "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.InvalidEmailLength}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.InvalidEmailLength}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -115,7 +115,7 @@ public class UsersServiceTest
     public async Task Test_Join_Nickname_길이가_범위_밖일때_Fail(string nickname)
     {
         var response = await mUsersService.JoinAsync("binna", "1234", nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.InvalidNicknameLength}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.InvalidNicknameLength}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -126,7 +126,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult(true));
         
         var response = await mUsersService.JoinAsync("binna", "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmailAlreadyExists}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmailAlreadyExists}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -139,7 +139,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult(false));
         
         var response = await mUsersService.JoinAsync(email, "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.ForbiddenEmail}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.ForbiddenEmail}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -152,7 +152,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult(false));
         
         var response = await mUsersService.JoinAsync("binna", "1234", nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.ForbiddenNickname}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.ForbiddenNickname}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -163,7 +163,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult(false));
         
         var response = await mUsersService.JoinAsync("binna", "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
@@ -183,7 +183,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.LoginAsync(email, "1234");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmptyRequiredField}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -201,7 +201,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.LoginAsync("binna", password);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmptyRequiredField}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -220,7 +220,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.JoinAsync(email, "1234", "shine");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.EmailAlphabetNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.EmailAlphabetNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -242,7 +242,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.LoginAsync(email, "1234");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.InvalidEmailLength}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.InvalidEmailLength}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -257,7 +257,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.LoginAsync("shine94", "1234");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.NoData}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.NoData}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -273,7 +273,7 @@ public class UsersServiceTest
             .Returns(Task.FromResult<Users?>(user));
         
         var response = await mUsersService.LoginAsync("binna", "1234");
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion

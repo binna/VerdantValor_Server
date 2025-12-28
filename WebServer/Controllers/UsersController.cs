@@ -26,9 +26,8 @@ public class UsersController : Controller
             language = AppEnum.ELanguage.En;
 
         if (!Enum.TryParse<AppEnum.EAuthType>(request.AuthType, out var authType))
-            return new ApiResponse(
-                ResponseStatus.FromResponseStatus(
-                    EResponseStatus.InvalidInput, language));
+            return ApiResponse
+                .From(AppEnum.EResponseStatus.InvalidInput, language);
 
         switch (authType)
         {
@@ -44,7 +43,7 @@ public class UsersController : Controller
             }
         }
         
-        return new ApiResponse(ResponseStatus.FromResponseStatus(
-            EResponseStatus.Success, language));
+        return ApiResponse
+            .From(AppEnum.EResponseStatus.Success, language);
     }
 }

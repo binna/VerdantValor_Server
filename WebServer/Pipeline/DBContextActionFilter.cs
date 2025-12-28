@@ -39,9 +39,7 @@ public class DBContextActionFilter : ActionFilterAttribute
                     StatusCode = StatusCodes.Status200OK,
                     ContentType = "application/json",
                     Content = JsonSerializer.Serialize(
-                        new ApiResponse(
-                            ResponseStatus.FromResponseStatus(
-                                EResponseStatus.DbError, AppEnum.ELanguage.En)))
+                        ApiResponse.From(AppEnum.EResponseStatus.DbError, AppEnum.ELanguage.En))
                 };
             }
         }

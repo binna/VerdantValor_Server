@@ -18,9 +18,9 @@ public class ServerDateTimeController : Controller
         ServerDateTime.SetServerTimeNow(
             ServerDateTime.ToCustomDateTime(req.TargetNow)
         );
-        
-        return new ApiResponse(ResponseStatus.FromResponseStatus(
-            EResponseStatus.Success, AppEnum.ELanguage.Ko));
+
+        return ApiResponse
+            .From(AppEnum.EResponseStatus.Success, AppEnum.ELanguage.En);
     }
     
     [HttpPost("reset")]
@@ -29,7 +29,7 @@ public class ServerDateTimeController : Controller
     {
         ServerDateTime.ResetServerTimeNow();
         
-        return new ApiResponse(ResponseStatus.FromResponseStatus(
-            EResponseStatus.Success, AppEnum.ELanguage.Ko));
+        return ApiResponse
+            .From(AppEnum.EResponseStatus.Success, AppEnum.ELanguage.En);
     }
 }

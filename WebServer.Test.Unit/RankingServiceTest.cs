@@ -49,7 +49,7 @@ public class RankingServiceTest
             ));
         
         var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, limit);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.InvalidInput}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.InvalidInput}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -61,7 +61,7 @@ public class RankingServiceTest
             .Returns(Task.FromResult(Array.Empty<SortedSetEntry>()));
         
         var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, 100);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     
@@ -86,7 +86,7 @@ public class RankingServiceTest
             ));
         
         var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, limit);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
@@ -110,7 +110,7 @@ public class RankingServiceTest
             .Returns(Task.FromResult(score));
         
         var response = await mRankingService.GetMemberRankAsync(AppEnum.ERankingType.All, userId, nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.SuccessEmptyRanking}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.SuccessEmptyRanking}"); 
         Assert.True(response.IsSuccess);
     }
     
@@ -127,7 +127,7 @@ public class RankingServiceTest
             .Returns(Task.FromResult<double?>(score));
         
         var response = await mRankingService.GetMemberRankAsync(AppEnum.ERankingType.All, userId, nickname);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
@@ -140,7 +140,7 @@ public class RankingServiceTest
     public async Task Test_AddScore_점수가_음수일때_Fail(string userId, string nickname, double score)
     {
         var response = await mRankingService.AddScore(AppEnum.ERankingType.All, userId, nickname, score);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.ScoreCannotBeNegative}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.ScoreCannotBeNegative}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -149,7 +149,7 @@ public class RankingServiceTest
     public async Task Test_AddScore_Success(string userId, string nickname, double score)
     {
         var response = await mRankingService.AddScore(AppEnum.ERankingType.All, userId, nickname, score);
-        Assert.Equal($"{response.Code}", $"{(int)EResponseStatus.Success}"); 
+        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
