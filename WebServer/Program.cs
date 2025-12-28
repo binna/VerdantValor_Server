@@ -5,6 +5,7 @@ using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Efcore;
 using SharedLibrary.Efcore.Repository;
+using SharedLibrary.GameData;
 using SharedLibrary.Redis;
 using WebServer;
 using WebServer.Pipeline;
@@ -82,7 +83,7 @@ try
     var baseDir = AppContext.BaseDirectory;
     var path = Path.GetFullPath(
         Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
-    ResponseStatus.Init(path);
+    ResponseStatusTable.Init(path);
     Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
 }
 catch (Exception ex)

@@ -1,23 +1,37 @@
-﻿namespace SharedLibrary.Common;
+﻿using SharedLibrary.GameData;
+using SharedLibrary.Protocol.Common.Web;
 
-public class ApiResponse(ResponseStatus status)
+namespace SharedLibrary.Common;
+
+public class ApiResponse(bool isSuccess, int code, string message)
 {
-    public bool IsSuccess { get; } = status.IsSuccess;
-    public string Message { get; } = status.Message;
-    public int Code { get; } = status.Code;
+    public bool IsSuccess { get; } = isSuccess;
+    public int Code { get; } = code;
+    public string Message { get; } = message;
+    
+    public static ApiResponse From(AppEnum.EResponseStatus status, AppEnum.ELanguage language)
+    {
+        var statusDefinition = ResponseStatusTable.GetStatusDefinition(status);
+        
+        return new ApiResponse(
+            statusDefinition.IsSuccess, 
+            (int)status, 
+            statusDefinition.Messages[language]);
+    }
 }
 
-public class ApiResponse<T> : ApiResponse
+public class ApiResponse<T>(bool isSuccess, int code, string message, T? result = default)
+    : ApiResponse(isSuccess, code, message)
 {
-    public T? Result { get; set; }
+    public T? Result { get; } = result;
 
-    public ApiResponse(ResponseStatus status)
-       : base(status)
-    { }
-
-    public ApiResponse(ResponseStatus status, T result)
-        : base(status)
+    public static ApiResponse<T> From(AppEnum.EResponseStatus status, AppEnum.ELanguage language, T? result = default)
     {
-        this.Result = result;
+        var statusDefinition = ResponseStatusTable.GetStatusDefinition(status);
+        
+        return new ApiResponse<T>(
+            statusDefinition.IsSuccess, 
+            (int)status, 
+            statusDefinition.Messages[language], result);
     }
 }
