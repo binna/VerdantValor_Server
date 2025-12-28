@@ -2,7 +2,7 @@
 
 namespace WebServer;
 
-public class AppReadonly
+public static class AppReadonly
 {
     public static byte[] REQ_ENCRYPT_KEY { get; private set; }
 

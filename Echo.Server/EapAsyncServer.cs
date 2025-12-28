@@ -37,7 +37,7 @@ public class EapAsyncServer
     
     static long msgsPerSec;
 
-    static readonly Timer mpsTimer = new Timer(_ =>
+    static readonly Timer MpsTimer = new(_ =>
     {
         var count = Interlocked.Exchange(ref msgsPerSec, 0);
         Console.WriteLine($"MPS: {count}");

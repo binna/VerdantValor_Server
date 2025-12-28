@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using SharedLibrary.Protocol.Common.ChatSocket;
+using SharedLibrary.Protocol.Common.ChatServer;
+using SharedLibrary.Protocol.Packet;
+using SharedLibrary.Protocol.Packet.ChatServer;
 
 namespace SharedLibrary.Tcp;
 
@@ -18,11 +20,23 @@ public class SocketServer
     #region TODO 별도의 ClientSessionManager 만들어야 함
     private static ConcurrentDictionary<ulong, Session> mConnectedSessions = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
+    private static byte[] mRoomIdsPacket = [];
+    private static bool mbUpdated = false;
+    
+    // TODO 나중에 동기화 고려 필요
+    //      타임스템프 + userId 조합으로 string으로 변경 예정
+    private static int roomCount = 0;
     #endregion
 
-    // TODO 나중에 동기화 고려 필요
-    // 타임스템프 + userId 조합으로 string으로 변경 예정
-    private static int roomCount = 1;
+    private static readonly Timer UpdateRoomIdsTimer = new(_ =>
+    {
+        if (!mbUpdated)
+            return;
+
+        Console.WriteLine("변경 방리스트 정보");
+        mbUpdated = false;
+        UpdateRoomIds();
+    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     
     public SocketServer(IPAddress ipAddress, int port)
     {
@@ -31,6 +45,28 @@ public class SocketServer
     }
     
     // TODO 비정상 종료에 대한 로직 필요
+    //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
+    
+    // TODO 여러개의 유저 테스트 필요
+    
+    private static void UpdateRoomIds()
+    {
+        var roomIds = mRoomSessions.Keys.ToArray();
+        var payload = new RoomListPayload
+        {
+            RoomCount = roomIds.Length,
+            RoomIds = roomIds
+        };
+        var header = new Header
+        {
+            Type = (int)AppEnum.PacketType.RoomList,
+            PayloadLength = payload.PayloadSize 
+        };
+        
+        var packet = new Packet<RoomListPayload>(header, payload);
+        
+        mRoomIdsPacket = packet.From();
+    }
     
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -58,11 +94,12 @@ public class SocketServer
         var stream = tcpClient.GetStream();
         
         var readBuffer = new byte[1024];
-        var lengthBuffer = new byte[AppEnum.LENGTH_FIELD_SIZE];
+        
+        var header = new Header();
+        var headerBuffer = new byte[Header.HEADER_SIZE];
         byte[] payloadBuffer = [];
         
-        var lengthRead = 0;
-        var payloadLength = 0;
+        var headerRead = 0;
         var payloadRead = 0;
         
         while (!cancellationToken.IsCancellationRequested)
@@ -85,32 +122,33 @@ public class SocketServer
 
             while (remaining > 0)
             {
-                if (lengthRead < AppEnum.LENGTH_FIELD_SIZE)
+                if (headerRead < Header.HEADER_SIZE)
                 {
-                    var needHead = AppEnum.LENGTH_FIELD_SIZE - lengthRead;
-                    var takeHead = Math.Min(needHead, read);
+                    var needHead = Header.HEADER_SIZE - headerRead;
+                    var takeHead = Math.Min(needHead, remaining);
 
                     Buffer.BlockCopy(
                         readBuffer, offset,
-                        lengthBuffer, lengthRead,
+                        headerBuffer, headerRead,
                         takeHead);
 
-                    lengthRead += takeHead;
+                    headerRead += takeHead;
                     offset += takeHead;
                     remaining -= takeHead;
 
-                    if (lengthRead < AppEnum.LENGTH_FIELD_SIZE)
+                    if (headerRead < Header.HEADER_SIZE)
                         break;
-
-                    var beforeLength = payloadLength;
-                    payloadLength = BinaryPrimitives.ReadInt16BigEndian(lengthBuffer);
-
-                    if (beforeLength < payloadLength)
-                        payloadBuffer = new byte[payloadLength];
+                    
+                    var beforeLength = header.PayloadLength;
+                    
+                    header.Parse(headerBuffer);
+                    
+                    if (beforeLength < header.PayloadLength)
+                        payloadBuffer = new byte[header.PayloadLength];
                 }
 
-                var needData = payloadLength - payloadRead;
-                var takeData = Math.Min(needData, read);
+                var needData = header.PayloadLength - payloadRead;
+                var takeData = Math.Min(needData, remaining);
 
                 Buffer.BlockCopy(
                     readBuffer, offset,
@@ -121,28 +159,25 @@ public class SocketServer
                 offset += takeData;
                 remaining -= takeData;
 
-                if (payloadRead < payloadLength)
+                if (payloadRead < header.PayloadLength)
                     break;
 
-                var type = BinaryPrimitives.ReadInt32BigEndian(payloadBuffer.AsSpan(0, 4));
-
-                switch (type)
+                switch (header.Type)
                 {
                     case (int)AppEnum.PacketType.Login:
                     {
-                        Console.WriteLine("in? - 1");
-                        var sessionId = Encoding.UTF8.GetString(payloadBuffer, 4, 36);
-                        var userId = BinaryPrimitives.ReadUInt64BigEndian(payloadBuffer.AsSpan(4 + 36, 8));
-                        session = new Session(sessionId, userId, tcpClient);
-                        Console.WriteLine($"sessionId:{sessionId}//userId:{userId}");
+                        var payload = new LoginPayload();
+                        payload.Parse(payloadBuffer);
+                        
+                        session = new Session(payload.SessionId, payload.UserId, tcpClient);
+                        Console.WriteLine($"sessionId:{payload.SessionId}//userId:{payload.UserId}");
 
-                        mConnectedSessions.TryAdd(userId, session);
+                        mConnectedSessions.TryAdd(payload.UserId, session);
                         Console.WriteLine("연결된 유저: " + mConnectedSessions.Count);
                         break;
                     }
                     case (int)AppEnum.PacketType.CreateRoom:
                     {
-                        Console.WriteLine("in? - 2");
                         if (session == null)
                             break;
 
@@ -150,12 +185,24 @@ public class SocketServer
                         {
                             var sessions = new ConcurrentDictionary<ulong, Session>();
                             sessions.TryAdd(session.UserId, session);
-                            mRoomSessions.TryAdd(roomCount, sessions);
-                            session.RoomId = roomCount;
-                            roomCount++;
+
+                            int newRoomId;
+                            do
+                            {
+                                newRoomId = Interlocked.Increment(ref roomCount);
+                            } while (!mRoomSessions.TryAdd(newRoomId, sessions));
+                            session.RoomId = newRoomId;
+                            mbUpdated = true;
                             Console.WriteLine($"방 만들기 성공 {session.RoomId}");
                         }
-
+                        break;
+                    }
+                    case (int)AppEnum.PacketType.RoomList:
+                    {
+                        if (session == null)
+                            break;
+                        
+                        await session.Stream.WriteAsync(mRoomIdsPacket, cancellationToken);
                         break;
                     }
                     case (int)AppEnum.PacketType.EnterRoom:
@@ -174,7 +221,6 @@ public class SocketServer
                                 Console.WriteLine($"방 들어가기 성공 {session.RoomId}");
                             }
                         }
-
                         break;
                     }
                     case (int)AppEnum.PacketType.ExitRoom:
@@ -186,9 +232,9 @@ public class SocketServer
                         {
                             roomSessions.TryRemove(session.UserId, out _);
                             session.RoomId = 0;
+                            mbUpdated = true;
                             Console.WriteLine($"방 삭제 성공 {session.RoomId}");
                         }
-
                         break;
                     }
                     case (int)AppEnum.PacketType.SendMessage:
@@ -198,11 +244,13 @@ public class SocketServer
 
                         if (session.RoomId != 0)
                         {
-                            var message = Encoding.UTF8.GetString(payloadBuffer, 4, payloadLength - 4);
-                            Console.WriteLine($"받음 : {message}");
-                            _ = BroadcastToRoomAsync(session.RoomId, message, cancellationToken);
+                            var payload = new SendMessagePayload();
+                            payload.Parse(payloadBuffer);
+                            Console.WriteLine($"받음 : {payload.Message}");
+                            
+                            var packet = new Packet<SendMessagePayload>(header, payload);
+                            _ = BroadcastToRoomAsync(session.RoomId, packet, cancellationToken);
                         }
-
                         break;
                     }
                     case (int)AppEnum.PacketType.Disconnect:
@@ -213,26 +261,26 @@ public class SocketServer
                             if (mRoomSessions.TryGetValue(session.RoomId, out var roomSessions))
                                 roomSessions.TryRemove(session.UserId, out _);
                         }
-
                         return;
                     }
                 }
 
-                lengthRead = 0;
-                payloadLength = 0;
+                headerRead = 0;
                 payloadRead = 0;
             }
         }
     }
 
-    private async Task BroadcastToRoomAsync(int roomId, string message, CancellationToken cancellationToken)
+    private async Task BroadcastToRoomAsync(int roomId, Packet<SendMessagePayload> packet, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
+            var message = packet.From();
+            
             foreach (var client in roomSessions)
             {
                 Console.WriteLine($"발송:{client.Value.SessionId}//{client.Value.UserId}");
-                await client.Value.Stream.WriteAsync(Encoding.UTF8.GetBytes(message), cancellationToken);
+                await client.Value.Stream.WriteAsync(message, cancellationToken);
             }
         }
     }

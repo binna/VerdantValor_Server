@@ -2,7 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using SharedLibrary.Protocol.Common.ChatSocket;
+using SharedLibrary.Protocol.Common.ChatServer;
+using SharedLibrary.Protocol.Packet;
+using SharedLibrary.Protocol.Packet.ChatServer;
 
 namespace ChatServer.Client;
 
@@ -33,56 +35,34 @@ public class SocketClient
         var stream = mTcpClient.GetStream();
 
         // 로그인
-        var type = new byte[4];
-        var sessionId = Encoding.UTF8.GetBytes($"{Guid.NewGuid()}");
-        var userId = new byte[8];
+        {
+            var payload = new LoginPayload
+            {
+                SessionId = $"{Guid.NewGuid()}",
+                UserId = 1
+            };
+            var header = new Header
+            {
+                Type = (int)AppEnum.PacketType.Login,
+                PayloadLength = payload.PayloadSize 
+            };
         
-        BinaryPrimitives.WriteInt32BigEndian(type, (int)AppEnum.PacketType.Login);
-        BinaryPrimitives.WriteUInt64BigEndian(userId, 1UL);
-
-        var length = new byte[2];
-        
-        BinaryPrimitives.WriteInt16BigEndian(length, 4 + 36 + 8);
-        
-        var messageBuffer = new byte[2 + 4 + 36 + 8];
-        Array.Copy(
-            length, 0, 
-            messageBuffer, 0, 
-            2);
-        Array.Copy(
-            type, 0, 
-            messageBuffer, 2, 
-            type.Length);
-        Array.Copy(
-            sessionId, 0, 
-            messageBuffer, 2 + type.Length, 
-            sessionId.Length);
-        Array.Copy(
-            userId, 0, 
-            messageBuffer, 2 + type.Length + sessionId.Length, 
-            userId.Length);
-        
-        await stream.WriteAsync(messageBuffer, cancellationToken);
-
-        Console.WriteLine("1");
+            var packet = new Packet<LoginPayload>(header, payload);
+            await stream.WriteAsync(packet.From(), cancellationToken);
+        }
         
         // 방 만들기
-        BinaryPrimitives.WriteInt32BigEndian(type, (int)AppEnum.PacketType.CreateRoom);
-        BinaryPrimitives.WriteInt16BigEndian(length, 2 + 4);
+        {
+            var payload = new CreateRoomPayload();
+            var header = new Header
+            {
+                Type = (int)AppEnum.PacketType.CreateRoom,
+                PayloadLength = payload.PayloadSize 
+            };
         
-        messageBuffer = new byte[2 + 4];
-        Array.Copy(
-            length, 0, 
-            messageBuffer, 0, 
-            2);
-        Array.Copy(
-            type, 0, 
-            messageBuffer, 2, 
-            type.Length);
-        
-        await stream.WriteAsync(messageBuffer, cancellationToken);
-        
-        Console.WriteLine("2");
+            var packet = new Packet<CreateRoomPayload>(header, payload);
+            await stream.WriteAsync(packet.From(), cancellationToken);
+        }
         
         var readTask  = HandleClientSendAsync(mTcpClient, cancelToken);
         var writeTask = Task.Run(() => HandleClientWriteAsync(mTcpClient, cancelToken), cancelToken);
@@ -98,23 +78,22 @@ public class SocketClient
         {
             var str = Console.ReadLine();
 
-            if (str == null)
+            if (str == null || str.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
                 return;
+
+            var payload = new SendMessagePayload
+            {
+                Message = str
+            };
+            var header = new Header
+            {
+                Type = (int)AppEnum.PacketType.SendMessage,
+                PayloadLength = payload.PayloadSize 
+            };
+        
+            var packet = new Packet<SendMessagePayload>(header, payload);
             
-            var header = new byte[4];
-            BinaryPrimitives.WriteInt32BigEndian(header, (int)AppEnum.PacketType.SendMessage);
-            var buffer = Encoding.UTF8.GetBytes(str);
-            var messageBuffer = new byte[4 + buffer.Length];
-            Array.Copy(
-                header, 0, 
-                messageBuffer, 0, 
-                header.Length);
-            Array.Copy(
-                buffer, 0, 
-                messageBuffer, 4, 
-                buffer.Length);
-            
-            stream.WriteAsync(messageBuffer, cancellationToken);
+            stream.WriteAsync(packet.From(), cancellationToken);
         }
     }
     

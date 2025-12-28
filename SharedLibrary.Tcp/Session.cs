@@ -18,5 +18,5 @@ public class Session
     }
 
     public NetworkStream Stream => mClient.GetStream();
-    public void Disconnect() => mClient.Dispose();
+    public void Disconnect() => mClient.Close();
 }
