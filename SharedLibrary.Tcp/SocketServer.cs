@@ -1,8 +1,6 @@
-﻿using System.Buffers.Binary;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using SharedLibrary.Protocol.Common.ChatServer;
 using SharedLibrary.Protocol.Packet;
 using SharedLibrary.Protocol.Packet.ChatServer;
@@ -28,15 +26,8 @@ public class SocketServer
     private static int roomCount = 0;
     #endregion
 
-    private static readonly Timer UpdateRoomIdsTimer = new(_ =>
-    {
-        if (!mbUpdated)
-            return;
-
-        Console.WriteLine("변경 방리스트 정보");
-        mbUpdated = false;
-        UpdateRoomIds();
-    }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    private static readonly Timer UpdateRoomIdsTimer = 
+        new(UpdateRoomIds, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     
     public SocketServer(IPAddress ipAddress, int port)
     {
@@ -49,10 +40,20 @@ public class SocketServer
     
     // TODO 여러개의 유저 테스트 필요
     
-    private static void UpdateRoomIds()
+    private static void UpdateRoomIds(object? o)
     {
+        if (!mbUpdated)
+            return;
+        
+        Console.WriteLine("변경 방리스트 정보");
+        mbUpdated = false;
+        
         var roomIds = mRoomSessions.Keys.ToArray();
-        var payload = new RoomListPayload
+
+        if (roomIds.Length == 0)
+            return;
+        
+        var payload = new RoomList
         {
             RoomCount = roomIds.Length,
             RoomIds = roomIds
@@ -63,7 +64,7 @@ public class SocketServer
             PayloadLength = payload.PayloadSize 
         };
         
-        var packet = new Packet<RoomListPayload>(header, payload);
+        var packet = new Packet<RoomList>(header, payload);
         
         mRoomIdsPacket = packet.From();
     }
@@ -124,49 +125,52 @@ public class SocketServer
             {
                 if (headerRead < Header.HEADER_SIZE)
                 {
-                    var needHead = Header.HEADER_SIZE - headerRead;
-                    var takeHead = Math.Min(needHead, remaining);
+                    var needHeader = Header.HEADER_SIZE - headerRead;
+                    var takeHeader = Math.Min(needHeader, remaining);
 
                     Buffer.BlockCopy(
                         readBuffer, offset,
                         headerBuffer, headerRead,
-                        takeHead);
+                        takeHeader);
 
-                    headerRead += takeHead;
-                    offset += takeHead;
-                    remaining -= takeHead;
+                    headerRead += takeHeader;
+                    offset += takeHeader;
+                    remaining -= takeHeader;
 
                     if (headerRead < Header.HEADER_SIZE)
                         break;
                     
-                    var beforeLength = header.PayloadLength;
+                    var beforePayloadLength = header.PayloadLength;
                     
                     header.Parse(headerBuffer);
                     
-                    if (beforeLength < header.PayloadLength)
+                    if (beforePayloadLength < header.PayloadLength)
                         payloadBuffer = new byte[header.PayloadLength];
                 }
 
-                var needData = header.PayloadLength - payloadRead;
-                var takeData = Math.Min(needData, remaining);
+                var needPayLoad = header.PayloadLength - payloadRead;
+                var takePayLoad = Math.Min(needPayLoad, remaining);
 
                 Buffer.BlockCopy(
                     readBuffer, offset,
                     payloadBuffer, payloadRead,
-                    takeData);
+                    takePayLoad);
 
-                payloadRead += takeData;
-                offset += takeData;
-                remaining -= takeData;
+                payloadRead += takePayLoad;
+                offset += takePayLoad;
+                remaining -= takePayLoad;
 
                 if (payloadRead < header.PayloadLength)
                     break;
+
+                Console.WriteLine($">> {header.Type}");
 
                 switch (header.Type)
                 {
                     case (int)AppEnum.PacketType.Login:
                     {
-                        var payload = new LoginPayload();
+                        // TODO 유효성 검사가 필요
+                        var payload = new Login();
                         payload.Parse(payloadBuffer);
                         
                         session = new Session(payload.SessionId, payload.UserId, tcpClient);
@@ -212,7 +216,7 @@ public class SocketServer
 
                         if (session.RoomId == 0)
                         {
-                            var payload = new EnterRoomPayload();
+                            var payload = new EnterRoom();
                             payload.Parse(payloadBuffer);
 
                             if (mRoomSessions.TryGetValue(payload.RoomId, out var roomSessions))
@@ -258,11 +262,11 @@ public class SocketServer
 
                         if (session.RoomId != 0)
                         {
-                            var payload = new SendMessagePayload();
+                            var payload = new SendMessage();
                             payload.Parse(payloadBuffer);
                             Console.WriteLine($"받음 : {payload.Message}");
                             
-                            var packet = new Packet<SendMessagePayload>(header, payload);
+                            var packet = new Packet<SendMessage>(header, payload);
                             _ = BroadcastChatMessageAsync(session.RoomId, packet, cancellationToken);
                         }
                         break;
@@ -278,14 +282,13 @@ public class SocketServer
                         return;
                     }
                 }
-
                 headerRead = 0;
                 payloadRead = 0;
             }
         }
     }
 
-    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessagePayload> packet, CancellationToken cancellationToken)
+    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessage> packet, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
@@ -301,7 +304,7 @@ public class SocketServer
     
     private static async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
     {
-        var payload = new RoomNotificationPayload
+        var payload = new RoomNotification
         {
             Notification = notificationMessage
         };
@@ -311,7 +314,7 @@ public class SocketServer
             PayloadLength = payload.PayloadSize 
         };
         
-        var packet = new Packet<RoomNotificationPayload>(header, payload);
+        var packet = new Packet<RoomNotification>(header, payload);
         
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {

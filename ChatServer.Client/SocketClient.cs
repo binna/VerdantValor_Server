@@ -1,7 +1,5 @@
-﻿using System.Buffers.Binary;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using SharedLibrary.Protocol.Common.ChatServer;
 using SharedLibrary.Protocol.Packet;
 using SharedLibrary.Protocol.Packet.ChatServer;
@@ -14,7 +12,7 @@ public class SocketClient
     private readonly int mPort;
     
     private TcpClient? mTcpClient;
-    private CancellationTokenSource mCts = new();
+    private CancellationTokenSource? mCts;
     
     public SocketClient(IPAddress ipAddress, int port)
     {
@@ -28,103 +26,214 @@ public class SocketClient
             throw new InvalidOperationException("Client is already running.");
         
         mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var cancelToken = mCts.Token;
-        
         mTcpClient = new TcpClient(mIpAddress.ToString(), mPort);
+        
+        await HandleReadAsync(mTcpClient, mCts.Token);
+    }
 
+    public async Task SendLoginAsync()
+    {
+        if (mTcpClient == null)
+            throw new InvalidOperationException("Client is not running.");
+        
         var stream = mTcpClient.GetStream();
+        
+        Console.WriteLine("Enter UserId : ");
+        var userIdInput = Console.ReadLine();
+        if (ulong.TryParse(userIdInput, out var userId))
+        {
+            var packet = 
+                new Packet<Login>(new Login
+                {
+                    SessionId = $"{Guid.NewGuid()}",
+                    UserId = userId
+                });
+            await stream.WriteAsync(packet.From(), mCts!.Token);
+        }
+    }
 
-        // 로그인
+    public async Task SendRoomListAsync()
+    {
+        if (mTcpClient == null)
+            throw new InvalidOperationException("Client is not running.");
+        
+        var stream = mTcpClient.GetStream();
+        
+        var packet = new Packet<RoomList>(new RoomList());
+        await stream.WriteAsync(packet.From(), mCts!.Token);
+    }
+
+    public async Task SendCreateRoomAsync()
+    {
+        if (mTcpClient == null)
+            throw new InvalidOperationException("Client is not running.");
+        
+        var stream = mTcpClient.GetStream();
+        
+        var packet = new Packet<CreateRoom>(new CreateRoom());
+        await stream.WriteAsync(packet.From(), mCts!.Token);
+        await HandleWriteAsync(mTcpClient, mCts!.Token);
+        
+    }
+
+    public async Task SendEnterRoomAsync()
+    {
+        if (mTcpClient == null)
+            throw new InvalidOperationException("Client is not running.");
+        
+        var stream = mTcpClient.GetStream();
+        
+        Console.WriteLine("Enter RoomId : ");
+        var roomIdInput = Console.ReadLine();
+        if (int.TryParse(roomIdInput, out var roomId))
         {
-            var payload = new LoginPayload
-            {
-                SessionId = $"{Guid.NewGuid()}",
-                UserId = 1
-            };
-            var header = new Header
-            {
-                Type = (int)AppEnum.PacketType.Login,
-                PayloadLength = payload.PayloadSize 
-            };
-        
-            var packet = new Packet<LoginPayload>(header, payload);
-            await stream.WriteAsync(packet.From(), cancellationToken);
+            var packet = new Packet<EnterRoom>(
+                new EnterRoom
+                {
+                    RoomId = roomId
+                });
+            await stream.WriteAsync(packet.From(), mCts!.Token);
+            await HandleWriteAsync(mTcpClient, mCts!.Token);
         }
-        
-        // 방 만들기
-        {
-            var payload = new CreateRoomPayload();
-            var header = new Header
-            {
-                Type = (int)AppEnum.PacketType.CreateRoom,
-                PayloadLength = payload.PayloadSize 
-            };
-        
-            var packet = new Packet<CreateRoomPayload>(header, payload);
-            await stream.WriteAsync(packet.From(), cancellationToken);
-        }
-        
-        var readTask  = HandleClientSendAsync(mTcpClient, cancelToken);
-        var writeTask = Task.Run(() => HandleClientWriteAsync(mTcpClient, cancelToken), cancelToken);
-        
-        await Task.WhenAny(readTask, writeTask);
     }
     
-    private void HandleClientWriteAsync(TcpClient tcpClient, CancellationToken cancellationToken)
+    private static async Task HandleWriteAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
         var stream = tcpClient.GetStream();
         
         while (!cancellationToken.IsCancellationRequested)
         {
-            var str = Console.ReadLine();
+            var messageInput = Console.ReadLine();
 
-            if (str == null || str.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+            if (messageInput == null)
+                break;
+
+            if (messageInput.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+            {
+                var exitRoomPacket = new Packet<ExitRoom>(new ExitRoom()); 
+                await stream.WriteAsync(exitRoomPacket.From(), cancellationToken);
                 return;
-
-            var payload = new SendMessagePayload
-            {
-                Message = str
-            };
-            var header = new Header
-            {
-                Type = (int)AppEnum.PacketType.SendMessage,
-                PayloadLength = payload.PayloadSize 
-            };
-        
-            var packet = new Packet<SendMessagePayload>(header, payload);
-            
-            stream.WriteAsync(packet.From(), cancellationToken);
+            }
+  
+            var sendMessagePacket = 
+                new Packet<SendMessage>(new SendMessage { Message = messageInput });
+            await stream.WriteAsync(sendMessagePacket.From(), cancellationToken);
         }
     }
     
-    private async Task HandleClientSendAsync(TcpClient tcpClient, CancellationToken cancellationToken)
+    private async Task HandleReadAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
         var stream = tcpClient.GetStream();
-        var buffer = new byte[1024];
+        
+        var readBuffer = new byte[1024];
+
+        var header = new Header();
+        var headerBuffer = new byte[Header.HEADER_SIZE];
+        byte[] payloadBuffer = [];
+
+        var headerRead = 0;
+        var payloadRead = 0;
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var read = await stream.ReadAsync(buffer, cancellationToken);
+            var read = await stream.ReadAsync(readBuffer, cancellationToken);
 
             if (read == 0)
             {
                 Console.WriteLine("[SERVER] Client disconnected");
-                StopAsync();
+                Stop();
                 break;
             }
+
+            var offset = 0;
+            var remaining = read;
             
-            var msg = Encoding.UTF8.GetString(buffer, 0, read);
-            Console.WriteLine($"받음 : {msg}");
+            while (remaining > 0)
+            {
+                var needHeader = Header.HEADER_SIZE - headerRead;
+                var takeHeader = Math.Min(needHeader, remaining);
+                
+                Buffer.BlockCopy(
+                    readBuffer, offset, 
+                    headerBuffer, headerRead, 
+                    Header.HEADER_SIZE);
+
+                headerRead += takeHeader;
+                offset += takeHeader;
+                remaining -= takeHeader;
+
+                if (headerRead < Header.HEADER_SIZE)
+                    break;
+
+                var beforePayloadLength = header.PayloadLength;
+                
+                header.Parse(headerBuffer);
+                
+                if (beforePayloadLength < header.PayloadLength)
+                    payloadBuffer = new byte[header.PayloadLength];
+                
+                var needPayLoad = header.PayloadLength - payloadRead;
+                var takePayLoad = Math.Min(needPayLoad, remaining);
+                
+                Buffer.BlockCopy(
+                    readBuffer, offset,
+                    payloadBuffer, payloadRead,
+                    takePayLoad);
+                
+                payloadRead += takePayLoad;
+                offset += takePayLoad;
+                remaining -= takePayLoad;
+
+                if (payloadRead < header.PayloadLength)
+                    break;
+
+                switch (header.Type)
+                {
+                    case (int)AppEnum.PacketType.DeleteRoom:
+                    {
+                        // TODO 방에서 쫓겨나는게 필요
+                        break;
+                    }
+                    case (int)AppEnum.PacketType.RoomList:
+                    {
+                        var payload = new RoomList();
+                        payload.Parse(payloadBuffer);
+
+                        Console.WriteLine("Room List=================");
+                        foreach (var roomId in payload.RoomIds)
+                        {
+                            Console.WriteLine(roomId);
+                        }
+                        Console.WriteLine("==========================");
+                        break;
+                    }
+                    case (int)AppEnum.PacketType.SendMessage:
+                    {
+                        var payload = new SendMessage();
+                        payload.Parse(payloadBuffer);
+                        Console.WriteLine($"Message: {payload.Message}");
+                        break;
+                    }
+                    case (int)AppEnum.PacketType.RoomNotification:
+                    {
+                        var payload = new RoomNotification();
+                        payload.Parse(payloadBuffer);
+                        Console.WriteLine($"Message: {payload.Notification}");
+                        break;
+                    }
+                }
+            }
+            headerRead = 0;
+            payloadRead = 0;
         }
     }
     
-    public void StopAsync()
+    public void Stop()
     {
-        Console.WriteLine("호출!");
         if (mTcpClient == null)
             return;
         
-        mCts.Cancel();
+        mCts!.Cancel();
         
         mTcpClient.Dispose();
         mTcpClient = null;
