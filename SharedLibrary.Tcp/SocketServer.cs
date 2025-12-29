@@ -212,13 +212,23 @@ public class SocketServer
 
                         if (session.RoomId == 0)
                         {
-                            var roomId = BinaryPrimitives.ReadInt32BigEndian(payloadBuffer.AsSpan(4, 4));
+                            var payload = new EnterRoomPayload();
+                            payload.Parse(payloadBuffer);
 
-                            if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
+                            if (mRoomSessions.TryGetValue(payload.RoomId, out var roomSessions))
                             {
                                 roomSessions.TryAdd(session.UserId, session);
-                                session.RoomId = roomId;
+                                session.RoomId = payload.RoomId;
+                                
+                                _ = BroadcastRoomNotificationAsync(
+                                    session.RoomId, 
+                                    $"{session.UserId}가 입장하셨습니다.", 
+                                    cancellationToken);
                                 Console.WriteLine($"방 들어가기 성공 {session.RoomId}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"검색된 방이 없습니다.");
                             }
                         }
                         break;
@@ -233,6 +243,10 @@ public class SocketServer
                             roomSessions.TryRemove(session.UserId, out _);
                             session.RoomId = 0;
                             mbUpdated = true;
+                            _ = BroadcastRoomNotificationAsync(
+                                session.RoomId, 
+                                $"{session.UserId}가 퇴장하셨습니다.", 
+                                cancellationToken);
                             Console.WriteLine($"방 삭제 성공 {session.RoomId}");
                         }
                         break;
@@ -249,7 +263,7 @@ public class SocketServer
                             Console.WriteLine($"받음 : {payload.Message}");
                             
                             var packet = new Packet<SendMessagePayload>(header, payload);
-                            _ = BroadcastToRoomAsync(session.RoomId, packet, cancellationToken);
+                            _ = BroadcastChatMessageAsync(session.RoomId, packet, cancellationToken);
                         }
                         break;
                     }
@@ -271,16 +285,42 @@ public class SocketServer
         }
     }
 
-    private async Task BroadcastToRoomAsync(int roomId, Packet<SendMessagePayload> packet, CancellationToken cancellationToken)
+    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessagePayload> packet, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
-            var message = packet.From();
+            var packetBuffer = packet.From();
             
             foreach (var client in roomSessions)
             {
-                Console.WriteLine($"발송:{client.Value.SessionId}//{client.Value.UserId}");
-                await client.Value.Stream.WriteAsync(message, cancellationToken);
+                Console.WriteLine($"채팅발송:{roomId}//{client.Value.SessionId}//{client.Value.UserId}");
+                await client.Value.Stream.WriteAsync(packetBuffer , cancellationToken);
+            }
+        }
+    }
+    
+    private static async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
+    {
+        var payload = new RoomNotificationPayload
+        {
+            Notification = notificationMessage
+        };
+        var header = new Header
+        {
+            Type = (int)AppEnum.PacketType.RoomNotification,
+            PayloadLength = payload.PayloadSize 
+        };
+        
+        var packet = new Packet<RoomNotificationPayload>(header, payload);
+        
+        if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
+        {
+            var packetBuffer = packet.From();
+            
+            foreach (var client in roomSessions)
+            {
+                Console.WriteLine($"공지발송:{client.Value.SessionId}//{client.Value.UserId}");
+                await client.Value.Stream.WriteAsync(packetBuffer, cancellationToken);
             }
         }
     }
