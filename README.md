@@ -67,8 +67,15 @@
 #### 공용 코드 관리 및 서버 확장성 
 - SharedLibrary로 서버 전반의 공용 코드 통합 관리
 - 기능 단위(EF Core, Redis, ADO)로 모듈화하여 의존성 최소화
-- 서버-클라이언트 공용 데이터(DTO, Enum, GameData)를 Git Submodule로 관리    
-  <img width="450" height="350" alt="image" src="https://github.com/user-attachments/assets/923816ce-95bd-4e4b-9472-54125b347f92" />
+  - 코드:
+    - [기본 라이브러리](./SharedLibrary)
+    - [EF Core 라이브러리](./SharedLibrary.Efcore)
+    - [Redis 라이브러리](./SharedLibrary.Redis)
+    - [Ado 라이브러리](./SharedLibrary.Ado)
+    - [Tcp 라이브러리](./SharedLibrary.Tcp)
+- 서버-클라이언트 공용 데이터(DTO, Enum, GameData)를 Git Submodule로 관리
+  - 코드:
+    - [SharedLibrary.Protocol 서브모듈](https://github.com/binna/VerdantValor_Shared)
   
 #### 서버 안정성 및 운영 관점 처리 
 - 미들웨어 기반 글로벌 예외 처리 및 공통 검증 로직 구성
