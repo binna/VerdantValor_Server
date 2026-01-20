@@ -47,6 +47,7 @@
 
 - EF Core + Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
   - 코드:
+    - [Program.cs 명시적으로 의존주입 설정](./WebServer/Program.cs)
     - [EF Core 라이브러리](./SharedLibrary.Efcore)     
     - [Repository](./SharedLibrary.Efcore/Repository)
 
@@ -59,8 +60,8 @@
 - 세션 만료를 서버에서 통제하고, 클라이언트 토큰 조작 가능성을 최소화
 - Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지
   - 코드:
-    - [Program.cs 설정](./WebServer/Program.cs)
-    - [PassThroughAuthHandler.cs 인증](./WebServer/Pipeline/PassThroughAuthHandler.cs)
+    - [Program.cs 인증과 세션 설정](./WebServer/Program.cs)
+    - [PassThroughAuthHandler.cs 인증 핸들러](./WebServer/Pipeline/PassThroughAuthHandler.cs)
     - [SessionAuthHandler.cs 세션](./WebServer/Pipeline/SessionAuthHandler.cs)
 
 #### 공용 코드 관리 및 서버 확장성 
@@ -75,7 +76,7 @@
     - [GlobalExceptionMiddleware.cs 글로벌 예외 처리](./WebServer/Pipeline/GlobalExceptionMiddleware.cs)
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
-    - [Program.cs 인증 정책](./WebServer/Program.cs)
+    - [Program.cs 인증 정책 설정](./WebServer/Program.cs)
 - Request Body 암호화를 통해 클라이언트-서버 통신 데이터 보호
   - 코드:
     - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Helpers/SecurityHelper.cs)
