@@ -13,13 +13,13 @@ public class SocketServer
     private readonly int mPort;
     
     private TcpListener? mListener;
-    private CancellationTokenSource mCts = new();
+    private CancellationTokenSource? mCts;
     
     #region TODO 별도의 ClientSessionManager 만들어야 함
     private static ConcurrentDictionary<ulong, Session> mConnectedSessions = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
     private static byte[] mRoomIdsPacket = [];
-    private static bool mbUpdated = false;
+    private static bool mbUpdated;
     
     // TODO 나중에 동기화 고려 필요
     //      타임스템프 + userId 조합으로 string으로 변경 예정
@@ -53,19 +53,12 @@ public class SocketServer
         if (roomIds.Length == 0)
             return;
         
-        var payload = new RoomList
-        {
-            RoomCount = roomIds.Length,
-            RoomIds = roomIds
-        };
-        var header = new Header
-        {
-            Type = (int)AppEnum.PacketType.RoomList,
-            PayloadLength = payload.PayloadSize 
-        };
-        
-        var packet = new Packet<RoomList>(header, payload);
-        
+        var packet = 
+            new Packet<RoomList>(new RoomList
+            {
+                RoomCount = roomIds.Length,
+                RoomIds = roomIds
+            });
         mRoomIdsPacket = packet.From();
     }
     
@@ -75,19 +68,19 @@ public class SocketServer
             throw new InvalidOperationException("Server is already running.");
         
         mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var cancelToken = mCts.Token;
-        
         mListener = new TcpListener(mIpAddress, mPort);
         mListener.Start();
 
-        while (!cancelToken.IsCancellationRequested)
+        while (!mCts.Token.IsCancellationRequested)
         {
-            var tcpClient = await mListener.AcceptTcpClientAsync(cancelToken);
+            var tcpClient = await mListener.AcceptTcpClientAsync(mCts.Token);
             Console.WriteLine($"[SERVER] Client connected: {tcpClient.Client.RemoteEndPoint}");
-            _ = HandleClientAsync(tcpClient, cancelToken);
+            _ = HandleClientAsync(tcpClient, mCts.Token);
         }
     }
 
+    // TODO switch 문 대신에 딕셔너리 이용하여 C# 델리게이션 사용하기
+    
     private async Task HandleClientAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
         Session? session = null;
@@ -201,6 +194,26 @@ public class SocketServer
                         }
                         break;
                     }
+                    case (int)AppEnum.PacketType.DeleteRoom:
+                    {
+                        if (session == null || session.RoomId == 0)
+                            break;
+                        
+                        await BroadcastRoomNotificationAsync(
+                            session.RoomId, 
+                            "방이 삭제되어 퇴장되었습니다.", 
+                            cancellationToken);
+                        
+                        if (mRoomSessions.TryRemove(session.RoomId, out var roomSessions))
+                        {
+                            foreach (var roomSession in roomSessions)
+                            {
+                                roomSession.Value.RoomId = 0;
+                            }
+                            Console.WriteLine($"방 삭제 성공 {session.RoomId}");
+                        }
+                        break;
+                    }
                     case (int)AppEnum.PacketType.RoomList:
                     {
                         if (session == null)
@@ -251,7 +264,7 @@ public class SocketServer
                                 session.RoomId, 
                                 $"{session.UserId}가 퇴장하셨습니다.", 
                                 cancellationToken);
-                            Console.WriteLine($"방 삭제 성공 {session.RoomId}");
+                            Console.WriteLine($"방 나가기 성공 {session.RoomId}");
                         }
                         break;
                     }
@@ -278,6 +291,9 @@ public class SocketServer
                         {
                             if (mRoomSessions.TryGetValue(session.RoomId, out var roomSessions))
                                 roomSessions.TryRemove(session.UserId, out _);
+                            
+                            mConnectedSessions.TryRemove(session.UserId, out _);
+                            session.Disconnect();
                         }
                         return;
                     }
@@ -304,20 +320,11 @@ public class SocketServer
     
     private static async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
     {
-        var payload = new RoomNotification
-        {
-            Notification = notificationMessage
-        };
-        var header = new Header
-        {
-            Type = (int)AppEnum.PacketType.RoomNotification,
-            PayloadLength = payload.PayloadSize 
-        };
-        
-        var packet = new Packet<RoomNotification>(header, payload);
-        
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
+            var packet = new Packet<RoomNotification>(
+                new RoomNotification { Notification = notificationMessage });
+            
             var packetBuffer = packet.From();
             
             foreach (var client in roomSessions)
@@ -328,12 +335,12 @@ public class SocketServer
         }
     }
 
-    public void StopAsync()
+    public void Stop()
     {
         if (mListener == null)
             return;
         
-        mCts.Cancel();
+        mCts!.Cancel();
         
         mListener.Stop();
         mListener = null;
