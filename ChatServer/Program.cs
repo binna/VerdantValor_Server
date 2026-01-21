@@ -1,13 +1,14 @@
 ﻿using System.Net;
-using SharedLibrary.Tcp;
 
 namespace ChatServer;
+
+// TODO 여러개의 유저 테스트 필요
 
 internal class Server
 {
     static async Task Main(string[] args)
     {
-        var server = new SocketServer(IPAddress.Any, 20000);
+        var server = new ChatSocketServer(IPAddress.Any, 20000);
 
         using var cts = new CancellationTokenSource();
         
