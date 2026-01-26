@@ -12,8 +12,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Redis", "Shar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Unit", "WebServer.Test.Unit\WebServer.Test.Unit.csproj", "{20DAC27A-23BF-418B-B218-1FE747D87073}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Protocol", "SharedLibrary.Protocol\SharedLibrary.Protocol.csproj", "{96439E7C-1050-46C5-B35B-89DD43798BF5}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer", "ChatServer\ChatServer.csproj", "{4849EEC1-F310-48B9-8141-B4B5E1E673D1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedLibrary.Tcp", "SharedLibrary.Tcp\SharedLibrary.Tcp.csproj", "{4D39A7AA-D6DB-4702-99B5-FEA31D93E8A3}"
@@ -82,14 +80,6 @@ Global
 		{20DAC27A-23BF-418B-B218-1FE747D87073}.Development|Any CPU.Build.0 = Development|Any CPU
 		{20DAC27A-23BF-418B-B218-1FE747D87073}.Live|Any CPU.ActiveCfg = Live|Any CPU
 		{20DAC27A-23BF-418B-B218-1FE747D87073}.Live|Any CPU.Build.0 = Live|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Development|Any CPU.ActiveCfg = Development|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Development|Any CPU.Build.0 = Development|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Live|Any CPU.ActiveCfg = Live|Any CPU
-		{96439E7C-1050-46C5-B35B-89DD43798BF5}.Live|Any CPU.Build.0 = Live|Any CPU
 		{4849EEC1-F310-48B9-8141-B4B5E1E673D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4849EEC1-F310-48B9-8141-B4B5E1E673D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4849EEC1-F310-48B9-8141-B4B5E1E673D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
