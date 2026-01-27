@@ -117,9 +117,9 @@
 I/O 처리 방식에 따른 성능 차이를 이해하고자 했습니다.
 
 ▼ 구현한 프로젝트   
-- [에코 서버](./Echo.Server)
-- [에코 클라이언트](./Echo.Client)
-- [에코 테스트 (기능 테스트, RTT 테스트)](./Echo.LoadTester)
+- [에코 서버](./Echo/EchoServer)
+- [에코 클라이언트](./Echo/EchoServer.Client)
+- [에코 테스트 (기능 테스트, RTT 테스트)](./Echo/EchoServer.LoadTester)
 
 #### 기능 시연
 
