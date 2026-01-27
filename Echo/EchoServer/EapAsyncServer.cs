@@ -185,7 +185,15 @@ public class EapAsyncServer
                 
                 foreach (var client in connectedClients)
                 {
-                    client.Value.Send(messageBuffer);
+                    try
+                    {
+                        client.Value.Send(messageBuffer);
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(e);
+                        connectedClients.TryRemove(client.Key, out _);
+                    }
                 }
                 
                 sessionInfo.HeaderRead = 0;
