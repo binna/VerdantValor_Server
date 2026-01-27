@@ -75,7 +75,7 @@
     - [Tcp 라이브러리](./SharedLibrary/Tcp)
 - 서버-클라이언트 공용 데이터(DTO, Enum, GameData)를 Git Submodule로 관리
   - 코드:
-    - [SharedLibrary.Protocol 서브모듈](https://github.com/binna/VerdantValor_Shared)
+    - [VerdantValor_Shared 서브모듈](https://github.com/binna/VerdantValor_Shared)
   
 #### 서버 안정성 및 운영 관점 처리 
 - 미들웨어 기반 글로벌 예외 처리 및 공통 검증 로직 구성
