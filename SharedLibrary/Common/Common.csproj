@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Configurations>Debug;Development</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MySql.Data" Version="9.5.0" />
+        <PackageReference Include="MySql.EntityFrameworkCore" Version="9.0.9" />
+        <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\VerdantValorShared\VerdantValorShared.csproj" />
+    </ItemGroup>
+
+</Project>
