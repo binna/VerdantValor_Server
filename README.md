@@ -87,7 +87,7 @@
 - Request Body 암호화를 통해 클라이언트-서버 통신 데이터 보호
   - 코드:
     - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Common/Helpers/SecurityHelper.cs)
-    - [DecryptReqMiddleware.cs 요청 복호화 미들웨어](./WebServer/Pipeline/DecryptReqMiddleware.cs)
+    - [DecryptReqMiddleware.cs 요청 복호화 미들웨어](./Web/WebServer/Pipeline/DecryptReqMiddleware.cs)
 
 #### 유니테스트를 통한 검증 
 - xUnit + NSubstitute 유닛 테스트 구성
