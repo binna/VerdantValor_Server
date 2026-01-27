@@ -68,11 +68,11 @@
 - SharedLibrary로 서버 전반의 공용 코드 통합 관리
 - 기능 단위(EF Core, Redis, ADO)로 모듈화하여 의존성 최소화
   - 코드:
-    - [기본 라이브러리](./SharedLibrary)
-    - [EF Core 라이브러리](./SharedLibrary.Efcore)
-    - [Redis 라이브러리](./SharedLibrary.Redis)
-    - [Ado 라이브러리](./SharedLibrary.Ado)
-    - [Tcp 라이브러리](./SharedLibrary.Tcp)
+    - [기본 라이브러리](./SharedLibrary/Common)
+    - [EF Core 라이브러리](./SharedLibrary/Efcore)
+    - [Redis 라이브러리](./SharedLibrary/Redis)
+    - [Ado 라이브러리](./SharedLibrary/Ado)
+    - [Tcp 라이브러리](./SharedLibrary/Tcp)
 - 서버-클라이언트 공용 데이터(DTO, Enum, GameData)를 Git Submodule로 관리
   - 코드:
     - [SharedLibrary.Protocol 서브모듈](https://github.com/binna/VerdantValor_Shared)
@@ -80,20 +80,20 @@
 #### 서버 안정성 및 운영 관점 처리 
 - 미들웨어 기반 글로벌 예외 처리 및 공통 검증 로직 구성
   - 코드:
-    - [GlobalExceptionMiddleware.cs 글로벌 예외 처리](./WebServer/Pipeline/GlobalExceptionMiddleware.cs)
+    - [GlobalExceptionMiddleware.cs 글로벌 예외 처리](./Web/WebServer/Pipeline/GlobalExceptionMiddleware.cs)
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
-    - [Program.cs 인증 정책 설정](./WebServer/Program.cs)
+    - [Program.cs 인증 정책 설정](./Web/WebServer/Program.cs)
 - Request Body 암호화를 통해 클라이언트-서버 통신 데이터 보호
   - 코드:
-    - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Helpers/SecurityHelper.cs)
+    - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Common/Helpers/SecurityHelper.cs)
     - [DecryptReqMiddleware.cs 요청 복호화 미들웨어](./WebServer/Pipeline/DecryptReqMiddleware.cs)
 
 #### 유니테스트를 통한 검증 
 - xUnit + NSubstitute 유닛 테스트 구성
 - 주요 비즈니스 로직과 예외 시나리오를 사전 검증하여 장애 가능성 감소
   - 코드:
-    - [웹서버 유니테스트 라이브러리](./WebServer.Test.Unit)
+    - [웹서버 유니테스트 라이브러리](./Web/WebServer.Test.Unit)
 
 <br><br>
 
