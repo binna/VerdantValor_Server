@@ -93,7 +93,7 @@
 - xUnit + NSubstitute 유닛 테스트 구성
 - 주요 비즈니스 로직과 예외 시나리오를 사전 검증하여 장애 가능성 감소
   - 코드:
-    - [웹서버 유니테스트 라이브러리](./Web/WebServer.Test.Unit)
+    - [웹서버 유니테스트](./Web/WebServer.Test.Unit)
 
 <br><br>
 
