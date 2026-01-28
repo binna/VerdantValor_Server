@@ -10,6 +10,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\VerdantValorShared\VerdantValorShared.csproj" />
+      <ProjectReference Include="..\Common\Common.csproj" />
     </ItemGroup>
 
 </Project>
