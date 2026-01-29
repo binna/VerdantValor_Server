@@ -6,7 +6,7 @@ internal class Server
     static async Task Main(string[] args)
     {
         using var cts = new CancellationTokenSource();
-        var server = new SocketClient(IPAddress.Loopback, 20000, cts.Token);
+        var server = new ChatSocketClient(IPAddress.Loopback, 20000, cts.Token);
         
         _ = server.StartAsync();
         

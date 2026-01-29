@@ -7,12 +7,12 @@ using VerdantValorShared.Packet.ChatServer;
 
 namespace ChatServer.Client;
 
-public class SocketClient : SocketServer
+public class ChatSocketClient : SocketServer
 {
     private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
     
-    public SocketClient(IPAddress ipAddress, int port, CancellationToken cancellationToken = default) 
+    public ChatSocketClient(IPAddress ipAddress, int port, CancellationToken cancellationToken = default) 
         : base(
             new Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>>
             {
