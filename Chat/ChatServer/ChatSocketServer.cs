@@ -11,12 +11,11 @@ namespace ChatServer;
 public class ChatSocketServer : SocketServer
 {
     private static ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
-    private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
     private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];
+    private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
 
     private static byte[] mRoomIdsPacket = [];
     private static bool mbUpdated;
-    
     
     private readonly TcpListener mListener;
     

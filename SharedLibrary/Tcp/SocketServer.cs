@@ -30,7 +30,6 @@ public abstract class SocketServer
 
     protected async Task HandleClientReadAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        Console.WriteLine("in?");
         while (!cancellationToken.IsCancellationRequested)
         {
             var read = await socketContext.Stream.ReadAsync(

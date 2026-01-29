@@ -9,8 +9,7 @@ namespace ChatServer.Client;
 
 public class SocketClient : SocketServer
 {
-    private readonly Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
-    private readonly TcpClient mTcpClient;
+    private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
     
     public SocketClient(IPAddress ipAddress, int port, CancellationToken cancellationToken = default) 
@@ -23,8 +22,8 @@ public class SocketClient : SocketServer
                 [AppEnum.PacketType.RoomNotification] = HandleRoomNotificationAsync
             }, cancellationToken)
     {
-        mTcpClient = new TcpClient(ipAddress.ToString(), port);
-        mSocketContext = new SocketContext(mTcpClient);
+        mClient = new TcpClient(ipAddress.ToString(), port);
+        mSocketContext = new SocketContext(mClient);
     }
 
     public override async Task StartAsync()
@@ -34,8 +33,6 @@ public class SocketClient : SocketServer
 
     private static async Task HandleWriteAsync(TcpClient tcpClient, CancellationToken cancellationToken)
     {
-        var stream = tcpClient.GetStream();
-        
         while (!cancellationToken.IsCancellationRequested)
         {
             var messageInput = Console.ReadLine();
@@ -46,20 +43,21 @@ public class SocketClient : SocketServer
             if (messageInput.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
             {
                 var exitRoomPacket = new Packet<ExitRoom>(new ExitRoom()); 
-                await stream.WriteAsync(exitRoomPacket.From(), cancellationToken);
+                await WritePacket(tcpClient.GetStream(), exitRoomPacket, cancellationToken);
                 return;
             }
   
             var sendMessagePacket = 
                 new Packet<SendMessage>(new SendMessage { Message = messageInput });
-            await stream.WriteAsync(sendMessagePacket.From(), cancellationToken);
+            
+            await WritePacket(tcpClient.GetStream(), sendMessagePacket, cancellationToken);
         }
     }
     
     #region 클라이언트 선택 메뉴
     public async Task SendLoginAsync()
     {
-        var stream = mTcpClient.GetStream();
+        var stream = mClient.GetStream();
         
         Console.WriteLine("Enter UserId : ");
         var userIdInput = Console.ReadLine();
@@ -79,10 +77,10 @@ public class SocketClient : SocketServer
 
     public async Task SendRoomListAsync()
     {
-        if (mTcpClient == null)
+        if (mClient == null)
             throw new InvalidOperationException("Client is not running.");
         
-        var stream = mTcpClient.GetStream();
+        var stream = mClient.GetStream();
         
         var packet = new Packet<RoomList>(new RoomList());
         await stream.WriteAsync(packet.From(), mCts!.Token);
@@ -90,23 +88,23 @@ public class SocketClient : SocketServer
 
     public async Task SendCreateRoomAsync()
     {
-        if (mTcpClient == null)
+        if (mClient == null)
             throw new InvalidOperationException("Client is not running.");
         
-        var stream = mTcpClient.GetStream();
+        var stream = mClient.GetStream();
         
         var packet = new Packet<CreateRoom>(new CreateRoom());
         await stream.WriteAsync(packet.From(), mCts!.Token);
-        await HandleWriteAsync(mTcpClient, mCts!.Token);
+        await HandleWriteAsync(mClient, mCts!.Token);
         
     }
 
     public async Task SendEnterRoomAsync()
     {
-        if (mTcpClient == null)
+        if (mClient == null)
             throw new InvalidOperationException("Client is not running.");
         
-        var stream = mTcpClient.GetStream();
+        var stream = mClient.GetStream();
         
         Console.WriteLine("Enter RoomId : ");
         var roomIdInput = Console.ReadLine();
@@ -118,7 +116,7 @@ public class SocketClient : SocketServer
                     RoomId = roomId
                 });
             await stream.WriteAsync(packet.From(), mCts.Token);
-            await HandleWriteAsync(mTcpClient, mCts.Token);
+            await HandleWriteAsync(mClient, mCts.Token);
         }
     }
     #endregion
