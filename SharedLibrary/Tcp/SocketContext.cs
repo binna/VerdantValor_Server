@@ -6,36 +6,30 @@ namespace Tcp;
 public class SocketContext
 {
     private readonly TcpClient mClient;
+
+    public bool IsLogin { get; set; } = false;
     
     public Session Session { get; private set; }
-    public Header Header { get; }
-    public byte[] Payload { get; }
+    public Header Header { get; } = new();
     
-    public byte[] ReadBuffer { get; set; } = new byte[1024];
-    public byte[] HeaderBuffer { get; set; } = new byte[Header.HEADER_SIZE];
+    public byte[] ReadBuffer { get; } = new byte[1024];
+    public byte[] HeaderBuffer { get; } = new byte[Header.HEADER_SIZE];
     public byte[] PayloadBuffer { get; set; } = [];
         
-    public int HeaderRead { get; set; } = 0;
-    public int PayloadRead { get; set; } = 0;
+    public int HeaderRead { get; set; }
+    public int PayloadRead { get; set; }
     
     public int Offset { get; set; }
     public int Remaining { get; set; }
     
-    public SocketContext(TcpClient tcpClient)
+    public SocketContext(TcpClient client)
     {
-        mClient = tcpClient;
+        mClient = client;
     }
 
-    public SocketContext(TcpClient tcpClient, Header header, byte[] payload)
-    {
-        mClient = tcpClient;
-        Header = header;
-        Payload = payload;
-    }
-
-    public void SessionChange(string sessionId, ulong userId) 
+    public void SetSession(string sessionId, ulong userId) 
         => Session = new Session(sessionId, userId, mClient);
     
     public NetworkStream Stream => mClient.GetStream();
-    public TcpClient tcpClient => mClient;
+    public TcpClient Client => mClient;
 }

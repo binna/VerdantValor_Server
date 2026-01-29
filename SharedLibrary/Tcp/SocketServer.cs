@@ -1,22 +1,25 @@
-﻿using VerdantValorShared.Common.ChatServer;
+﻿using System.Net.Sockets;
+using VerdantValorShared.Common.ChatServer;
 using VerdantValorShared.Packet;
 
 namespace Tcp;
 
 public abstract class SocketServer
 {
-    protected readonly Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
-    protected readonly CancellationTokenSource mCts;
-    
-    protected enum ReadPacketReturn
+    private enum ReadPacketReturn
     {
         NeedMoreData,
         PacketReady,
         BufferDrained
     }
     
+    protected readonly CancellationTokenSource mCts;
+    
+    private readonly 
+        Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
+    
     public SocketServer(
-        Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> packetHandlers,
+        Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> packetHandlers, 
         CancellationToken cancellationToken = default)
     {
         mPacketHandlers = packetHandlers;
@@ -25,7 +28,47 @@ public abstract class SocketServer
 
     public abstract Task StartAsync();
 
-    protected static ReadPacketReturn ReadPacket(SocketContext socketContext)
+    protected async Task HandleClientReadAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("in?");
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var read = await socketContext.Stream.ReadAsync(
+                socketContext.ReadBuffer, cancellationToken);
+        
+            if (read == 0)
+            {
+                Console.WriteLine("disconnected");
+                return;
+            }
+            
+            socketContext.Offset = 0;
+            socketContext.Remaining = read;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var result = ReadPacket(socketContext);
+
+                if (result == ReadPacketReturn.NeedMoreData)
+                    break;
+
+                if (Enum.IsDefined(typeof(AppEnum.PacketType), socketContext.Header.Type))
+                {
+                    await mPacketHandlers[(AppEnum.PacketType)socketContext.Header.Type](socketContext, cancellationToken);
+                }
+
+                if (result == ReadPacketReturn.PacketReady)
+                    break;
+            }
+        }
+    }
+
+    protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : class, IPayload
+    {
+        await stream.WriteAsync(message.From(), cancellationToken);
+    }
+    
+    private static ReadPacketReturn ReadPacket(SocketContext socketContext)
     {
         while (socketContext.Remaining > 0)
         {

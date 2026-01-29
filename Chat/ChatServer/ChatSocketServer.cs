@@ -12,10 +12,11 @@ public class ChatSocketServer : SocketServer
 {
     private static ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
-    private static ConcurrentDictionary<ulong, Session> mLoginedSessions = [];
+    private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];
 
     private static byte[] mRoomIdsPacket = [];
     private static bool mbUpdated;
+    
     
     private readonly TcpListener mListener;
     
@@ -29,19 +30,18 @@ public class ChatSocketServer : SocketServer
     private static readonly Timer UpdateRoomIdsTimer = 
         new(UpdateRoomIds, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
-    public ChatSocketServer(IPAddress ipAddress, int port)
-        : base(
-            new Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>>
-            {
-                [AppEnum.PacketType.Login] = HandleLoginAsync,
-                [AppEnum.PacketType.CreateRoom] = HandleCreateRoomAsync,
-                [AppEnum.PacketType.DeleteRoom] = HandleDeleteRoomAsync,
-                [AppEnum.PacketType.RoomList] = HandleRoomListAsync,
-                [AppEnum.PacketType.EnterRoom] = HandleEnterRoomAsync,
-                [AppEnum.PacketType.ExitRoom] = HandleExitRoomAsync,
-                [AppEnum.PacketType.SendMessage] = HandleSendMessageAsync,
-                [AppEnum.PacketType.Disconnect] = HandleDisconnectAsync,
-            })
+    public ChatSocketServer(IPAddress ipAddress, int port, CancellationToken cancellationToken = default)
+        : base(new Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>>
+        {
+            [AppEnum.PacketType.Login] = HandleLoginAsync,
+            [AppEnum.PacketType.CreateRoom] = HandleCreateRoomAsync,
+            [AppEnum.PacketType.DeleteRoom] = HandleDeleteRoomAsync,
+            [AppEnum.PacketType.RoomList] = HandleRoomListAsync,
+            [AppEnum.PacketType.EnterRoom] = HandleEnterRoomAsync,
+            [AppEnum.PacketType.ExitRoom] = HandleExitRoomAsync,
+            [AppEnum.PacketType.SendMessage] = HandleSendMessageAsync,
+            [AppEnum.PacketType.Disconnect] = HandleDisconnectAsync,
+        }, cancellationToken)
     {
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
@@ -57,7 +57,7 @@ public class ChatSocketServer : SocketServer
             mConnectedClient.TryAdd(tcpClient, 0);
             
             var socketContext = new SocketContext(tcpClient);
-            _ = HandleClientAsync(socketContext, mCts.Token);
+            _ = HandleClientReadAsync(socketContext, mCts.Token);
         }
     }
 
@@ -82,61 +82,33 @@ public class ChatSocketServer : SocketServer
             });
         mRoomIdsPacket = packet.From();
     }
-    
-    private async Task HandleClientAsync(SocketContext socketContext, CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            var read = await socketContext.Stream.ReadAsync(
-                socketContext.ReadBuffer, cancellationToken);
-        
-            if (read == 0)
-            {
-                Console.WriteLine("[SERVER] Client disconnected");
-                return;
-            }
-            
-            socketContext.Offset = 0;
-            socketContext.Remaining = read;
-
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var result = ReadPacket(socketContext);
-
-                if (result == ReadPacketReturn.NeedMoreData)
-                    break;
-                
-                if (Enum.IsDefined(typeof(AppEnum.PacketType), socketContext.Header.Type))
-                {
-                    await mPacketHandlers[(AppEnum.PacketType)socketContext.Header.Type](socketContext, cancellationToken);
-                }
-
-                if (result == ReadPacketReturn.PacketReady)
-                    break;
-            }
-        }
-    }
 
     #region 패킷 핸들러 함수 모음
     private static async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         // TODO 유효성 검사가 필요
+        //  레디스 뎐결해서 레디스 세션ID와 pid가 일치하는지 확인하기
         
         var payload = new Login();
-        payload.Parse(socketContext.Payload);
+        payload.Parse(socketContext.PayloadBuffer);
                         
-        socketContext.SessionChange(payload.SessionId, payload.UserId);
+        socketContext.SetSession(payload.SessionId, payload.UserId);
         Console.WriteLine($"sessionId:{payload.SessionId}//userId:{payload.UserId}");
         
-        // mConnectedClient.TryRemove(socketContext.tcpClient, out _);
-        // mLoginedSessions.TryAdd(payload.UserId, socketContext.Session);
-        // Console.WriteLine("연결된 유저: " + mLoginedSessions.Count);
+        mConnectedClient.TryRemove(socketContext.Client, out _);
+        mLoginSessions.TryAdd(payload.UserId, socketContext.Session);
+
+        socketContext.IsLogin = true;
+        Console.WriteLine("연결된 유저: " + mLoginSessions.Count);
     }
     
     private static async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
 
         if (socketContext.Session.RoomId == 0)
         {
@@ -156,29 +128,44 @@ public class ChatSocketServer : SocketServer
 
     private static async Task HandleDeleteRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null || socketContext.Session.RoomId == 0)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
+        
+        if (socketContext.Session.RoomId == 0)
+        {
+            // TODO 패킷 날릴 예정
+            return;
+        }
 
         await DeleteRoomAsync(socketContext.Session.RoomId, cancellationToken);
     }
 
     private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
                         
         await socketContext.Session.Stream.WriteAsync(mRoomIdsPacket, cancellationToken);
     }
     
     private static async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
 
         if (socketContext.Session.RoomId == 0)
         {
             var payload = new EnterRoom();
-            payload.Parse(socketContext.Payload);
+            payload.Parse(socketContext.PayloadBuffer);
 
             if (mRoomSessions.TryGetValue(payload.RoomId, out var roomSessions))
             {
@@ -200,31 +187,43 @@ public class ChatSocketServer : SocketServer
     
     private static async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null || socketContext.Session.RoomId == 0)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
+        
+        if (socketContext.Session.RoomId == 0)
+        {
+            // TODO 패킷 날릴 예정
+            return;
+        }
 
         if (mRoomSessions.TryGetValue(socketContext.Session.RoomId, out var roomSessions))
         {
             roomSessions.TryRemove(socketContext.Session.UserId, out _);
-            socketContext.Session.RoomId = 0;
             mbUpdated = true;
             await BroadcastRoomNotificationAsync(
                 socketContext.Session.RoomId, 
                 $"{socketContext.Session.UserId}가 퇴장하셨습니다.", 
                 cancellationToken);
+            socketContext.Session.RoomId = 0;
             Console.WriteLine($"방 나가기 성공 {socketContext.Session.RoomId}");
         }
     }
     
     private static async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        if (socketContext.Session == null)
+        if (!socketContext.IsLogin)
+        {
+            // TODO 패킷 날릴 예정
             return;
+        }
 
         if (socketContext.Session.RoomId != 0)
         {
             var payload = new SendMessage();
-            payload.Parse(socketContext.Payload);
+            payload.Parse(socketContext.PayloadBuffer);
             Console.WriteLine($"받음 : {payload.Message}");
             
             var packet = new Packet<SendMessage>(socketContext.Header, payload);
@@ -235,7 +234,7 @@ public class ChatSocketServer : SocketServer
     private static async Task HandleDisconnectAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         Console.WriteLine("[SERVER] Client disconnected");
-        if (socketContext.Session != null)
+        if (!socketContext.IsLogin)
         {
             if (mRoomSessions.TryGetValue(socketContext.Session.RoomId, out var roomSessions))
                 roomSessions.TryRemove(socketContext.Session.UserId, out _);

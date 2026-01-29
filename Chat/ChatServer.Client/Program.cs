@@ -5,9 +5,10 @@ internal class Server
 {
     static async Task Main(string[] args)
     {
-        var server = new SocketClient(IPAddress.Loopback, 20000);
         using var cts = new CancellationTokenSource();
-        _ = server.StartAsync(cts.Token);
+        var server = new SocketClient(IPAddress.Loopback, 20000, cts.Token);
+        
+        _ = server.StartAsync();
         
         Console.WriteLine("Menu=================");
         Console.WriteLine("1. Login");
@@ -43,9 +44,6 @@ internal class Server
                     await server.SendEnterRoomAsync();
                     break;
                 }
-                default:
-                    server.Stop();
-                    return;
             }
         }
     }
