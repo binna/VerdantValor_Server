@@ -4,7 +4,7 @@ using VerdantValorShared.Packet;
 
 namespace Tcp;
 
-public abstract class SocketServer
+public abstract class NetworkSocket
 {
     private enum ReadPacketReturn
     {
@@ -18,7 +18,7 @@ public abstract class SocketServer
     private readonly 
         Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
     
-    public SocketServer(
+    public NetworkSocket(
         Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> packetHandlers, 
         CancellationToken cancellationToken = default)
     {

@@ -8,7 +8,7 @@ using Tcp;
 
 namespace ChatServer;
 
-public class ChatSocketServer : SocketServer
+public class ChatSocketServer : NetworkSocket
 {
     private static ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
     private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];

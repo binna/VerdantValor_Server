@@ -7,7 +7,7 @@ using VerdantValorShared.Packet.ChatServer;
 
 namespace ChatServer.Client;
 
-public class ChatSocketClient : SocketServer
+public class ChatSocketClient : NetworkSocket
 {
     private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
