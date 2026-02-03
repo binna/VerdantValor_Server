@@ -1,7 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using Common.Models;
 
-namespace Ado.DAOs;
+namespace Ado.Daos;
 
 public sealed class UsersDao
 {
