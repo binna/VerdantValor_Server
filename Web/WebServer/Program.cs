@@ -27,7 +27,7 @@ builder.Configuration
         $"appsettings.{builder.Environment.EnvironmentName}.json", 
         optional: false, reloadOnChange: true);
 
-// 인증과 세션 설정
+// 세션 설정
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(10);
@@ -35,6 +35,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".VerdantValor.Session";
 });
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers(options =>
@@ -54,6 +55,7 @@ var host = builder.Configuration["DB:Redis:Host"];
 var port = builder.Configuration["DB:Redis:Port"];
 var serverName = builder.Configuration["Server:Name"];
 
+// Redis 기반 세션 공유를 위한 분산 캐시 설정
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = $"{host}:{port},defaultDatabase=3";
@@ -114,10 +116,12 @@ if (!builder.Environment.IsDevelopment())
 }
 #endregion
 
-// Authentication Handler + Attribute 기반 인증 정책 설정
+// 인증 설정
 builder.Services.AddAuthentication("PassThroughAuth")
      .AddScheme<AuthenticationSchemeOptions, PassThroughAuthHandler>(
          "PassThroughAuth", null);
+
+// 인가(Authorization) 정책 설정,  Attribute 기반 인증 정책 적용 가능함
 builder.Services.AddAuthorization(options => 
     options.AddPolicy(
         "SessionPolicy", 
@@ -144,8 +148,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-// 인증과 세션 사용
+// 세션 사용
 app.UseSession();           // 세션
+
+// 
 app.UseAuthentication();    // 사용자 인증
 app.UseAuthorization();     // 정책 기반 인가
 
