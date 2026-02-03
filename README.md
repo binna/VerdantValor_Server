@@ -88,7 +88,7 @@
   - 코드:
     - Program.cs
       - [인증과 인가 설정](./Web/WebServer/Program.cs#L119)
-      - [인증과 인가 사용](./Web/WebServer/Program.cs#L149)
+      - [인증과 인가 사용](./Web/WebServer/Program.cs#L153)
     - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
     - [실제 사용 예시](./Web/WebServer/Controllers/RankingController.cs#L23)
     
