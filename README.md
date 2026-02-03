@@ -49,7 +49,7 @@
   - 코드:
     - [Program.cs 명시적으로 의존주입 설정](./Web/WebServer/Program.cs)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
-    - [Repository](./SharedLibrary/Efcore/Repository)
+    - [Repository](./SharedLibrary/Efcore/Repositories)
 
 - API 단위 트랜잭션 범위를 필터로 관리하여 서비스-데이터 결합도 감소
   - 코드:
