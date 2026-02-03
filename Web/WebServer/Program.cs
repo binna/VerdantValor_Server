@@ -27,6 +27,7 @@ builder.Configuration
         $"appsettings.{builder.Environment.EnvironmentName}.json", 
         optional: false, reloadOnChange: true);
 
+// 인증과 세션 설정
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(10);
@@ -34,7 +35,6 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".VerdantValor.Session";
 });
-
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers(options =>
@@ -114,16 +114,16 @@ if (!builder.Environment.IsDevelopment())
 }
 #endregion
 
+// Authentication Handler + Attribute 기반 인증 정책 설정
 builder.Services.AddAuthentication("PassThroughAuth")
      .AddScheme<AuthenticationSchemeOptions, PassThroughAuthHandler>(
          "PassThroughAuth", null);
-
 builder.Services.AddAuthorization(options => 
     options.AddPolicy(
         "SessionPolicy", 
         policy => policy.Requirements.Add(new SessionAuthRequirement())));
 
-// DI 관리 대상 싱글톤 등록
+// 명시적으로 의존주입 설정
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IRedisClient, ConfigRedisClient>()
@@ -144,9 +144,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-app.UseSession();
-app.UseAuthentication();
-app.UseAuthorization();
+// 인증과 세션 사용
+app.UseSession();           // 세션
+app.UseAuthentication();    // 사용자 인증
+app.UseAuthorization();     // 정책 기반 인가
 
 //if (app.Environment.IsDevelopment())
 {
