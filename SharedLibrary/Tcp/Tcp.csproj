@@ -4,11 +4,12 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Configurations>Debug</Configurations>
-        <Platforms>AnyCPU</Platforms>
+        <RootNamespace>Tcp</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\ChatServer2\Chat\Chat.csproj" />
+      <ProjectReference Include="..\..\VerdantValorShared\Protocol\Chat\Chat.csproj" />
       <ProjectReference Include="..\..\VerdantValorShared\VerdantValorShared.csproj" />
       <ProjectReference Include="..\Common\Common.csproj" />
     </ItemGroup>

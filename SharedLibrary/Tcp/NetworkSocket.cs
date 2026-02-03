@@ -1,6 +1,8 @@
 ﻿using System.Net.Sockets;
-using VerdantValorShared.Common.ChatServer;
-using VerdantValorShared.Packet;
+using MemoryPack;
+using Protocol.Chat.Frames;
+using Shared.Constants;
+using Shared.Types;
 
 namespace Tcp;
 
@@ -16,10 +18,10 @@ public abstract class NetworkSocket
     protected readonly CancellationTokenSource mCts;
     
     private readonly 
-        Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
+        Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
     
     public NetworkSocket(
-        Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>> packetHandlers, 
+        Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> packetHandlers, 
         CancellationToken cancellationToken = default)
     {
         mPacketHandlers = packetHandlers;
@@ -51,9 +53,9 @@ public abstract class NetworkSocket
                 if (result == ReadPacketReturn.NeedMoreData)
                     break;
 
-                if (Enum.IsDefined(typeof(AppEnum.PacketType), socketContext.Header.Type))
+                if (Enum.IsDefined(typeof(EPacket), socketContext.Header.PacketType))
                 {
-                    await mPacketHandlers[(AppEnum.PacketType)socketContext.Header.Type](socketContext, cancellationToken);
+                    await mPacketHandlers[socketContext.Header.PacketType](socketContext, cancellationToken);
                 }
 
                 if (result == ReadPacketReturn.PacketReady)
@@ -62,18 +64,18 @@ public abstract class NetworkSocket
         }
     }
 
-    protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : class, IPayload
+    protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : struct, IPacketBody
     {
-        await stream.WriteAsync(message.From(), cancellationToken);
+        await stream.WriteAsync(message.PacketBytes, cancellationToken);
     }
     
     private static ReadPacketReturn ReadPacket(SocketContext socketContext)
     {
         while (socketContext.Remaining > 0)
         {
-            if (socketContext.HeaderRead < Header.HEADER_SIZE)
+            if (socketContext.HeaderRead < AppConstant.HEADER_SIZE)
             {
-                var needHeader = Header.HEADER_SIZE - socketContext.HeaderRead;
+                var needHeader = AppConstant.HEADER_SIZE - socketContext.HeaderRead;
                 var takeHeader = Math.Min(needHeader, socketContext.Remaining);
 
                 Buffer.BlockCopy(
@@ -85,18 +87,19 @@ public abstract class NetworkSocket
                 socketContext.Offset += takeHeader;
                 socketContext.Remaining -= takeHeader;
 
-                if (socketContext.HeaderRead < Header.HEADER_SIZE)
+                if (socketContext.HeaderRead < AppConstant.HEADER_SIZE)
                     return ReadPacketReturn.NeedMoreData;
 
-                var beforePayloadLength = socketContext.Header.PayloadLength;
+                var beforePayloadLength = socketContext.Header.PayloadSize;
 
-                socketContext.Header.Parse(socketContext.HeaderBuffer);
+                socketContext.Header = 
+                    MemoryPackSerializer.Deserialize<PacketHeader>(socketContext.HeaderBuffer);
 
-                if (beforePayloadLength < socketContext.Header.PayloadLength)
-                    socketContext.PayloadBuffer = new byte[socketContext.Header.PayloadLength];
+                if (beforePayloadLength < socketContext.Header.PayloadSize)
+                    socketContext.PayloadBuffer = new byte[socketContext.Header.PayloadSize];
             }
 
-            var needPayLoad = socketContext.Header.PayloadLength - socketContext.PayloadRead;
+            var needPayLoad = socketContext.Header.PayloadSize - socketContext.PayloadRead;
             var takePayLoad = Math.Min(needPayLoad, socketContext.Remaining);
 
             Buffer.BlockCopy(
@@ -108,7 +111,7 @@ public abstract class NetworkSocket
             socketContext.Offset += takePayLoad;
             socketContext.Remaining -= takePayLoad;
 
-            if (socketContext.PayloadRead < socketContext.Header.PayloadLength)
+            if (socketContext.PayloadRead < socketContext.Header.PayloadSize)
                 return ReadPacketReturn.NeedMoreData;
             
             socketContext.HeaderRead = 0;
