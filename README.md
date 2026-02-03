@@ -47,7 +47,7 @@
 
 - EF Core + Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
   - 코드:
-    - [Program.cs 명시적으로 의존주입 설정](./Web/WebServer/Program.cs)
+    - [Program.cs 명시적으로 의존주입 설정](./Web/WebServer/Program.cs#L126): DI 설정 시작 지점 (약 120라인대)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repository](./SharedLibrary/Efcore/Repositories)
 
