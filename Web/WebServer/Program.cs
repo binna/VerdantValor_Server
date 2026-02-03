@@ -116,12 +116,11 @@ if (!builder.Environment.IsDevelopment())
 }
 #endregion
 
-// 인증 설정
+// 인증 설정, 커스텀한 인가를 사용하기 위해 반드시 필요하여 형식적으로 작업
 builder.Services.AddAuthentication("PassThroughAuth")
      .AddScheme<AuthenticationSchemeOptions, PassThroughAuthHandler>(
          "PassThroughAuth", null);
-
-// 인가(Authorization) 정책 설정,  Attribute 기반 인증 정책 적용 가능함
+// 인가 정책 설정, Attribute([Authorize]) 기반 정책 적용
 builder.Services.AddAuthorization(options => 
     options.AddPolicy(
         "SessionPolicy", 
@@ -151,7 +150,7 @@ app.UseRouting();
 // 세션 사용
 app.UseSession();           // 세션
 
-// 
+// 인증과 인가 정책 사용
 app.UseAuthentication();    // 사용자 인증
 app.UseAuthorization();     // 정책 기반 인가
 
