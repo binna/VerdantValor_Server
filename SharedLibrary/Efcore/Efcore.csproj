@@ -6,6 +6,7 @@
         <Nullable>enable</Nullable>
         <Configurations>Debug;Development</Configurations>
         <Platforms>AnyCPU</Platforms>
+        <RootNamespace>Efcore</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>
