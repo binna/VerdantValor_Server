@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using VerdantValorShared.Common.Web;
 using Redis;
+using Shared.Types;
 
 namespace WebServer.Pipeline;
 
@@ -31,8 +31,8 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
         var nickname = http.Session.GetString("nickname");
         var langStr = http.Session.GetString("language");
 
-        if (!Enum.TryParse<AppEnum.ELanguage>(langStr, out var language))
-            language = AppEnum.ELanguage.En;
+        if (!Enum.TryParse<ELanguage>(langStr, out var language))
+            language = ELanguage.En;
 
         if (userId == null || nickname == null)
         {

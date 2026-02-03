@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Common.Base;
 using Common.Helpers;
-using VerdantValorShared.Common.Web;
-using VerdantValorShared.DTOs.Web;
+using Common.Web;
+using Protocol.Web.Dtos;
+using Shared.Types;
 
 namespace WebServer.Pipeline;
 
@@ -42,7 +42,7 @@ public class DecryptReqMiddleware
                 
                 await context.Response.WriteAsJsonAsync(
                     ApiResponse.From(
-                        AppEnum.EResponseStatus.FailDecrypt, AppEnum.ELanguage.En));
+                        EResponseResult.FailDecrypt, ELanguage.En));
                 return;
             }
 
@@ -51,7 +51,7 @@ public class DecryptReqMiddleware
             if (encryptReq == null)
             {
                 await context.Response.WriteAsJsonAsync(
-                    ApiResponse.From(AppEnum.EResponseStatus.FailDecrypt, AppEnum.ELanguage.En));
+                    ApiResponse.From(EResponseResult.FailDecrypt, ELanguage.En));
                 return;
             }
 

@@ -1,6 +1,6 @@
-﻿using Serilog;
-using Common.Base;
-using VerdantValorShared.Common.Web;
+﻿using Common.Web;
+using Serilog;
+using Shared.Types;
 
 namespace WebServer.Pipeline;
 
@@ -35,6 +35,6 @@ public class GlobalExceptionMiddleware
 
         await context.Response.WriteAsJsonAsync(
             ApiResponse.From(
-                AppEnum.EResponseStatus.UnexpectedError, AppEnum.ELanguage.En));
+                EResponseResult.UnexpectedError, ELanguage.En));
     }
 }

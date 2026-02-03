@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerdantValorShared", "VerdantValorShared\VerdantValorShared.csproj", "{515EBD8F-4048-432F-A077-AFF026ED9EA3}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedLibrary", "SharedLibrary", "{1EF9613A-23CE-452D-BF45-8B911B09DBC9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "SharedLibrary\Common\Common.csproj", "{039E3CAE-38DB-4FFF-907C-41675A603D1B}"
@@ -21,6 +19,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer.Client", "Chat\ChatServer.Client\ChatServer.Client.csproj", "{A98DCEC9-C939-4A41-88D3-255067E8A683}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{EB5A961A-3377-404B-957E-DB89642BC2E4}"
+	ProjectSection(SolutionItems) = preProject
+		appsettings.Development.json = appsettings.Development.json
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer", "Web\WebServer\WebServer.csproj", "{788A3350-9B94-407B-89DA-74A21C19E688}"
 EndProject
@@ -34,16 +35,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "Echo\EchoServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer.Client", "Echo\EchoServer.Client\EchoServer.Client.csproj", "{199CE315-F8A9-44A2-8A32-9BE28686587C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VerdantValorShared", "VerdantValorShared", "{BE14B215-E8F2-4127-AFC9-64FE46B419CA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Protocol", "Protocol", "{6D7CD848-785E-42D2-80D5-FE4D260F4C78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "VerdantValorShared\Shared\Shared.csproj", "{E762DB89-21F8-4331-AAD8-0A393E2A386F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chat", "VerdantValorShared\Protocol\Chat\Chat.csproj", "{70EB279E-CC15-4F3B-AD66-218A274092AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "VerdantValorShared\Protocol\Web\Web.csproj", "{18F66E7F-5701-4AC3-A48E-1FA40095B69B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Development|Any CPU = Development|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{515EBD8F-4048-432F-A077-AFF026ED9EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{515EBD8F-4048-432F-A077-AFF026ED9EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{515EBD8F-4048-432F-A077-AFF026ED9EA3}.Development|Any CPU.ActiveCfg = Development|Any CPU
-		{515EBD8F-4048-432F-A077-AFF026ED9EA3}.Development|Any CPU.Build.0 = Development|Any CPU
 		{039E3CAE-38DB-4FFF-907C-41675A603D1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{039E3CAE-38DB-4FFF-907C-41675A603D1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{039E3CAE-38DB-4FFF-907C-41675A603D1B}.Development|Any CPU.ActiveCfg = Development|Any CPU
@@ -92,6 +99,18 @@ Global
 		{199CE315-F8A9-44A2-8A32-9BE28686587C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{199CE315-F8A9-44A2-8A32-9BE28686587C}.Development|Any CPU.ActiveCfg = Debug|Any CPU
 		{199CE315-F8A9-44A2-8A32-9BE28686587C}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{E762DB89-21F8-4331-AAD8-0A393E2A386F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E762DB89-21F8-4331-AAD8-0A393E2A386F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E762DB89-21F8-4331-AAD8-0A393E2A386F}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{E762DB89-21F8-4331-AAD8-0A393E2A386F}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{70EB279E-CC15-4F3B-AD66-218A274092AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70EB279E-CC15-4F3B-AD66-218A274092AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70EB279E-CC15-4F3B-AD66-218A274092AE}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{70EB279E-CC15-4F3B-AD66-218A274092AE}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{18F66E7F-5701-4AC3-A48E-1FA40095B69B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18F66E7F-5701-4AC3-A48E-1FA40095B69B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18F66E7F-5701-4AC3-A48E-1FA40095B69B}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{18F66E7F-5701-4AC3-A48E-1FA40095B69B}.Development|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{039E3CAE-38DB-4FFF-907C-41675A603D1B} = {1EF9613A-23CE-452D-BF45-8B911B09DBC9}
@@ -106,5 +125,9 @@ Global
 		{FC4B8CEF-EF5C-4EB0-A569-D5B1E0275652} = {57CD5E72-A238-4940-9E93-14237E5DD591}
 		{9B3D17BF-DBF3-4AD8-B69F-F53AFA9BAF29} = {57CD5E72-A238-4940-9E93-14237E5DD591}
 		{199CE315-F8A9-44A2-8A32-9BE28686587C} = {57CD5E72-A238-4940-9E93-14237E5DD591}
+		{6D7CD848-785E-42D2-80D5-FE4D260F4C78} = {BE14B215-E8F2-4127-AFC9-64FE46B419CA}
+		{E762DB89-21F8-4331-AAD8-0A393E2A386F} = {BE14B215-E8F2-4127-AFC9-64FE46B419CA}
+		{70EB279E-CC15-4F3B-AD66-218A274092AE} = {6D7CD848-785E-42D2-80D5-FE4D260F4C78}
+		{18F66E7F-5701-4AC3-A48E-1FA40095B69B} = {6D7CD848-785E-42D2-80D5-FE4D260F4C78}
 	EndGlobalSection
 EndGlobal

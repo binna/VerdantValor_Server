@@ -1,7 +1,8 @@
-﻿using Common.Base;
-using VerdantValorShared.Common.Web;
-using VerdantValorShared.DTOs.Web;
+﻿using Common.Web;
+using Protocol.Web.Dtos;
 using Redis;
+using Shared.Constants;
+using Shared.Types;
 
 namespace WebServer.Services;
 
@@ -19,12 +20,12 @@ public class RankingService
     }
 
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
-        AppEnum.ERankingType rankingType, int limit, 
-        AppEnum.ELanguage language = AppEnum.ELanguage.En)
+        ERanking rankingType, int limit, 
+        ELanguage language = ELanguage.En)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
             return ApiResponse<RankRes>
-                .From(AppEnum.EResponseStatus.InvalidInput, language);
+                .From(EResponseResult.InvalidInput, language);
 
         var redisRankings =
             await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
@@ -53,14 +54,13 @@ public class RankingService
         }
 
         return ApiResponse<RankRes>
-            .From(AppEnum.EResponseStatus.Success, language, result);
-
+            .From(EResponseResult.Success, language, result);
     }
 
     public async Task<ApiResponse<RankRes>> GetMemberRankAsync(
-        AppEnum.ERankingType rankingType, 
+        ERanking rankingType, 
         string userId, string nickname, 
-        AppEnum.ELanguage language = AppEnum.ELanguage.En)
+        ELanguage language = ELanguage.En)
     {
         var member = CreateMemberFieldName(userId, nickname);
         var rankingKey = CreateRankingKeyName(rankingType);
@@ -73,7 +73,7 @@ public class RankingService
 
         if (rank == null || score == null)
             return ApiResponse<RankRes>
-                .From(AppEnum.EResponseStatus.SuccessEmptyRanking, language);
+                .From(EResponseResult.SuccessEmptyRanking, language);
 
         var result = new RankRes
         {
@@ -88,24 +88,24 @@ public class RankingService
         };
 
         return ApiResponse<RankRes>
-            .From(AppEnum.EResponseStatus.Success, language, result);
+            .From(EResponseResult.Success, language, result);
     }
 
     public async Task<ApiResponse> AddScore(
-        AppEnum.ERankingType rankingType, 
+        ERanking rankingType, 
         string userId, string nickname, double score, 
-        AppEnum.ELanguage language = AppEnum.ELanguage.En)
+        ELanguage language = ELanguage.En)
     {
         if (score <= 0)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.ScoreCannotBeNegative, language);
+                .From(EResponseResult.ScoreCannotBeNegative, language);
         
         var member = CreateMemberFieldName(userId, nickname);
         
         await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, language);
+            .From(EResponseResult.Success, language);
     }
 
     private static string CreateMemberFieldName(string userId, string nickname)
@@ -113,7 +113,7 @@ public class RankingService
         return $"{userId}/{nickname}";
     }
 
-    private static string CreateRankingKeyName(AppEnum.ERankingType rankingType)
+    private static string CreateRankingKeyName(ERanking rankingType)
     {
         return $"{AppConstant.RANKING_ROOT}:{rankingType}";
     }

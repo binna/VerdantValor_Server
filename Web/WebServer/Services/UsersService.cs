@@ -1,8 +1,9 @@
-﻿using Common.Base;
-using Efcore.Repository;
+﻿using Efcore.Repository;
 using Common.Helpers;
-using VerdantValorShared.Common.Web;
+using Common.Web;
 using Redis;
+using Shared.Constants;
+using Shared.Types;
 
 namespace WebServer.Services;
 
@@ -32,86 +33,86 @@ public class UsersService
 
     public async Task<ApiResponse> JoinAsync(
         string email, string password, string nickname, 
-        AppEnum.ELanguage language = AppEnum.ELanguage.En)
+        ELanguage language = ELanguage.En)
     {
         if (string.IsNullOrWhiteSpace(email)
             || string.IsNullOrWhiteSpace(password)
             || string.IsNullOrWhiteSpace(nickname))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.EmptyRequiredField, language);
+                .From(EResponseResult.EmptyRequiredField, language);
 
         if (!ValidationHelper.IsValidEmail(email))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.EmailAlphabetNumberOnly, language);
+                .From(EResponseResult.EmailAlphabetNumberOnly, language);
         
         if (!ValidationHelper.IsValidNickname(nickname))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.NicknameAlphabetKoreanNumberOnly, language);
+                .From(EResponseResult.NicknameAlphabetKoreanNumberOnly, language);
 
         if (email.Length is 
                 < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.InvalidEmailLength, language);
+                .From(EResponseResult.InvalidEmailLength, language);
 
         if (nickname.Length is 
                 < AppConstant.NICKNAME_MIN_LENGTH or > AppConstant.NICKNAME_MAX_LENGTH)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.InvalidNicknameLength, language);
+                .From(EResponseResult.InvalidNicknameLength, language);
         
         var bExistsUser = await mUsersRepository.ExistsUserAsync(email);
         
         if (bExistsUser)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.EmailAlreadyExists, language);
+                .From(EResponseResult.EmailAlreadyExists, language);
 
         var containsForbiddenWord =
             bannedEmails.Any(word => email.Contains(word, StringComparison.OrdinalIgnoreCase));
 
         if (containsForbiddenWord)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.ForbiddenEmail, language);
+                .From(EResponseResult.ForbiddenEmail, language);
 
         containsForbiddenWord =
            bannedNicknames.Any(word => nickname.Contains(word, StringComparison.OrdinalIgnoreCase));
 
         if (containsForbiddenWord)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.ForbiddenNickname, language);
+                .From(EResponseResult.ForbiddenNickname, language);
 
         var hashPw = SecurityHelper.ComputeSha512Hash(password);
         await mUsersRepository.AddAsync(email, nickname, hashPw);
         
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, language);
+            .From(EResponseResult.Success, language);
     }
 
     public async Task<ApiResponse> LoginAsync(
         string email, string password, 
-        AppEnum.ELanguage language = AppEnum.ELanguage.En)
+        ELanguage language = ELanguage.En)
     {
         if (string.IsNullOrWhiteSpace(email)
             || string.IsNullOrWhiteSpace(password))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.EmptyRequiredField, language);
+                .From(EResponseResult.EmptyRequiredField, language);
 
         if (!ValidationHelper.IsValidEmail(email))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.EmailAlphabetNumberOnly, language);
+                .From(EResponseResult.EmailAlphabetNumberOnly, language);
         
         if (email.Length is 
             < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.InvalidEmailLength, language);
+                .From(EResponseResult.InvalidEmailLength, language);
         
         var user = await mUsersRepository.FindUserByEmailAsync(email);
 
         if (user == null)
             return ApiResponse
-                .From(AppEnum.EResponseStatus.NoData, language);
+                .From(EResponseResult.NoData, language);
 
         if (!SecurityHelper.VerifySha512Hash(password, user.Pw))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.NotMatchPw, language);
+                .From(EResponseResult.NotMatchPw, language);
         
         await mRedisClient.AddSessionInfoAsync(
             $"{user.UserId}", 
@@ -123,6 +124,6 @@ public class UsersService
             $"{language}");
         
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, language);
+            .From(EResponseResult.Success, language);
     }
 }

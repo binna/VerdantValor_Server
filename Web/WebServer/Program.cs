@@ -1,12 +1,12 @@
+using Common.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Common.Base;
 using Efcore;
 using Efcore.Repository;
-using Common.GameData;
 using Redis;
+using Shared.Constants;
 using WebServer.Pipeline;
 using WebServer.Services;
 
@@ -78,11 +78,11 @@ builder.Services
 try
 {
     // AppContext.BaseDirectory
-    // 실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
+    //  실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
     var baseDir = AppContext.BaseDirectory;
     var path = Path.GetFullPath(
-        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseStatus.json"));
-    ResponseStatusTable.Init(path);
+        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseResult.json"));
+    ResponseResultTable.Init(path);
     Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
 }
 catch (Exception ex)

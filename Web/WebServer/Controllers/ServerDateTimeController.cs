@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Common.Base;
-using VerdantValorShared.Common.Web;
-using VerdantValorShared.DTOs.Web;
 using Common.Types;
+using Common.Web;
+using Protocol.Web.Dtos;
+using Shared.Constants;
+using Shared.Types;
 
 namespace WebServer.Controllers;
 
@@ -20,7 +21,7 @@ public class ServerDateTimeController : Controller
         );
 
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, AppEnum.ELanguage.En);
+            .From(EResponseResult.Success, ELanguage.En);
     }
     
     [HttpPost("reset")]
@@ -30,6 +31,6 @@ public class ServerDateTimeController : Controller
         ServerDateTime.ResetServerTimeNow();
         
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, AppEnum.ELanguage.En);
+            .From(EResponseResult.Success, ELanguage.En);
     }
 }

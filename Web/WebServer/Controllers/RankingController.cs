@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Common.Base;
-using VerdantValorShared.Common.Web;
-using VerdantValorShared.DTOs.Web;
+using Common.Web;
+using Protocol.Web.Dtos;
+using Shared.Constants;
+using Shared.Types;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -25,27 +26,27 @@ public class RankingController : Controller
         var userId = this.GetUserId();
         var language = this.GetLanguage();
         
-        if (!Enum.TryParse<AppEnum.ERankingScope>(request.Scope, out var rankingScope) 
-                || !Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
+        if (!Enum.TryParse<ERankingScope>(request.Scope, out var rankingScope) 
+                || !Enum.TryParse<ERanking>(request.Type, out var rankingType))
             return ApiResponse<RankRes>
-                .From(AppEnum.EResponseStatus.InvalidInput, language);
+                .From(EResponseResult.InvalidInput, language);
         
         switch (rankingScope)
         {
-            case AppEnum.ERankingScope.My:
+            case ERankingScope.My:
             {
                 var nickname = this.GetNickname();
                 return await mRankingService.GetMemberRankAsync(
                     rankingType, userId, nickname, language);
             }
-            case AppEnum.ERankingScope.Global:
+            case ERankingScope.Global:
             {
                 return await mRankingService.GetTopRankingAsync(
                     rankingType, request.Limit, language);
             }
         }
         return ApiResponse<RankRes>
-            .From(AppEnum.EResponseStatus.Success, language);
+            .From(EResponseResult.Success, language);
     }
 
     [HttpPost("Entries")]
@@ -56,9 +57,9 @@ public class RankingController : Controller
         var language = this.GetLanguage();
         var nickname = this.GetNickname();
 
-        if (!Enum.TryParse<AppEnum.ERankingType>(request.Type, out var rankingType))
+        if (!Enum.TryParse<ERanking>(request.Type, out var rankingType))
             return ApiResponse<RankRes>
-                .From(AppEnum.EResponseStatus.InvalidInput, language);
+                .From(EResponseResult.InvalidInput, language);
 
         return await mRankingService.AddScore(
             rankingType, userId, nickname, request.Score, language);

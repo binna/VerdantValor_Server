@@ -23,7 +23,7 @@ public class ApiResponse<T>(bool isSuccess, int code, string message, T? result 
     : ApiResponse(isSuccess, code, message)
 {
     public T? Result { get; } = result;
-
+    
     public static ApiResponse<T> From(EResponseResult status, ELanguage language, T? result = default)
     {
         var statusDefinition = ResponseResultTable.GetStatusDefinition(status);

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using VerdantValorShared.Common.Web;
+using Shared.Types;
 
 namespace WebServer;
 
@@ -10,9 +10,9 @@ public static class HttpContextExtension
         return (string)controller.HttpContext.Items["userId"]!;
     }
 
-    public static AppEnum.ELanguage GetLanguage(this Controller controller)
+    public static ELanguage GetLanguage(this Controller controller)
     {
-        return (AppEnum.ELanguage)controller.HttpContext.Items["language"]!;
+        return (ELanguage)controller.HttpContext.Items["language"]!;
     }
 
     public static string GetNickname(this Controller controller)

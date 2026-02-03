@@ -1,10 +1,10 @@
 ﻿using System.Text.Json;
+using Common.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
-using Common.Base;
 using Efcore;
-using VerdantValorShared.Common.Web;
+using Shared.Types;
 
 namespace WebServer.Pipeline;
 
@@ -39,7 +39,7 @@ public class DBContextActionFilter : ActionFilterAttribute
                     StatusCode = StatusCodes.Status200OK,
                     ContentType = "application/json",
                     Content = JsonSerializer.Serialize(
-                        ApiResponse.From(AppEnum.EResponseStatus.DbError, AppEnum.ELanguage.En))
+                        ApiResponse.From(EResponseResult.DbError, ELanguage.En))
                 };
             }
         }

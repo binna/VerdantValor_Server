@@ -1,8 +1,8 @@
-﻿using Common.Base;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using VerdantValorShared.Common.Web;
 using Redis;
+using Shared.Constants;
+using Shared.Types;
 using StackExchange.Redis;
 using WebServer.Services;
 using Xunit.Abstractions;
@@ -36,7 +36,7 @@ public class RankingServiceTest
     public async Task Test_GetTopRanking_Limit_길이가_범위_밖일때_Fail(int limit)
     {
         mRedisClient.GetTopRankingByType(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", limit)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", limit)
             .Returns(Task.FromResult(
                 new []
                 {
@@ -48,8 +48,8 @@ public class RankingServiceTest
                 }
             ));
         
-        var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, limit);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.InvalidInput}"); 
+        var response = await mRankingService.GetTopRankingAsync(ERanking.All, limit);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidInput}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -57,11 +57,11 @@ public class RankingServiceTest
     public async Task Test_GetTopRanking_랭킹이_없을때_Success()
     {
         mRedisClient.GetTopRankingByType(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", 100)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", 100)
             .Returns(Task.FromResult(Array.Empty<SortedSetEntry>()));
         
-        var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, 100);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
+        var response = await mRankingService.GetTopRankingAsync(ERanking.All, 100);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }
     
@@ -73,7 +73,7 @@ public class RankingServiceTest
     public async Task Test_GetTopRanking_Success(int limit)
     {
         mRedisClient.GetTopRankingByType(
-            $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", limit)
+            $"{AppConstant.RANKING_ROOT}:{ERanking.All}", limit)
             .Returns(Task.FromResult(
                 new []
                 {
@@ -85,8 +85,8 @@ public class RankingServiceTest
                 }
             ));
         
-        var response = await mRankingService.GetTopRankingAsync(AppEnum.ERankingType.All, limit);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
+        var response = await mRankingService.GetTopRankingAsync(ERanking.All, limit);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
@@ -102,15 +102,15 @@ public class RankingServiceTest
         double? score = double.TryParse(scoreText, out var s) ? s : null;
         
         mRedisClient.GetMemberRank(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", member)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", member)
             .Returns(Task.FromResult(rank));
         
         mRedisClient.GetMemberScore(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", member)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", member)
             .Returns(Task.FromResult(score));
         
-        var response = await mRankingService.GetMemberRankAsync(AppEnum.ERankingType.All, userId, nickname);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.SuccessEmptyRanking}"); 
+        var response = await mRankingService.GetMemberRankAsync(ERanking.All, userId, nickname);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.SuccessEmptyRanking}"); 
         Assert.True(response.IsSuccess);
     }
     
@@ -119,15 +119,15 @@ public class RankingServiceTest
     public async Task Test_GetMemberRank_Success(string member, string userId, string nickname, long rank, double score)
     {
         mRedisClient.GetMemberRank(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", member)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", member)
             .Returns(Task.FromResult<long?>(rank));
         
         mRedisClient.GetMemberScore(
-                $"{AppConstant.RANKING_ROOT}:{AppEnum.ERankingType.All}", member)
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", member)
             .Returns(Task.FromResult<double?>(score));
         
-        var response = await mRankingService.GetMemberRankAsync(AppEnum.ERankingType.All, userId, nickname);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
+        var response = await mRankingService.GetMemberRankAsync(ERanking.All, userId, nickname);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion
@@ -139,8 +139,8 @@ public class RankingServiceTest
     [InlineData("3", "user3", -110)]
     public async Task Test_AddScore_점수가_음수일때_Fail(string userId, string nickname, double score)
     {
-        var response = await mRankingService.AddScore(AppEnum.ERankingType.All, userId, nickname, score);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.ScoreCannotBeNegative}"); 
+        var response = await mRankingService.AddScore(ERanking.All, userId, nickname, score);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ScoreCannotBeNegative}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -148,8 +148,8 @@ public class RankingServiceTest
     [InlineData("1", "user1", 5000)]
     public async Task Test_AddScore_Success(string userId, string nickname, double score)
     {
-        var response = await mRankingService.AddScore(AppEnum.ERankingType.All, userId, nickname, score);
-        Assert.Equal($"{response.Code}", $"{(int)AppEnum.EResponseStatus.Success}"); 
+        var response = await mRankingService.AddScore(ERanking.All, userId, nickname, score);
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }
     #endregion

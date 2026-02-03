@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Common.Web;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Common.Base;
-using VerdantValorShared.Common.Web;
-using VerdantValorShared.DTOs.Web;
+using Protocol.Web.Dtos;
+using Shared.Constants;
+using Shared.Types;
 using WebServer.Services;
 
 namespace WebServer.Controllers;
@@ -22,21 +23,21 @@ public class UsersController : Controller
     [AllowAnonymous]
     public async Task<ApiResponse> Auth([FromBody] AuthReq request)
     {
-        if (!Enum.TryParse<AppEnum.ELanguage>(request.Language, out var language))
-            language = AppEnum.ELanguage.En;
+        if (!Enum.TryParse<ELanguage>(request.Language, out var language))
+            language = ELanguage.En;
 
-        if (!Enum.TryParse<AppEnum.EAuthType>(request.AuthType, out var authType))
+        if (!Enum.TryParse<EAuth>(request.AuthType, out var authType))
             return ApiResponse
-                .From(AppEnum.EResponseStatus.InvalidInput, language);
+                .From(EResponseResult.InvalidInput, language);
 
         switch (authType)
         {
-            case AppEnum.EAuthType.Join:
+            case EAuth.Join:
             {
                 return await mUsersService.JoinAsync(
                     request.Email, request.Pw, request.Nickname, language);
             }
-            case AppEnum.EAuthType.Login:
+            case EAuth.Login:
             {
                 return await mUsersService.LoginAsync(
                     request.Email, request.Pw, language);
@@ -44,6 +45,6 @@ public class UsersController : Controller
         }
         
         return ApiResponse
-            .From(AppEnum.EResponseStatus.Success, language);
+            .From(EResponseResult.Success, language);
     }
 }
