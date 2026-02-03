@@ -1,9 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using MemoryPack;
+using Protocol.Chat.Frames;
+using Protocol.Chat.Payloads;
+using Shared.Types;
 using Tcp;
-using VerdantValorShared.Common.ChatServer;
-using VerdantValorShared.Packet;
-using VerdantValorShared.Packet.ChatServer;
 
 namespace ChatServer.Client;
 
@@ -14,12 +15,12 @@ public class ChatSocketClient : NetworkSocket
     
     public ChatSocketClient(IPAddress ipAddress, int port, CancellationToken cancellationToken = default) 
         : base(
-            new Dictionary<AppEnum.PacketType, Func<SocketContext, CancellationToken, Task>>
+            new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
             {
-                [AppEnum.PacketType.RoomList] = HandleRoomListAsync,
-                [AppEnum.PacketType.ExitRoom] = HandleExitRoomAsync,
-                [AppEnum.PacketType.SendMessage] = HandleSendMessageAsync,
-                [AppEnum.PacketType.RoomNotification] = HandleRoomNotificationAsync
+                [EPacket.RoomList] = HandleRoomListAsync,
+                [EPacket.ExitRoom] = HandleExitRoomAsync,
+                [EPacket.SendMessage] = HandleSendMessageAsync,
+                [EPacket.RoomNotification] = HandleRoomNotificationAsync
             }, cancellationToken)
     {
         mClient = new TcpClient(ipAddress.ToString(), port);
@@ -42,13 +43,13 @@ public class ChatSocketClient : NetworkSocket
 
             if (messageInput.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
             {
-                var exitRoomPacket = new Packet<ExitRoom>(new ExitRoom()); 
+                var exitRoomPacket = new Packet<ExitRoomReq>(EPacket.ExitRoom, new ExitRoomReq());
                 await WritePacket(tcpClient.GetStream(), exitRoomPacket, cancellationToken);
                 return;
             }
   
             var sendMessagePacket = 
-                new Packet<SendMessage>(new SendMessage { Message = messageInput });
+                new Packet<SendMessageReq>(EPacket.SendMessage, new SendMessageReq { Message = messageInput });
             
             await WritePacket(tcpClient.GetStream(), sendMessagePacket, cancellationToken);
         }
@@ -64,13 +65,15 @@ public class ChatSocketClient : NetworkSocket
         if (ulong.TryParse(userIdInput, out var userId))
         {
             var packet = 
-                new Packet<Login>(new Login
-                {
-                    SessionId = $"{Guid.NewGuid()}",
-                    UserId = userId
-                });
+                new Packet<LoginReq>(
+                    EPacket.Login, 
+                    new LoginReq
+                    {
+                        SessionId = $"{Guid.NewGuid()}",
+                        UserId = userId
+                    });
             
-            await stream.WriteAsync(packet.From(), mCts.Token);
+            await stream.WriteAsync(packet.PacketBytes, mCts.Token);
         }
         Console.WriteLine("end =============");
     }
@@ -82,8 +85,8 @@ public class ChatSocketClient : NetworkSocket
         
         var stream = mClient.GetStream();
         
-        var packet = new Packet<RoomList>(new RoomList());
-        await stream.WriteAsync(packet.From(), mCts!.Token);
+        var packet = new Packet<RoomListReq>(EPacket.RoomList, new RoomListReq());
+        await stream.WriteAsync(packet.PacketBytes, mCts.Token);
     }
 
     public async Task SendCreateRoomAsync()
@@ -93,9 +96,9 @@ public class ChatSocketClient : NetworkSocket
         
         var stream = mClient.GetStream();
         
-        var packet = new Packet<CreateRoom>(new CreateRoom());
-        await stream.WriteAsync(packet.From(), mCts!.Token);
-        await HandleWriteAsync(mClient, mCts!.Token);
+        var packet = new Packet<CreateRoomReq>(EPacket.CreateRoom, new CreateRoomReq());
+        await stream.WriteAsync(packet.PacketBytes, mCts.Token);
+        await HandleWriteAsync(mClient, mCts.Token);
         
     }
 
@@ -110,12 +113,13 @@ public class ChatSocketClient : NetworkSocket
         var roomIdInput = Console.ReadLine();
         if (int.TryParse(roomIdInput, out var roomId))
         {
-            var packet = new Packet<EnterRoom>(
-                new EnterRoom
+            var packet = new Packet<EnterRoomReq>(
+                EPacket.EnterRoom,
+                new EnterRoomReq
                 {
                     RoomId = roomId
                 });
-            await stream.WriteAsync(packet.From(), mCts.Token);
+            await stream.WriteAsync(packet.PacketBytes, mCts.Token);
             await HandleWriteAsync(mClient, mCts.Token);
         }
     }
@@ -129,8 +133,7 @@ public class ChatSocketClient : NetworkSocket
     
     private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = new RoomList();
-        payload.Parse(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer.Deserialize<RoomListReq>(socketContext.PayloadBuffer);
 
         Console.WriteLine("Room List=================");
         foreach (var roomId in payload.RoomIds)
@@ -142,15 +145,13 @@ public class ChatSocketClient : NetworkSocket
     
     private static async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = new SendMessage();
-        payload.Parse(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer.Deserialize<SendMessageReq>(socketContext.PayloadBuffer);
         Console.WriteLine($"Message: {payload.Message}");
     }
     
     private static async Task HandleRoomNotificationAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = new RoomNotification();
-        payload.Parse(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer.Deserialize<RoomNotificationReq>(socketContext.PayloadBuffer);
         Console.WriteLine($"Message: {payload.Notification}");
     }
     #endregion
