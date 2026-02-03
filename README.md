@@ -48,7 +48,7 @@
 - EF Core + Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
   - 코드:
     - Program.cs
-      - [명시적으로 의존주입 설정](./Web/WebServer/Program.cs#L126)
+      - [명시적으로 의존주입 설정](./Web/WebServer/Program.cs#L130)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
@@ -64,7 +64,8 @@
     - Program.cs
       - [세션 설정](./Web/WebServer/Program.cs#L30)
       - [세션 사용](./Web/WebServer/Program.cs#L151)
-      - [Redis 세션 공유 설정](./Web/WebServer/Program.cs#L58)
+      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L58)
+    - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
 
 #### 공용 코드 관리 및 서버 확장성 
 - SharedLibrary로 서버 전반의 공용 코드 통합 관리
@@ -86,10 +87,11 @@
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
     - Program.cs
-      - [설정](./Web/WebServer/Program.cs#L117)
-      - [사용](./Web/WebServer/Program.cs#L149)
-        - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
-    - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
+      - [인증과 인가 설정](./Web/WebServer/Program.cs#L119)
+      - [인증과 인가 사용](./Web/WebServer/Program.cs#L149)
+    - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
+    - [실제 사용 예시](./Web/WebServer/Controllers/RankingController.cs#L23)
+    
 - Request Body 암호화를 통해 클라이언트-서버 통신 데이터 보호
   - 코드:
     - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Common/Helpers/SecurityHelper.cs)
