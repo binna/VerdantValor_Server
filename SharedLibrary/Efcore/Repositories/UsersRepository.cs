@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Common.Models;
 
-namespace Efcore.Repository;
+namespace Efcore.Repositories;
 
 public class UsersRepository : IUsersRepository
 {

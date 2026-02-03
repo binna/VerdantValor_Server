@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Efcore.Converter;
+using Efcore.Converters;
 using Common.Models;
 using Common.Types;
 

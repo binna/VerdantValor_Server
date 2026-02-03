@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Common.Types;
 
-namespace Efcore.Converter;
+namespace Efcore.Converters;
 
 public class ServerDateTimeConverter : ValueConverter<ServerDateTime, DateTime>
 {

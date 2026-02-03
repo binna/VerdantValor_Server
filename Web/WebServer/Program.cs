@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Efcore;
-using Efcore.Repository;
+using Efcore.Repositories;
 using Redis;
 using Shared.Constants;
 using WebServer.Pipeline;

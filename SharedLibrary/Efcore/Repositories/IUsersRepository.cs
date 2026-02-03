@@ -1,6 +1,6 @@
 ﻿using Common.Models;
 
-namespace Efcore.Repository;
+namespace Efcore.Repositories;
 
 public interface IUsersRepository
 {

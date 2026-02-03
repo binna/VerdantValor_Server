@@ -1,4 +1,4 @@
-﻿using Efcore.Repository;
+﻿using Efcore.Repositories;
 using Common.Helpers;
 using Common.Web;
 using Redis;

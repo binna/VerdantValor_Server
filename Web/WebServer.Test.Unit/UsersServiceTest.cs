@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Efcore.Repository;
+using Efcore.Repositories;
 using Common.Models;
 using Redis;
 using Shared.Types;
