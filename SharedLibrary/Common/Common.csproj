@@ -4,8 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Configurations>Debug;Development</Configurations>
-        <Platforms>AnyCPU</Platforms>
+        <RootNamespace>Common</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -15,7 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\VerdantValorShared\VerdantValorShared.csproj" />
+      <ProjectReference Include="..\..\VerdantValorShared\Protocol\Web\Web.csproj" />
+      <ProjectReference Include="..\..\VerdantValorShared\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>

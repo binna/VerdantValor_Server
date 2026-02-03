@@ -1,6 +1,6 @@
-﻿using Common.Base;
-using Common.Helpers;
+﻿using Common.Helpers;
 using Org.BouncyCastle.Security;
+using Shared.Constants;
 
 namespace Common.Types;
 

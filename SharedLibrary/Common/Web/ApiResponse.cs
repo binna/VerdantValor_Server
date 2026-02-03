@@ -1,7 +1,6 @@
-﻿using Common.GameData;
-using VerdantValorShared.Common.Web;
+﻿using Shared.Types;
 
-namespace Common.Base;
+namespace Common.Web;
 
 public class ApiResponse(bool isSuccess, int code, string message)
 {
@@ -9,9 +8,9 @@ public class ApiResponse(bool isSuccess, int code, string message)
     public int Code { get; } = code;
     public string Message { get; } = message;
     
-    public static ApiResponse From(AppEnum.EResponseStatus status, AppEnum.ELanguage language)
+    public static ApiResponse From(EResponseResult status, ELanguage language)
     {
-        var statusDefinition = ResponseStatusTable.GetStatusDefinition(status);
+        var statusDefinition = ResponseResultTable.GetStatusDefinition(status);
         
         return new ApiResponse(
             statusDefinition.IsSuccess, 
@@ -25,9 +24,9 @@ public class ApiResponse<T>(bool isSuccess, int code, string message, T? result 
 {
     public T? Result { get; } = result;
 
-    public static ApiResponse<T> From(AppEnum.EResponseStatus status, AppEnum.ELanguage language, T? result = default)
+    public static ApiResponse<T> From(EResponseResult status, ELanguage language, T? result = default)
     {
-        var statusDefinition = ResponseStatusTable.GetStatusDefinition(status);
+        var statusDefinition = ResponseResultTable.GetStatusDefinition(status);
         
         return new ApiResponse<T>(
             statusDefinition.IsSuccess, 

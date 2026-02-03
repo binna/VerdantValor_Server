@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Common.Base;
+namespace Common.Web;
 
 public static class AppReadonly
 {

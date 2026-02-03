@@ -1,8 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Common.Base;
-using VerdantValorShared.DTOs.Web;
+using Common.Web;
+using Protocol.Web.Dtos;
 
 namespace Common.Helpers;
 
