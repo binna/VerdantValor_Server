@@ -10,6 +10,8 @@
   서버와 클라이언트가 함께 사용하는 코드와 파일을 관리합니다.    
 - [개발 스케줄 보드](https://github.com/users/binna/projects/1)    
   프로젝트 일정과 작업 계획을 정리한 보드입니다.
+- [위키](https://github.com/binna/VerdantValor_Server/wiki)     
+  프로젝트 개발 과정에서의 기술 학습과 설계 기록을 정리한 문서입니다.     
 
 <br><br>
 
