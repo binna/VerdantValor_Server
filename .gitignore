@@ -716,7 +716,7 @@ obj/
 # End of https://www.toptal.com/developers/gitignore/api/csharp,visualstudio,dotnetcore,aspnetcore
 
 # Development secrets
-**/appsettings.Development.json
+
 
 # Optional: static library folders
 **/wwwroot/lib/
@@ -808,3 +808,4 @@ fabric.properties
 # ETC
 # appsettings.json
 # appsettings.*.json
+# **/appsettings.Development.json
