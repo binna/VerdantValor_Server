@@ -30,9 +30,7 @@ public class RankingService
         var redisRankings =
             await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
-        List<RankInfo> rankingList = new(limit);
-        
-        var result = new RankRes { Rankings = rankingList };
+        var result = new RankRes();
 
         for (var i = 0; i < redisRankings.Length; i++)
         {
@@ -45,7 +43,7 @@ public class RankingService
                     new { userId = userInfo[0] });
             }
             
-            rankingList.Add(new RankInfo
+            result.Rankings.Add(new RankInfo
             {
                 Rank = i + 1,
                 Nickname = userInfo[1],
@@ -74,18 +72,16 @@ public class RankingService
         if (rank == null || score == null)
             return ApiResponse<RankRes>
                 .From(EResponseResult.SuccessEmptyRanking, language);
-
-        var result = new RankRes
-        {
-            Rankings = [
-                new RankInfo
-                {
-                    Rank = (int)rank + 1,
-                    Nickname = nickname,
-                    Score = (double)score
-                }
-            ]
-        };
+        
+        var result = new RankRes();
+        result.Rankings.Add(
+            new RankInfo
+            {
+                Rank = (int)rank + 1,
+                Nickname = nickname,
+                Score = (double)score
+            }
+        );
 
         return ApiResponse<RankRes>
             .From(EResponseResult.Success, language, result);
