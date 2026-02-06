@@ -150,7 +150,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
 
-    // TODO
+    // TODO 삭제랑 로그아웃 둘다 작업 필요
     private static async Task HandleDeleteRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         LoginRes response;

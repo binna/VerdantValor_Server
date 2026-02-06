@@ -14,6 +14,12 @@ public class ChatSocketClient : NetworkSocket
     //  반드시 req, res 1:1 관계이어야 한다면 필요할 것 같아서
     //  만약 필요없다면 패킷 구조 자체를 수정해야함
     
+    // TODO 지금은 switch문으로 했지만
+    //  추후 게임 데이터 기반으로 Table 만들어서 Message 뽑아내는 방식으로 바꿀 예정
+    
+    // TODO 웹 서버 부분도 isSuccess, Message 제거하고 게임 데이터 Table 기반으로 할지도 고민해보기
+    //  이렇게되면 웹서버 Response 용량을 절약할 수 있어 최종적으로 패킷 절약으로 비용 절감을 노릴 수 있다고 생각
+    
     private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
     
