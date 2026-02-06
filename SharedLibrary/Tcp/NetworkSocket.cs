@@ -53,10 +53,8 @@ public abstract class NetworkSocket
                 if (result == ReadPacketReturn.NeedMoreData)
                     break;
 
-                if (Enum.IsDefined(typeof(EPacket), socketContext.Header.PacketType))
-                {
+                if (Enum.IsDefined(socketContext.Header.PacketType))
                     await mPacketHandlers[socketContext.Header.PacketType](socketContext, cancellationToken);
-                }
 
                 if (result == ReadPacketReturn.PacketReady)
                     break;

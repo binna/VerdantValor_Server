@@ -15,7 +15,15 @@ public class ChatSocketServer : NetworkSocket
     private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
 
-    private static byte[] mRoomIdsPacket = [];
+    private static Packet<RoomListRes> mRoomListResPacket = new(
+        EPacket.RoomList,
+        new RoomListRes
+        {
+            Code = (int)EResponseResult.Success,
+            RoomCount = 0,
+            RoomIds = []
+        });
+
     private static bool mbUpdated;
     
     private readonly TcpListener mListener;
@@ -74,14 +82,13 @@ public class ChatSocketServer : NetworkSocket
         if (roomIds.Length == 0)
             return;
 
-        var payload = new RoomListReq
+        var payload = new RoomListRes
         {
+            Code = (int)EResponseResult.Success,
             RoomCount = roomIds.Length,
             RoomIds = roomIds
         };
-        var packet = new Packet<RoomListReq>(EPacket.RoomList, payload);
-        
-        mRoomIdsPacket = MemoryPackSerializer.Serialize(packet);
+        mRoomListResPacket = new Packet<RoomListRes>(EPacket.RoomList, payload);
     }
 
     #region 패킷 핸들러 함수 모음
@@ -100,13 +107,19 @@ public class ChatSocketServer : NetworkSocket
 
         socketContext.IsLogin = true;
         Console.WriteLine("연결된 유저: " + mLoginSessions.Count);
+        
+        var response = new CreateRoomRes { Code = (int)EResponseResult.Success };
+        var packet = new Packet<CreateRoomRes>(EPacket.Login, response);
+        await WritePacket(socketContext.Stream, packet, cancellationToken);
     }
     
     private static async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
-            // TODO 패킷 날릴 예정
+            var response = new CreateRoomRes { Code = (int)EResponseResult.LoginRequired };
+            var packet = new Packet<CreateRoomRes>(EPacket.CreateRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
 
@@ -115,50 +128,72 @@ public class ChatSocketServer : NetworkSocket
             var sessions = new ConcurrentDictionary<ulong, Session>();
             sessions.TryAdd(socketContext.Session.UserId, socketContext.Session);
 
-            int newRoomId;
+            int newRoomId; 
             do
             {
                 newRoomId = Interlocked.Increment(ref roomCount);
             } while (!mRoomSessions.TryAdd(newRoomId, sessions));
             socketContext.Session.RoomId = newRoomId;
             mbUpdated = true;
-            Console.WriteLine($"방 만들기 성공 {socketContext.Session.RoomId}");
+            Console.WriteLine($"[Notice] 방 만들기 성공({socketContext.Session.RoomId})");
+            
+            var response = new CreateRoomRes { Code = (int)EResponseResult.Success };
+            var packet = new Packet<CreateRoomRes>(EPacket.CreateRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
+            return;
+        }
+
+        {
+            var response = new CreateRoomRes { Code = (int)EResponseResult.AlreadyInRoom };
+            var packet = new Packet<CreateRoomRes>(EPacket.CreateRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
         }
     }
 
+    // TODO
     private static async Task HandleDeleteRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
+        LoginRes response;
+        
         if (!socketContext.IsLogin)
+            response = new LoginRes { Code = (int)EResponseResult.LoginRequired };
+        
+        else if (socketContext.Session.RoomId == 0)
+            response = new LoginRes { Code = (int)EResponseResult.AlreadyOutOfRoom };
+
+        else
         {
-            // TODO 패킷 날릴 예정
-            return;
+            response = new LoginRes { Code = (int)EResponseResult.Success };
+            await DeleteRoomAsync(socketContext.Session.RoomId, cancellationToken);
         }
         
-        if (socketContext.Session.RoomId == 0)
-        {
-            // TODO 패킷 날릴 예정
-            return;
-        }
-
-        await DeleteRoomAsync(socketContext.Session.RoomId, cancellationToken);
+        var packet = new Packet<LoginRes>(EPacket.Login, response);
+        await WritePacket(socketContext.Stream, packet, cancellationToken);
     }
 
     private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
-            // TODO 패킷 날릴 예정
+            var response = new RoomListRes { Code = (int)EResponseResult.LoginRequired };
+            var packet = new Packet<RoomListRes>(EPacket.CreateRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
-                        
-        await socketContext.Session.Stream.WriteAsync(mRoomIdsPacket, cancellationToken);
+
+        {
+            var packet = mRoomListResPacket;
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
+        }
     }
     
     private static async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
-            // TODO 패킷 날릴 예정
+            var response = new EnterRoomRes { Code = (int)EResponseResult.LoginRequired };
+            var packet = new Packet<EnterRoomRes>(EPacket.EnterRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
 
@@ -171,16 +206,29 @@ public class ChatSocketServer : NetworkSocket
                 roomSessions.TryAdd(socketContext.Session.UserId, socketContext.Session);
                 socketContext.Session.RoomId = payload.RoomId;
                 
+                var response = new EnterRoomRes { Code = (int)EResponseResult.Success };
+                var packet = new Packet<EnterRoomRes>(EPacket.EnterRoom, response);
+                await WritePacket(socketContext.Stream, packet, cancellationToken);
+                
                 await BroadcastRoomNotificationAsync(
                     socketContext.Session.RoomId, 
                     $"{socketContext.Session.UserId}가 입장하셨습니다.", 
                     cancellationToken);
-                Console.WriteLine($"방 들어가기 성공 {socketContext.Session.RoomId}");
+                return;
             }
-            else
+            
             {
-                Console.WriteLine($"검색된 방이 없습니다.");
+                var response = new EnterRoomRes { Code = (int)EResponseResult.NoRoomSelected };
+                var packet = new Packet<EnterRoomRes>(EPacket.EnterRoom, response);
+                await WritePacket(socketContext.Stream, packet, cancellationToken);
+                return;
             }
+        }
+
+        {
+            var response = new EnterRoomRes { Code = (int)EResponseResult.AlreadyInRoom };
+            var packet = new Packet<EnterRoomRes>(EPacket.EnterRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
         }
     }
     
@@ -188,13 +236,17 @@ public class ChatSocketServer : NetworkSocket
     {
         if (!socketContext.IsLogin)
         {
-            // TODO 패킷 날릴 예정
+            var response = new ExitRoomRes { Code = (int)EResponseResult.LoginRequired };
+            var packet = new Packet<ExitRoomRes>(EPacket.ExitRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
         
         if (socketContext.Session.RoomId == 0)
         {
-            // TODO 패킷 날릴 예정
+            var response = new ExitRoomRes { Code = (int)EResponseResult.AlreadyOutOfRoom };
+            var packet = new Packet<ExitRoomRes>(EPacket.ExitRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
 
@@ -202,12 +254,16 @@ public class ChatSocketServer : NetworkSocket
         {
             roomSessions.TryRemove(socketContext.Session.UserId, out _);
             mbUpdated = true;
+            
+            var response = new ExitRoomRes { Code = (int)EResponseResult.Success };
+            var packet = new Packet<ExitRoomRes>(EPacket.ExitRoom, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
+            
             await BroadcastRoomNotificationAsync(
                 socketContext.Session.RoomId, 
                 $"{socketContext.Session.UserId}가 퇴장하셨습니다.", 
                 cancellationToken);
             socketContext.Session.RoomId = 0;
-            Console.WriteLine($"방 나가기 성공 {socketContext.Session.RoomId}");
         }
     }
     
@@ -215,16 +271,29 @@ public class ChatSocketServer : NetworkSocket
     {
         if (!socketContext.IsLogin)
         {
-            // TODO 패킷 날릴 예정
+            var response = new SendMessageRes { Code = (int)EResponseResult.LoginRequired };
+            var packet = new Packet<SendMessageRes>(EPacket.SendMessage, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
+            return;
+        }
+        
+        if (socketContext.Session.RoomId == 0)
+        {
+            var response = new SendMessageRes { Code = (int)EResponseResult.NotInRoom };
+            var packet = new Packet<SendMessageRes>(EPacket.SendMessage, response);
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
 
-        if (socketContext.Session.RoomId != 0)
         {
             var payload = MemoryPackSerializer.Deserialize<SendMessageReq>(socketContext.PayloadBuffer);
-            Console.WriteLine($"받음 : {payload.Message}");
-            
-            var packet = new Packet<SendMessageReq>(socketContext.Header, payload);
+            var response = new SendMessageRes
+            {
+                Code = (int)EResponseResult.Success, 
+                userId = socketContext.Session.UserId, 
+                Message = payload.Message
+            };
+            var packet = new Packet<SendMessageRes>(EPacket.SendMessage, response);
             await BroadcastChatMessageAsync(socketContext.Session.RoomId, packet, cancellationToken);
         }
     }
@@ -243,16 +312,13 @@ public class ChatSocketServer : NetworkSocket
     }
     #endregion
     
-    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessageReq> packet, CancellationToken cancellationToken)
+    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessageRes> packet, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
-            var packetBuffer = packet.PacketBytes;
-            
             foreach (var client in roomSessions)
             {
-                Console.WriteLine($"채팅발송:{roomId}//{client.Value.SessionId}//{client.Value.UserId}");
-                await client.Value.Stream.WriteAsync(packetBuffer , cancellationToken);
+                await WritePacket(client.Value.Stream, packet, cancellationToken); 
             }
         }
     }
@@ -261,16 +327,12 @@ public class ChatSocketServer : NetworkSocket
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
-            var packet = new Packet<RoomNotificationReq>(
-                EPacket.RoomNotification,
-                new RoomNotificationReq { Notification = notificationMessage });
-            
-            var packetBuffer = packet.PacketBytes;
+            var response = new RoomNotification { Notification = notificationMessage };
+            var packet = new Packet<RoomNotification>(EPacket.RoomNotification, response);
             
             foreach (var client in roomSessions)
             {
-                Console.WriteLine($"공지발송:{client.Value.SessionId}//{client.Value.UserId}");
-                await client.Value.Stream.WriteAsync(packetBuffer, cancellationToken);
+                await WritePacket(client.Value.Stream, packet, cancellationToken);
             }
         }
     }
@@ -288,7 +350,6 @@ public class ChatSocketServer : NetworkSocket
             {
                 roomSession.Value.RoomId = 0;
             }
-            Console.WriteLine($"방 삭제 성공 {roomId}");
         }
     }
 }
