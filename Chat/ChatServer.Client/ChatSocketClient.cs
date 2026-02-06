@@ -20,6 +20,9 @@ public class ChatSocketClient : NetworkSocket
     // TODO 웹 서버 부분도 isSuccess, Message 제거하고 게임 데이터 Table 기반으로 할지도 고민해보기
     //  이렇게되면 웹서버 Response 용량을 절약할 수 있어 최종적으로 패킷 절약으로 비용 절감을 노릴 수 있다고 생각
     
+    // TODO 패킷의 Size 검증은 지금은 Readyonly 구조체로 해서 지금은 알아서 생성하겠끔 했음
+    //  이렇게 함으로써 잘못된 길이값에 대한 대응을 했는데, 혹시 더 대응책이 필요한지 고민해보기
+    
     private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
     
