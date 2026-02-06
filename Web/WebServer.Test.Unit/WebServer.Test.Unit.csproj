@@ -4,9 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <IsPackable>false</IsPackable>
-        <Configurations>Debug;Development</Configurations>
-        <Platforms>AnyCPU</Platforms>
+        <RootNamespace>WebServer.Test.Unit</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -19,9 +19,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatServer.Client", "Chat\ChatServer.Client\ChatServer.Client.csproj", "{A98DCEC9-C939-4A41-88D3-255067E8A683}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{EB5A961A-3377-404B-957E-DB89642BC2E4}"
-	ProjectSection(SolutionItems) = preProject
-		appsettings.Development.json = appsettings.Development.json
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer", "Web\WebServer\WebServer.csproj", "{788A3350-9B94-407B-89DA-74A21C19E688}"
 EndProject

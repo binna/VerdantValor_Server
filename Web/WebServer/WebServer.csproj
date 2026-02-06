@@ -25,10 +25,6 @@
       <ProjectReference Include="..\..\SharedLibrary\Redis\Redis.csproj" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Development'">
-        <DefineConstants>DEVELOPMENT</DefineConstants>
-    </PropertyGroup>
-
     <ItemGroup>
       <Folder Include="Logs\" />
     </ItemGroup>
