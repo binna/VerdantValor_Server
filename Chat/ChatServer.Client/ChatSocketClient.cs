@@ -10,6 +10,10 @@ namespace ChatServer.Client;
 
 public class ChatSocketClient : NetworkSocket
 {
+    // TODO RequestId를 혹시 몰라 추가했음
+    //  반드시 req, res 1:1 관계이어야 한다면 필요할 것 같아서
+    //  만약 필요없다면 패킷 구조 자체를 수정해야함
+    
     private readonly TcpClient mClient;
     private readonly SocketContext mSocketContext;
     
@@ -17,7 +21,10 @@ public class ChatSocketClient : NetworkSocket
         : base(
             new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
             {
+                [EPacket.Login] = HandleLoginAsync,
+                [EPacket.CreateRoom] = HandleCreateRoomAsync,
                 [EPacket.RoomList] = HandleRoomListAsync,
+                [EPacket.EnterRoom] = HandleEnterRoomAsync,
                 [EPacket.ExitRoom] = HandleExitRoomAsync,
                 [EPacket.SendMessage] = HandleSendMessageAsync,
                 [EPacket.RoomNotification] = HandleRoomNotificationAsync
@@ -37,17 +44,17 @@ public class ChatSocketClient : NetworkSocket
         while (!cancellationToken.IsCancellationRequested)
         {
             var messageInput = Console.ReadLine();
-
-            if (messageInput == null)
-                break;
-
+    
+            if (string.IsNullOrEmpty(messageInput))
+                continue;
+    
             if (messageInput.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
             {
                 var exitRoomPacket = new Packet<ExitRoomReq>(EPacket.ExitRoom, new ExitRoomReq());
                 await WritePacket(tcpClient.GetStream(), exitRoomPacket, cancellationToken);
                 return;
             }
-  
+    
             var sendMessagePacket = 
                 new Packet<SendMessageReq>(EPacket.SendMessage, new SendMessageReq { Message = messageInput });
             
@@ -56,103 +63,168 @@ public class ChatSocketClient : NetworkSocket
     }
     
     #region 클라이언트 선택 메뉴
-    public async Task SendLoginAsync()
+    public async Task SendLoginReqAsync(ulong userId)
     {
-        var stream = mClient.GetStream();
+        mSocketContext.SetSession($"{Guid.NewGuid()}", userId);
         
-        Console.WriteLine("Enter UserId : ");
-        var userIdInput = Console.ReadLine();
-        if (ulong.TryParse(userIdInput, out var userId))
-        {
-            var packet = 
-                new Packet<LoginReq>(
-                    EPacket.Login, 
-                    new LoginReq
-                    {
-                        SessionId = $"{Guid.NewGuid()}",
-                        UserId = userId
-                    });
-            
-            await stream.WriteAsync(packet.PacketBytes, mCts.Token);
-        }
-        Console.WriteLine("end =============");
+        var packet = 
+            new Packet<LoginReq>(
+                EPacket.Login, 
+                new LoginReq
+                {
+                    SessionId = mSocketContext.Session.SessionId,
+                    UserId = userId
+                });
+        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mCts.Token);
     }
 
-    public async Task SendRoomListAsync()
+    public async Task SendRoomListReqAsync()
     {
-        if (mClient == null)
-            throw new InvalidOperationException("Client is not running.");
-        
-        var stream = mClient.GetStream();
-        
         var packet = new Packet<RoomListReq>(EPacket.RoomList, new RoomListReq());
-        await stream.WriteAsync(packet.PacketBytes, mCts.Token);
+        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mCts.Token);
     }
 
     public async Task SendCreateRoomAsync()
     {
-        if (mClient == null)
-            throw new InvalidOperationException("Client is not running.");
-        
-        var stream = mClient.GetStream();
-        
         var packet = new Packet<CreateRoomReq>(EPacket.CreateRoom, new CreateRoomReq());
-        await stream.WriteAsync(packet.PacketBytes, mCts.Token);
+        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mCts.Token);
         await HandleWriteAsync(mClient, mCts.Token);
-        
     }
 
-    public async Task SendEnterRoomAsync()
+    public async Task SendEnterRoomAsync(int roomId)
     {
-        if (mClient == null)
-            throw new InvalidOperationException("Client is not running.");
-        
-        var stream = mClient.GetStream();
-        
-        Console.WriteLine("Enter RoomId : ");
-        var roomIdInput = Console.ReadLine();
-        if (int.TryParse(roomIdInput, out var roomId))
-        {
-            var packet = new Packet<EnterRoomReq>(
-                EPacket.EnterRoom,
-                new EnterRoomReq
-                {
-                    RoomId = roomId
-                });
-            await stream.WriteAsync(packet.PacketBytes, mCts.Token);
-            await HandleWriteAsync(mClient, mCts.Token);
-        }
+        var packet = new Packet<EnterRoomReq>(
+            EPacket.EnterRoom,
+            new EnterRoomReq
+            {
+                RoomId = roomId
+            });
+        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mCts.Token);
+        await HandleWriteAsync(mClient, mCts.Token);
     }
     #endregion
     
     #region 패킷 핸들러 함수 모음
-    private static async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private static async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        // TODO 방에서 쫓겨나는게 필요
+        var payload = MemoryPackSerializer.Deserialize<LoginRes>(socketContext.PayloadBuffer);
+
+        switch ((EResponseResult)payload.Code)
+        {
+            case EResponseResult.Success:
+                Console.WriteLine("[Notice] 로그인 성공");
+                socketContext.IsLogin = true;
+                break;
+            default:
+                Console.WriteLine("[Notice] 로그인 실패");
+                Console.WriteLine($"[Notice] 처리되지 않음 {payload.Code}");
+                socketContext.IsLogin = false;
+                break;
+        }
     }
+
+    private static async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    {
+        var payload = MemoryPackSerializer.Deserialize<CreateRoomRes>(socketContext.PayloadBuffer);
+
+        switch ((EResponseResult)payload.Code)
+        {
+            case EResponseResult.Success:
+                Console.WriteLine("[Notice] 방 생성 성공, 생성한 방에 입장");
+                break;
+            case EResponseResult.LoginRequired:
+                Console.WriteLine("[Notice] 로그인 필요");
+                break;
+            case EResponseResult.AlreadyInRoom:
+                Console.WriteLine("[Notice] 이미 소속된 방 있음");
+                break;
+            default:
+                Console.WriteLine($"[Notice] 처리되지 않음 {payload.Code}");
+                break;
+        }
+    }
+    
+    // TODO Delete Room
+    
     
     private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = MemoryPackSerializer.Deserialize<RoomListReq>(socketContext.PayloadBuffer);
-
-        Console.WriteLine("Room List=================");
-        foreach (var roomId in payload.RoomIds)
+        var payload = MemoryPackSerializer.Deserialize<RoomListRes>(socketContext.PayloadBuffer);
+        
+        switch ((EResponseResult)payload.Code)
         {
-            Console.WriteLine(roomId);
+            case EResponseResult.Success:
+                Console.WriteLine("[Notice] Show Room List===");
+                foreach (var roomId in payload.RoomIds)
+                {
+                    Console.WriteLine(roomId);
+                }
+                Console.WriteLine("==========================");
+                break;
+            case EResponseResult.LoginRequired:
+                Console.WriteLine("[Notice] 로그인 필요");
+                break;
+            default:
+                Console.WriteLine($"[Notice] 처리되지 않음 {payload.Code}");
+                break;
         }
-        Console.WriteLine("==========================");
+    }
+    
+    private static async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    {
+        var payload = MemoryPackSerializer.Deserialize<EnterRoomRes>(socketContext.PayloadBuffer);
+        
+        switch ((EResponseResult)payload.Code)
+        {
+            case EResponseResult.Success:
+                Console.WriteLine("[Notice] 방에 들어왔습니다.");
+                break;
+            case EResponseResult.LoginRequired:
+                Console.WriteLine("[Notice] 로그인 필요");
+                break;
+            case EResponseResult.NoRoomSelected:
+                Console.WriteLine("검색된 방이 없습니다.");
+                break;
+            case EResponseResult.AlreadyInRoom:
+                Console.WriteLine("[Notice] 이미 방 안에 들어가 있습니다..");
+                break;
+            default:
+                Console.WriteLine($"[Notice] 처리되지 않음 {payload.Code}");
+                break;
+        }
+    }
+
+    private static async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    {
+        var payload = MemoryPackSerializer.Deserialize<ExitRoomRes>(socketContext.PayloadBuffer);
+        
+        switch ((EResponseResult)payload.Code)
+        {
+            case EResponseResult.Success:
+                Console.WriteLine("[Notice] 방을 정상적으로 나갔습니다.");
+                break;
+            case EResponseResult.LoginRequired:
+                Console.WriteLine("[Notice] 로그인 필요");
+                break;
+            case EResponseResult.AlreadyOutOfRoom:
+                Console.WriteLine("[Notice] 현재 해당 방에 참여 중이 아닙니다.");
+                break;
+            default:
+                Console.WriteLine($"[Notice] 처리되지 않음 {payload.Code}");
+                break;
+        }
     }
     
     private static async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = MemoryPackSerializer.Deserialize<SendMessageReq>(socketContext.PayloadBuffer);
-        Console.WriteLine($"Message: {payload.Message}");
+        var payload = MemoryPackSerializer.Deserialize<SendMessageRes>(socketContext.PayloadBuffer);
+        Console.WriteLine($"|유저 {payload.userId} 대화||||{payload.Message}");
     }
     
     private static async Task HandleRoomNotificationAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        var payload = MemoryPackSerializer.Deserialize<RoomNotificationReq>(socketContext.PayloadBuffer);
-        Console.WriteLine($"Message: {payload.Notification}");
+        var payload = MemoryPackSerializer.Deserialize<RoomNotification>(socketContext.PayloadBuffer);
+        Console.WriteLine($"*공지사항* {payload.Notification}");
     }
     #endregion
 }

@@ -7,8 +7,8 @@ internal class Server
     {
         using var cts = new CancellationTokenSource();
         var server = new ChatSocketClient(IPAddress.Loopback, 20000, cts.Token);
-        
-        _ = server.StartAsync();
+
+        var startTask = server.StartAsync();
         
         Console.WriteLine("Menu=================");
         Console.WriteLine("1. Login");
@@ -20,18 +20,27 @@ internal class Server
         
         while (!cts.Token.IsCancellationRequested) 
         {
+            Console.WriteLine("Menu Num: ");
             var selectedOption = Console.ReadLine();
 
             switch (selectedOption)
             {
                 case "1":
                 {
-                    await server.SendLoginAsync();
+                    Console.WriteLine("Enter UserId: ");
+                    var userIdInput = Console.ReadLine();
+                    if (!ulong.TryParse(userIdInput, out var userId))
+                    {
+                        Console.WriteLine("Invalid user ID.");
+                        break;
+                    }
+
+                    await server.SendLoginReqAsync(userId);
                     break;
                 }
                 case "2":
                 {
-                    await server.SendRoomListAsync();
+                    await server.SendRoomListReqAsync();
                     break;
                 }
                 case "3":
@@ -41,9 +50,18 @@ internal class Server
                 }
                 case "4":
                 {
-                    await server.SendEnterRoomAsync();
+                    Console.WriteLine("Enter RoomId : ");
+                    var roomIdInput = Console.ReadLine();
+                    if (!int.TryParse(roomIdInput, out var roomId))
+                    {
+                        Console.WriteLine("Invalid room ID.");
+                        break;
+                    }
+
+                    await server.SendEnterRoomAsync(roomId);
                     break;
                 }
+                // TODO 5
             }
         }
     }
