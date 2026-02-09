@@ -79,7 +79,7 @@
     - [Redis 라이브러리](./SharedLibrary/Redis)
     - [Ado 라이브러리](./SharedLibrary/Ado)
     - [Tcp 라이브러리](./SharedLibrary/Tcp)
-- 서버-클라이언트 공용 데이터(DTO, Enum, GameData)를 Git Submodule로 관리
+- 서버-클라이언트 공용 데이터를 Web, Chat, Shared 3개의 라이브러리로 분리하고 Git Submodule로 관리
   - 코드:
     - [VerdantValor_Shared 서브모듈](https://github.com/binna/VerdantValor_Shared)
   
