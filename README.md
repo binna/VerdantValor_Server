@@ -18,7 +18,8 @@
 ## 목차
 1. [기술스택](#기술스택)
 2. [구현 항목](#구현-항목)
-3. [사이드 프로젝트 (TCP 에코 브로드캐스트 서버)](#사이드-프로젝트-tcp-에코-브로드캐스트-서버)
+3. [소켓 서버 구현 항목](#소켓-서버-구현-항목)
+4. [사이드 프로젝트 (TCP 에코 브로드캐스트 서버)](#사이드-프로젝트-tcp-에코-브로드캐스트-서버)
 
 <br><br>
 
@@ -104,6 +105,26 @@
 - 주요 비즈니스 로직과 예외 시나리오를 사전 검증하여 장애 가능성 감소
   - 코드:
     - [웹서버 유니테스트](./Web/WebServer.Test.Unit)
+
+<br><br>
+
+## 소켓 서버 구현 항목
+
+#### TCP 기반 서버 구조 구현
+-	TcpClient, TcpListener 기반 TCP 서버 직접 구현    
+- 수신 → 버퍼링 → 파싱 → 처리로 이어지는 네트워크 처리 흐름 구성
+- 네트워크 I/O와 패킷 처리 로직을 분리해 기능 확장 시 영향을 최소화하도록 구성   
+  - 코드:
+    - [NetworkSocket.cs](/SharedLibrary/Tcp/NetworkSocket.cs)
+
+#### 헤더 기반 가변 길이 패킷 처리
+- TCP 스트림 특성상 패킷 경계가 보장되지 않는 점을 고려  
+- Partial Read 상황을 처리하기 위한 내부 버퍼 관리 로직 구현  
+- 헤더와 페이로드 분리 후 Payload Length 기반 가변 길이 패킷 조립 로직 구현  
+  - 코드:
+    - [Chat 패킷 라이브러리](https://github.com/binna/VerdantValor_Shared/tree/main/Protocol/Chat)
+    - [Chat 기본 틀](https://github.com/binna/VerdantValor_Shared/tree/main/Protocol/Chat/Frames)
+
 
 <br><br>
 
