@@ -48,7 +48,7 @@
     - [Controllers](./Web/WebServer/Controllers)     
     - [Services](./Web/WebServer/Services)
 
-- EF Core + Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
+- Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
   - 코드:
     - Program.cs
       - [Repository DI 설정](./Web/WebServer/Program.cs#L133)
