@@ -1,6 +1,6 @@
 ﻿namespace SwapQueue;
 
-enum EPacket
+internal enum EPacket
 {
     Move,
     Attack,
@@ -9,60 +9,59 @@ enum EPacket
     UseItem,
 }
 
-class Packet
+internal class Packet
 {
     public EPacket PacketType { get; set; }
 }
 
-class Program
+internal class Program
 {
-    static Queue<Packet> WriteQueue;
-    static Queue<Packet> ReadQueue;
-    
-    static Random packetRandom = new Random();
-    static Random generatePacketRandom = new Random();
+    static Queue<Packet> mWriteQueue;
+    static Queue<Packet> mReadQueue;
     
     static async Task Main(string[] args)
     {
-        WriteQueue = new Queue<Packet>();
-        ReadQueue = new Queue<Packet>();
+        mWriteQueue = new Queue<Packet>();
+        mReadQueue = new Queue<Packet>();
 
         _ = GeneratePacketAsync();
         _ = GeneratePacketAsync();
 
         while (true)
         {
-            Console.WriteLine($"읽기 큐에 {ReadQueue.Count}개 들어있음=====================");
+            Console.WriteLine($"읽기 큐에 {mReadQueue.Count}개 들어있음=====================");
             
-            if (ReadQueue.Count > 0)
+            if (mReadQueue.Count > 0)
                 ProcessPacket();
             else
                 await Task.Delay(1000);
 
             Console.WriteLine("===========================================");
             
-            (WriteQueue, ReadQueue) = (ReadQueue, WriteQueue);
+            (mWriteQueue, mReadQueue) = (mReadQueue, mWriteQueue);
         }
     }
     
     static async Task GeneratePacketAsync()
     {
+        var mPacketRandom = new Random();
+        var mGeneratePacketRandom = new Random();
         var packetCnt = Enum.GetValues<EPacket>().Length;
         
         while (true)
         {
-            var packetType = (EPacket)packetRandom.Next(packetCnt);
-            WriteQueue.Enqueue(new Packet { PacketType = packetType });
+            var packetType = (EPacket)mPacketRandom.Next(packetCnt);
+            mWriteQueue.Enqueue(new Packet { PacketType = packetType });
             
-            await Task.Delay(generatePacketRandom.Next(500));
+            await Task.Delay(mGeneratePacketRandom.Next(500));
         }
     }
 
     static void ProcessPacket()
     {
-        while (ReadQueue.Count > 0)
+        while (mReadQueue.Count > 0)
         {
-            var packet = ReadQueue.Dequeue();
+            var packet = mReadQueue.Dequeue();
             Console.WriteLine($"{packet.PacketType} 패킷 처리 완료");
         }
     }
