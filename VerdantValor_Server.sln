@@ -46,7 +46,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lock", "Lock", "{10E077DD-3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwapQueue", "Lock\SwapQueue\SwapQueue.csproj", "{6D2A041E-D3EF-4D96-9FA2-9976CB70009F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLock", "Lock\DistributedLock\DistributedLock.csproj", "{98EFDB47-6BE2-4484-8DA2-DC1A6AE48CA9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLock.Verifier", "Lock\DistributedLock.Verifier\DistributedLock.Verifier.csproj", "{98EFDB47-6BE2-4484-8DA2-DC1A6AE48CA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

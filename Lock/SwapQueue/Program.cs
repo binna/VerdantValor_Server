@@ -29,7 +29,7 @@ internal class Program
 
         while (true)
         {
-            Console.WriteLine($"읽기 큐에 {mReadQueue.Count}개 들어있음=====================");
+            Console.WriteLine($"읽기 큐에 {mReadQueue.Count}개 들어있음 ====================");
             
             if (mReadQueue.Count > 0)
                 ProcessPacket();
