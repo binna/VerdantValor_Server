@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Efcore;
 using Efcore.Repositories;
-using Redis;
+using Redis.Implementations;
+using Redis.Interfaces;
 using Shared.Constants;
 using WebServer.Pipeline;
 using WebServer.Services;
@@ -21,6 +22,7 @@ Log.Logger = new LoggerConfiguration().ReadFrom
 builder.Logging.ClearProviders();   // 기존 기본 로깅 공급자 제거 후
 builder.Host.UseSerilog();          // Serilog를 로거로 사용
 
+Console.WriteLine(builder.Environment.EnvironmentName);
 // 내가 사용할 환경 설정 이름
 builder.Configuration
     .AddJsonFile(
@@ -129,7 +131,7 @@ builder.Services.AddAuthorization(options =>
 // 명시적으로 의존주입 설정
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
-    .AddSingleton<IRedisClient, ConfigRedisClient>()
+    .AddSingleton<IWebServerRedisClient, WebServerRedisClient>()
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()

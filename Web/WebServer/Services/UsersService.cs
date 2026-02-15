@@ -1,7 +1,7 @@
 ﻿using Efcore.Repositories;
 using Common.Helpers;
 using Common.Web;
-using Redis;
+using Redis.Interfaces;
 using Shared.Constants;
 using Shared.Types;
 
@@ -12,7 +12,7 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
-    private readonly IRedisClient mRedisClient;
+    private readonly IWebServerRedisClient mRedisClient;
 
     #region TODO DB에서 관리하는 부분 제작하기, 금지 닉네임과 아이디 설정
     private HashSet<string> bannedEmails = ["admin"];
@@ -23,7 +23,7 @@ public class UsersService
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IUsersRepository usersRepository,
-        IRedisClient redisClient)
+        IWebServerRedisClient redisClient)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;

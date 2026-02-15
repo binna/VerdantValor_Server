@@ -1,14 +1,10 @@
 ﻿using StackExchange.Redis;
 
-namespace Redis;
+namespace Redis.Interfaces;
 
-public interface IRedisClient
+public interface IWebServerRedisClient
 {
-    // Set 결과
-    //  true: 새 멤버가 추가됨
-    //  false: 이미 존재해서 갱신됨
-
-    #region default
+    #region Core
     public Task<bool> AddHashAsync(string key, string hashField, string hashValue);
     public Task<bool> AddSortedSetAsync(string key, string member, double score);
     public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank);

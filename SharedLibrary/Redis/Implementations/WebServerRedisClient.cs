@@ -1,17 +1,18 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Redis.Interfaces;
 using StackExchange.Redis;
 
-namespace Redis;
+namespace Redis.Implementations;
 
-public sealed class ConfigRedisClient : IRedisClient
+public sealed class WebServerRedisClient : IWebServerRedisClient
 {
-    private readonly IDatabase mDatabase;
+    private readonly IDatabase mCoreDatabase;
     private readonly IDatabase mSessionDatabase;
 
-    public ConfigRedisClient(
+    public WebServerRedisClient(
         IConfiguration configuration,
-        ILogger<IRedisClient> logger)
+        ILogger<IWebServerRedisClient> logger)
     {
         var host = configuration["DB:Redis:Host"];
         var port = configuration["DB:Redis:Port"];
@@ -27,7 +28,7 @@ public sealed class ConfigRedisClient : IRedisClient
         {
             var endpoint = $"{host}:{port}";
             var connection = ConnectionMultiplexer.Connect(endpoint);
-            mDatabase = connection.GetDatabase(0);
+            mCoreDatabase = connection.GetDatabase(0);
             mSessionDatabase = connection.GetDatabase(1);
         }
         catch (Exception ex)
@@ -39,30 +40,30 @@ public sealed class ConfigRedisClient : IRedisClient
         logger.LogInformation("Redis connection success. {@context}", new { host, port });
     }
 
-    #region default
+    #region Core
     public Task<bool> AddHashAsync(string key, string hashField, string hashValue)
     {
-        return mDatabase.HashSetAsync(key, hashField, hashValue);
+        return mCoreDatabase.HashSetAsync(key, hashField, hashValue);
     }
 
     public Task<bool> AddSortedSetAsync(string key, string member, double score)
     {
-        return mDatabase.SortedSetAddAsync(key, member, score);
+        return mCoreDatabase.SortedSetAddAsync(key, member, score);
     }
 
     public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
     {
-        return mDatabase.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+        return mCoreDatabase.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
     }
 
     public Task<long?> GetMemberRank(string key, string member)
     {
-        return mDatabase.SortedSetRankAsync(key, member, Order.Descending);
+        return mCoreDatabase.SortedSetRankAsync(key, member, Order.Descending);
     }
 
     public Task<double?> GetMemberScore(string key, string member)
     {
-        return mDatabase.SortedSetScoreAsync(key, member);
+        return mCoreDatabase.SortedSetScoreAsync(key, member);
     }
     #endregion
     

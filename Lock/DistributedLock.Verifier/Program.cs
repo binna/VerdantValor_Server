@@ -1,4 +1,6 @@
-﻿namespace DistributedLock.Verifier;
+﻿using RedisLock = Redis.Implementations;
+
+namespace DistributedLock.Verifier;
 
 class Program
 {
@@ -11,7 +13,7 @@ class Program
 
         {
             List<Task> tasks = [];
-            var distributedLock = new Redis.DistributedLock(
+            var distributedLock = new RedisLock.DistributedLock(
                 "localhost", "6379", 10, 3000);
         
             for (var i = 0; i < REPEAT_NUM; i++)
@@ -46,7 +48,7 @@ class Program
         Console.WriteLine("TTL 테스트 ====================================================================");
 
         {
-            var distributedLock = new Redis.DistributedLock(
+            var distributedLock = new RedisLock.DistributedLock(
                 "localhost", "6379", 10, 1);
             
             var bSuccess = await distributedLock

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Efcore.Repositories;
 using Common.Models;
-using Redis;
+using Redis.Interfaces;
 using Shared.Types;
 using WebServer.Services;
 using Xunit.Abstractions;
@@ -25,7 +25,7 @@ public class UsersServiceTest
         var logger = Substitute.For<ILogger<UsersService>>();
         mHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
         mUsersRepository = Substitute.For<IUsersRepository>();
-        var redisClient = Substitute.For<IRedisClient>();
+        var redisClient = Substitute.For<IWebServerRedisClient>();
         mUsersService = Substitute.For<UsersService>(
             logger, mHttpContextAccessor, mUsersRepository, redisClient);
     }

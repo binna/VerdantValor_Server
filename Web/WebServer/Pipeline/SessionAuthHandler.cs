@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Redis;
+using Redis.Interfaces;
 using Shared.Types;
 
 namespace WebServer.Pipeline;
@@ -9,9 +9,9 @@ public class SessionAuthRequirement : IAuthorizationRequirement { }
 public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
 {
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IRedisClient mRedisClient;
+    private readonly IWebServerRedisClient mRedisClient;
 
-    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, IRedisClient redisClient)
+    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, IWebServerRedisClient redisClient)
     {
         mHttpContextAccessor = httpContextAccessor;
         mRedisClient = redisClient;

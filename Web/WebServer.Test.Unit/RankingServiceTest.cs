@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Redis;
+using Redis.Interfaces;
 using Shared.Constants;
 using Shared.Types;
 using StackExchange.Redis;
@@ -13,14 +13,14 @@ namespace WebServer.Test.Unit;
 public class RankingServiceTest
 {
     private readonly ITestOutputHelper mOutput;
-    private readonly IRedisClient mRedisClient;
+    private readonly IWebServerRedisClient mRedisClient;
     private readonly RankingService mRankingService;
 
     public RankingServiceTest(ITestOutputHelper output)
     {
         mOutput = output;
         var logger = Substitute.For<ILogger<RankingService>>();
-        mRedisClient = Substitute.For<IRedisClient>();
+        mRedisClient = Substitute.For<IWebServerRedisClient>();
         mRankingService = Substitute.For<RankingService>(logger, mRedisClient);
     }
 

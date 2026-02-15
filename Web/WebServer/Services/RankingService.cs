@@ -1,6 +1,6 @@
 ﻿using Common.Web;
 using Protocol.Web.Dtos;
-using Redis;
+using Redis.Interfaces;
 using Shared.Constants;
 using Shared.Types;
 
@@ -9,11 +9,11 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly IRedisClient mRedisClient;
+    private readonly IWebServerRedisClient mRedisClient;
 
     public RankingService(
         ILogger<RankingService> logger, 
-        IRedisClient redisClient)
+        IWebServerRedisClient redisClient)
     {
         mLogger = logger;
         mRedisClient = redisClient;

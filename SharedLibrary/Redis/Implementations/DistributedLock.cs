@@ -1,6 +1,7 @@
-﻿using StackExchange.Redis;
+﻿using Redis.Interfaces;
+using StackExchange.Redis;
 
-namespace Redis;
+namespace Redis.Implementations;
 
 // Redis 싱글 스레드 기반이며, 명령은 원자적으로 처리된다.
 //  1. SET lock_key lock_token NX PX 3000
@@ -20,7 +21,7 @@ namespace Redis;
 //  LockRelease      : 토큰 비교 후 안전한 락 해제
 //  LockExtend       : 현재 보유 중인 락의 TTL 연장
 
-public sealed class DistributedLock
+public sealed class DistributedLock : IDistributedLock
 {
     private readonly IDatabase mDatabase;
     private readonly TimeSpan mLockExpiry;
