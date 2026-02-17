@@ -1,5 +1,4 @@
-﻿using Redis.Interfaces;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
 namespace Redis.Implementations;
 
@@ -20,7 +19,7 @@ namespace Redis.Implementations;
 //  LockTake         : SET NX + TTL 기반 락 획득
 //  LockRelease      : 토큰 비교 후 안전한 락 해제
 //  LockExtend       : 현재 보유 중인 락의 TTL 연장
-public sealed class DistributedLockStackExchange : IDistributedLock
+public sealed class DistributedLockStackExchange
 {
     private readonly IDatabase mDatabase;
     private readonly TimeSpan mLockExpiry;
