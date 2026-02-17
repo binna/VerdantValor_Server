@@ -20,13 +20,12 @@ namespace Redis.Implementations;
 //  LockTake         : SET NX + TTL 기반 락 획득
 //  LockRelease      : 토큰 비교 후 안전한 락 해제
 //  LockExtend       : 현재 보유 중인 락의 TTL 연장
-
-public sealed class DistributedLock : IDistributedLock
+public sealed class DistributedLockStackExchange : IDistributedLock
 {
     private readonly IDatabase mDatabase;
     private readonly TimeSpan mLockExpiry;
 
-    public DistributedLock(string host, string port, int db, long expiryMilliseconds)
+    public DistributedLockStackExchange(string host, string port, int db, long expiryMs)
     {
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
             throw new ArgumentException("host, port");
@@ -35,7 +34,7 @@ public sealed class DistributedLock : IDistributedLock
         var connection = ConnectionMultiplexer.Connect(endpoint);
         
         mDatabase = connection.GetDatabase(db);
-        mLockExpiry = TimeSpan.FromMilliseconds(expiryMilliseconds);
+        mLockExpiry = TimeSpan.FromMilliseconds(expiryMs);
     }
 
     public Task<bool> TryAcquireLockAsync(string lockKey, string lockToken)
