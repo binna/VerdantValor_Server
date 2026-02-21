@@ -9,6 +9,12 @@ class Program
     static async Task Main(string[] args)
     {
         //await TestDistributedLockStackExchange();
+        await TestDistributedLockRawRedis();
+    }
+
+    static async Task TestDistributedLockRawRedis()
+    {
+        Console.WriteLine("기능 테스트 ===================================================================");
         
         {
             List<Task> tasks = [];
@@ -49,7 +55,7 @@ class Program
         Console.WriteLine("===============================================================================");
         Console.WriteLine();
         Console.WriteLine("TTL 테스트 ====================================================================");
-
+        
         {
             var distributedLock = new RedisLock.DistributedLockRawRedis(
                 "localhost", 6379, 10, 1);
@@ -58,23 +64,23 @@ class Program
             
             var bSuccess = await distributedLock
                 .TryAcquireLockAsync("GainItem", "shine", cts.Token);
-
+        
             Console.WriteLine(
                 $"{(bSuccess ? "Success" : "Fail")} Acquire Lock//gain item//shine");
-
+        
             await Task.Delay(2);
             
             bSuccess = await distributedLock
                 .TryReleaseLockAsync("GainItem", "shine", cts.Token);
-
+        
             Console.WriteLine(
                 $"{(bSuccess ? "Success" : "Fail")} --> Release Lock//gain item//shine");
         }
-
+        
         Console.WriteLine("===============================================================================");
     }
 
-    public static async Task TestDistributedLockStackExchange()
+    static async Task TestDistributedLockStackExchange()
     {
         Console.WriteLine("기능 테스트 ===================================================================");
 

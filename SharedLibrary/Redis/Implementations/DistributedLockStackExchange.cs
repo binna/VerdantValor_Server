@@ -19,15 +19,19 @@ namespace Redis.Implementations;
 //  LockTake         : SET NX + TTL 기반 락 획득
 //  LockRelease      : 토큰 비교 후 안전한 락 해제
 //  LockExtend       : 현재 보유 중인 락의 TTL 연장
+
 public sealed class DistributedLockStackExchange
 {
+    private const string RELEASE_LOCK_IF_OWNER_SCRIPT =
+        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
+    
     private readonly IDatabase mDatabase;
     private readonly TimeSpan mLockExpiry;
 
     public DistributedLockStackExchange(string host, string port, int db, long expiryMs)
     {
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
-            throw new ArgumentException("host, port");
+            throw new ArgumentException("Host and port must not be null or empty.");
         
         var endpoint = $"{host}:{port}";
         var connection = ConnectionMultiplexer.Connect(endpoint);
@@ -38,16 +42,14 @@ public sealed class DistributedLockStackExchange
 
     public Task<bool> TryAcquireLockAsync(string lockKey, string lockToken)
     {
-        return mDatabase.LockTakeAsync(
-            key: lockKey,
-            value: lockToken,
-            expiry: mLockExpiry); 
+        return mDatabase.StringSetAsync(lockKey, lockToken, mLockExpiry, When.NotExists);
     }
 
-    public Task<bool> TryReleaseLockAsync(string lockKey, string lockToken)
+    public async Task<bool> TryReleaseLockAsync(string lockKey, string lockToken)
     {
-        return mDatabase.LockReleaseAsync(
-            key: lockKey,
-            value: lockToken);
+        var result = await mDatabase
+            .ScriptEvaluateAsync(RELEASE_LOCK_IF_OWNER_SCRIPT, [lockKey], [lockToken]);
+
+        return (long)result == 1;
     }
 }
