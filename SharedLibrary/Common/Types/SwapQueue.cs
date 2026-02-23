@@ -41,11 +41,16 @@ public class SwapQueue<T>
             }
 
             // 락 없이 outputQueue 전부 처리
+            Console.WriteLine($"총 {mOutputQueue.Count}개 =====================");
+            var cnt = 1;
             while (mOutputQueue.Count > 0)
             {
                 var packet = mOutputQueue.Dequeue();
+                Console.Write($"{cnt}-");
                 handlePacket(packet);
+                cnt++;
             }
+            Console.WriteLine($"===============================================");
         }
         finally
         {
