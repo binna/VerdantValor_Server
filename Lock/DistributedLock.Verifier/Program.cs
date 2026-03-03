@@ -1,4 +1,5 @@
-﻿using RedisLock = Redis.Implementations;
+﻿using Redis.Driver;
+using RedisLock = Redis.Implementations;
 
 namespace DistributedLock.Verifier;
 
@@ -8,86 +9,22 @@ class Program
     
     static async Task Main(string[] args)
     {
-        //await TestDistributedLockStackExchange();
-        await TestDistributedLockRawRedis();
+        // RawRedis rawRedis = new("localhost", 6379, 10);
+        // await rawRedis.StringSetAsync("GainItem", "shine");
+
+
+        var cacheDriver = new RedisCacheDriver("localhost", "6379", 10);
+        await TestDistributed(cacheDriver);
     }
 
-    static async Task TestDistributedLockRawRedis()
-    {
-        Console.WriteLine("기능 테스트 ===================================================================");
-        
-        {
-            List<Task> tasks = [];
-            var distributedLock = new RedisLock.DistributedLockRawRedis(
-                "localhost", 6379, 10, 3000);
-            
-            for (var i = 0; i < REPEAT_NUM; i++)
-            {
-                tasks.Add(Task.Run(async () =>
-                {
-                    using var cts = new CancellationTokenSource();
-                    
-                    var bSuccess = await distributedLock
-                        .TryAcquireLockAsync("GainItem", "shine", cts.Token);
-            
-                    Console.WriteLine(
-                        $"{(bSuccess ? "Success" : "Fail")} Acquire Lock//gain item//shine");
-                }));
-            }
-            
-            for (var i = 0; i < REPEAT_NUM; i++)
-            {
-                tasks.Add(Task.Run(async () =>
-                {
-                    using var cts = new CancellationTokenSource();
-                    
-                    var bSuccess = await distributedLock
-                        .TryReleaseLockAsync("GainItem", "shine", cts.Token);
-            
-                    Console.WriteLine(
-                        $"{(bSuccess ? "Success" : "Fail")} --> Release Lock//gain item//shine");
-                }));
-            }
-        
-            await Task.WhenAll(tasks);
-        }
-        
-        Console.WriteLine("===============================================================================");
-        Console.WriteLine();
-        Console.WriteLine("TTL 테스트 ====================================================================");
-        
-        {
-            var distributedLock = new RedisLock.DistributedLockRawRedis(
-                "localhost", 6379, 10, 1);
-            
-            using var cts = new CancellationTokenSource();
-            
-            var bSuccess = await distributedLock
-                .TryAcquireLockAsync("GainItem", "shine", cts.Token);
-        
-            Console.WriteLine(
-                $"{(bSuccess ? "Success" : "Fail")} Acquire Lock//gain item//shine");
-        
-            await Task.Delay(2);
-            
-            bSuccess = await distributedLock
-                .TryReleaseLockAsync("GainItem", "shine", cts.Token);
-        
-            Console.WriteLine(
-                $"{(bSuccess ? "Success" : "Fail")} --> Release Lock//gain item//shine");
-        }
-        
-        Console.WriteLine("===============================================================================");
-    }
-
-    static async Task TestDistributedLockStackExchange()
+    static async Task TestDistributed(ICacheDriver driver)
     {
         Console.WriteLine("기능 테스트 ===================================================================");
 
         {
             List<Task> tasks = [];
-            var distributedLock = new RedisLock.DistributedLockStackExchange(
-                "localhost", "6379", 10, 3000);
+            
+            var distributedLock = new RedisLock.DistributedLock(driver, 3000);
         
             for (var i = 0; i < REPEAT_NUM; i++)
             {
@@ -121,8 +58,7 @@ class Program
         Console.WriteLine("TTL 테스트 ====================================================================");
 
         {
-            var distributedLock = new RedisLock.DistributedLockStackExchange(
-                "localhost", "6379", 10, 1);
+            var distributedLock = new RedisLock.DistributedLock(driver, 3000);
             
             var bSuccess = await distributedLock
                 .TryAcquireLockAsync("GainItem", "shine");
