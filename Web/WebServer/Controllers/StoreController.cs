@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Redis.Driver;
 using Redis.Implementations;
 using Shared.Constants;
 
@@ -9,11 +10,12 @@ namespace WebServer.Controllers;
 [ApiController]
 public class StoreController : Controller
 {
-    private readonly DistributedLockStackExchange mRedis;
+    private readonly DistributedLock mRedis;
     
     public StoreController()
     {
-        mRedis = new("localhost", "6379", 10, 1000);
+        var cacheDriver = new RedisCacheDriver("localhost", "6379", 10);
+        mRedis = new DistributedLock(cacheDriver, 1000);
     }
 
     [HttpGet("Buy")]
