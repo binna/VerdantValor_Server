@@ -41,8 +41,7 @@ public class DecryptReqMiddleware
                 context.Response.ContentType = "application/json";
                 
                 await context.Response.WriteAsJsonAsync(
-                    ApiResponse.From(
-                        EResponseResult.FailDecrypt, ELanguage.En));
+                    ApiResponse.From(EResponseResult.FailDecrypt));
                 return;
             }
 
@@ -51,7 +50,7 @@ public class DecryptReqMiddleware
             if (encryptReq == null)
             {
                 await context.Response.WriteAsJsonAsync(
-                    ApiResponse.From(EResponseResult.FailDecrypt, ELanguage.En));
+                    ApiResponse.From(EResponseResult.FailDecrypt));
                 return;
             }
 

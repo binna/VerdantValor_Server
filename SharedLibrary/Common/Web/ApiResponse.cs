@@ -1,36 +1,40 @@
-﻿using Shared.Types;
+﻿using Common.Manager;
+using Shared.Types;
 
 namespace Common.Web;
 
-public class ApiResponse(bool isSuccess, int code, string message)
+public class ApiResponse(bool isSuccess, int code, ulong textId)
 {
     public bool IsSuccess { get; } = isSuccess;
     public int Code { get; } = code;
-    public string Message { get; } = message;
+    public ulong TextId { get; } = textId;
     
-    public static ApiResponse From(EResponseResult status, ELanguage language)
+    public static ApiResponse From(EResponseResult code)
     {
-        var statusDefinition = ResponseResultTable.GetStatusDefinition(status);
+        if (!GameDataManager.TryResponseResultGet(code, out var responseResult))
+            throw new InvalidOperationException(
+                string.Format(ExceptionMessage.RESPONSE_RESULT_NOT_SET, $"{code}", $"{(int)code}"));
         
         return new ApiResponse(
-            statusDefinition.IsSuccess, 
-            (int)status, 
-            statusDefinition.Messages[language]);
+            responseResult.IsSuccess, 
+            (int)code,
+            responseResult.TextId);
     }
 }
 
-public class ApiResponse<T>(bool isSuccess, int code, string message, T? result = default)
-    : ApiResponse(isSuccess, code, message)
+public class ApiResponse<T>(bool isSuccess, int code, ulong textId, T result)
+    : ApiResponse(isSuccess, code, textId)
 {
-    public T? Result { get; } = result;
+    public T Result { get; } = result;
     
-    public static ApiResponse<T> From(EResponseResult status, ELanguage language, T? result = default)
+    public static ApiResponse<T> From(EResponseResult code, T result = default)
     {
-        var statusDefinition = ResponseResultTable.GetStatusDefinition(status);
+        var baseResponse = ApiResponse.From(code);
         
         return new ApiResponse<T>(
-            statusDefinition.IsSuccess, 
-            (int)status, 
-            statusDefinition.Messages[language], result);
+            baseResponse.IsSuccess,
+            (int)code,
+            baseResponse.TextId,
+            result);
     }
 }

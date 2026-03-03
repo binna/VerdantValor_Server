@@ -1,4 +1,4 @@
-﻿using Common.Web;
+﻿using Common.Manager;
 using Serilog;
 using Shared.Constants;
 
@@ -10,8 +10,8 @@ public class GlobalSetupResponseStatus
     {
         var baseDir = AppContext.BaseDirectory;
         var path = Path.GetFullPath(
-            Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseResult.json"));
-        ResponseResultTable.Init(path);
+            Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data"));
+        GameDataManager.LoadAllGameData(path);
         Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
         
 #if LIVE

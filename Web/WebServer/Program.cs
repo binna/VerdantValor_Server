@@ -1,4 +1,5 @@
 using Common.Web;
+using Common.Manager;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -85,8 +86,9 @@ try
     //  실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
     var baseDir = AppContext.BaseDirectory;
     var path = Path.GetFullPath(
-        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data", "ResponseResult.json"));
-    ResponseResultTable.Init(path);
+        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data"));
+    GameDataManager.LoadAllGameData(path);
+    BannedManager.Load();
     Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
 }
 catch (Exception ex)

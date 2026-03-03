@@ -23,28 +23,19 @@ public class UsersController : Controller
     [AllowAnonymous]
     public async Task<ApiResponse> Auth([FromBody] AuthReq request)
     {
-        if (!Enum.TryParse<ELanguage>(request.Language, out var language))
-            language = ELanguage.En;
-
         if (!Enum.TryParse<EAuth>(request.AuthType, out var authType))
-            return ApiResponse
-                .From(EResponseResult.InvalidInput, language);
+            return ApiResponse.From(EResponseResult.InvalidInput);
 
         switch (authType)
         {
             case EAuth.Join:
-            {
                 return await mUsersService.JoinAsync(
-                    request.Email, request.Pw, request.Nickname, language);
-            }
+                    request.Email, request.Pw, request.Nickname);
             case EAuth.Login:
-            {
                 return await mUsersService.LoginAsync(
-                    request.Email, request.Pw, language);
-            }
+                    request.Email, request.Pw);
         }
         
-        return ApiResponse
-            .From(EResponseResult.Success, language);
+        return ApiResponse.From(EResponseResult.Success);
     }
 }

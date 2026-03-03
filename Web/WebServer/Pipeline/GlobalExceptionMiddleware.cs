@@ -34,7 +34,6 @@ public class GlobalExceptionMiddleware
         context.Response.ContentType = "application/json";
 
         await context.Response.WriteAsJsonAsync(
-            ApiResponse.From(
-                EResponseResult.UnexpectedError, ELanguage.En));
+            ApiResponse.From(EResponseResult.UnexpectedError));
     }
 }

@@ -21,7 +21,7 @@ public class ServerDateTimeController : Controller
         );
 
         return ApiResponse
-            .From(EResponseResult.Success, ELanguage.En);
+            .From(EResponseResult.Success);
     }
     
     [HttpPost("reset")]
@@ -31,6 +31,6 @@ public class ServerDateTimeController : Controller
         ServerDateTime.ResetServerTimeNow();
         
         return ApiResponse
-            .From(EResponseResult.Success, ELanguage.En);
+            .From(EResponseResult.Success);
     }
 }

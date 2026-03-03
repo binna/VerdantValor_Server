@@ -20,12 +20,11 @@ public class RankingService
     }
 
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
-        ERanking rankingType, int limit, 
-        ELanguage language = ELanguage.En)
+        ERanking rankingType, int limit)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
             return ApiResponse<RankRes>
-                .From(EResponseResult.InvalidInput, language);
+                .From(EResponseResult.InvalidInput);
 
         var redisRankings =
             await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
@@ -52,7 +51,7 @@ public class RankingService
         }
 
         return ApiResponse<RankRes>
-            .From(EResponseResult.Success, language, result);
+            .From(EResponseResult.Success, result);
     }
 
     public async Task<ApiResponse<RankRes>> GetMemberRankAsync(
@@ -71,7 +70,7 @@ public class RankingService
 
         if (rank == null || score == null)
             return ApiResponse<RankRes>
-                .From(EResponseResult.SuccessEmptyRanking, language);
+                .From(EResponseResult.SuccessEmptyRanking);
         
         var result = new RankRes();
         result.Rankings.Add(
@@ -84,24 +83,23 @@ public class RankingService
         );
 
         return ApiResponse<RankRes>
-            .From(EResponseResult.Success, language, result);
+            .From(EResponseResult.Success, result);
     }
 
     public async Task<ApiResponse> AddScore(
         ERanking rankingType, 
-        string userId, string nickname, double score, 
-        ELanguage language = ELanguage.En)
+        string userId, string nickname, double score)
     {
         if (score <= 0)
             return ApiResponse
-                .From(EResponseResult.ScoreCannotBeNegative, language);
+                .From(EResponseResult.ScoreCannotBeNegative);
         
         var member = CreateMemberFieldName(userId, nickname);
         
         await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
         return ApiResponse
-            .From(EResponseResult.Success, language);
+            .From(EResponseResult.Success);
     }
 
     private static string CreateMemberFieldName(string userId, string nickname)

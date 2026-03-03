@@ -24,12 +24,11 @@ public class RankingController : Controller
     public async Task<ApiResponse<RankRes>> GetRank([FromBody] GetRankReq request)
     {
         var userId = this.GetUserId();
-        var language = this.GetLanguage();
         
         if (!Enum.TryParse<ERankingScope>(request.Scope, out var rankingScope) 
                 || !Enum.TryParse<ERanking>(request.Type, out var rankingType))
             return ApiResponse<RankRes>
-                .From(EResponseResult.InvalidInput, language);
+                .From(EResponseResult.InvalidInput);
         
         switch (rankingScope)
         {
@@ -37,16 +36,16 @@ public class RankingController : Controller
             {
                 var nickname = this.GetNickname();
                 return await mRankingService.GetMemberRankAsync(
-                    rankingType, userId, nickname, language);
+                    rankingType, userId, nickname);
             }
             case ERankingScope.Global:
             {
                 return await mRankingService.GetTopRankingAsync(
-                    rankingType, request.Limit, language);
+                    rankingType, request.Limit);
             }
         }
         return ApiResponse<RankRes>
-            .From(EResponseResult.Success, language);
+            .From(EResponseResult.Success);
     }
 
     [HttpPost("Entries")]
@@ -54,14 +53,13 @@ public class RankingController : Controller
     public async Task<ApiResponse> Entries([FromBody] CreateScoreReq request)
     {
         var userId = this.GetUserId();
-        var language = this.GetLanguage();
         var nickname = this.GetNickname();
 
         if (!Enum.TryParse<ERanking>(request.Type, out var rankingType))
             return ApiResponse<RankRes>
-                .From(EResponseResult.InvalidInput, language);
+                .From(EResponseResult.InvalidInput);
 
         return await mRankingService.AddScore(
-            rankingType, userId, nickname, request.Score, language);
+            rankingType, userId, nickname, request.Score);
     }
 }

@@ -10,11 +10,6 @@ public static class HttpContextExtension
         return (string)controller.HttpContext.Items["userId"]!;
     }
 
-    public static ELanguage GetLanguage(this Controller controller)
-    {
-        return (ELanguage)controller.HttpContext.Items["language"]!;
-    }
-
     public static string GetNickname(this Controller controller)
     {
         return (string)controller.HttpContext.Items["nickname"]!;
@@ -22,10 +17,9 @@ public static class HttpContextExtension
 
     public static void SetUserSession(
         this IHttpContextAccessor httpContextAccessor, 
-        string userId, string nickname, string language)
+        string userId, string nickname)
     {
         httpContextAccessor.HttpContext!.Session.SetString("userId", $"{userId}");
         httpContextAccessor.HttpContext!.Session.SetString("nickname", $"{nickname}");
-        httpContextAccessor.HttpContext!.Session.SetString("language", $"{language}");
     }
 }
