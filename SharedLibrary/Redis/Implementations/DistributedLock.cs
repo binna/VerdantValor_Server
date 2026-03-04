@@ -45,6 +45,6 @@ public sealed class DistributedLock
         var result = await mCacheDriver
             .ScriptEvaluateAsync(RELEASE_LOCK_IF_OWNER_SCRIPT, [lockKey], [lockToken]);
 
-        return (long)result == 1;
+        return long.TryParse(result, out var redisValue) && redisValue == 1;
     }
 }

@@ -23,7 +23,12 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         mConnection.Dispose();
     }
 
-    public Task<bool> StringSetAsync(string key, string value, TimeSpan? expiry = null, ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None)
+    public Task<bool> StringSetAsync(
+        string key, 
+        string value, 
+        TimeSpan? expiry = null, 
+        ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None,
+        CancellationToken token = default)
     {
         switch (condition)
         {
@@ -37,9 +42,13 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 
-    public Task<RedisResult> ScriptEvaluateAsync(string script, string[] keys, string[] values)
+    public async Task<string> ScriptEvaluateAsync(
+        string script, 
+        string[] keys, 
+        string[] values, 
+        CancellationToken token = default)
     {
-        if (string.IsNullOrWhiteSpace(script) )
+        if (string.IsNullOrWhiteSpace(script))
             throw new ArgumentException("script must not be empty.");
         
         var redisKeys = new RedisKey[keys.Length];
@@ -54,7 +63,9 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         {
             redisValues[i] = values[i];
         }
+
+        var response = await mDatabase.ScriptEvaluateAsync(script, redisKeys, redisValues);
         
-        return mDatabase.ScriptEvaluateAsync(script, redisKeys, redisValues);
+        return response.ToString();
     }
 }

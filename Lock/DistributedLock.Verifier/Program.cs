@@ -9,10 +9,7 @@ class Program
     
     static async Task Main(string[] args)
     {
-        // RawRedis rawRedis = new("localhost", 6379, 10);
-        // await rawRedis.StringSetAsync("GainItem", "shine");
-
-
+        var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 10);
         var cacheDriver = new RedisCacheDriver("localhost", "6379", 10);
         await TestDistributed(cacheDriver);
     }
