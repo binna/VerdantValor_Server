@@ -1,14 +1,15 @@
-using Common.Web;
+using Common;
+using Common.Helpers;
 using Common.Manager;
+using Common.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Efcore;
 using Efcore.Repositories;
-using Redis.Implementations;
-using Redis.Interfaces;
-using Shared.Constants;
+using Redis;
+using WebServer.options;
 using WebServer.Pipeline;
 using WebServer.Services;
 
@@ -23,7 +24,8 @@ Log.Logger = new LoggerConfiguration().ReadFrom
 builder.Logging.ClearProviders();   // 기존 기본 로깅 공급자 제거 후
 builder.Host.UseSerilog();          // Serilog를 로거로 사용
 
-Console.WriteLine(builder.Environment.EnvironmentName);
+Console.WriteLine($"Play Environment : {builder.Environment.EnvironmentName}");
+
 // 내가 사용할 환경 설정 이름
 builder.Configuration
     .AddJsonFile(
@@ -138,10 +140,9 @@ builder.Services.AddAuthorization(options =>
         "SessionPolicy", 
         policy => policy.Requirements.Add(new SessionAuthRequirement())));
 
-// 명시적으로 의존주입 설정
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
-    .AddSingleton<IWebServerRedisClient, WebServerRedisClient>()
+    .AddSingleton<IKeyValueStore, RedisKeyValueStore>()
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()

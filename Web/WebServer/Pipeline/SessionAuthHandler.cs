@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Redis.Interfaces;
+﻿using Common.Web;
+using Microsoft.AspNetCore.Authorization;
 using Shared.Types;
 
 namespace WebServer.Pipeline;
@@ -9,12 +9,12 @@ public class SessionAuthRequirement : IAuthorizationRequirement { }
 public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
 {
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IWebServerRedisClient mRedisClient;
+    private readonly IKeyValueStore mKeyValueStore;
 
-    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, IWebServerRedisClient redisClient)
+    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, IKeyValueStore keyValueStore)
     {
         mHttpContextAccessor = httpContextAccessor;
-        mRedisClient = redisClient;
+        mKeyValueStore = keyValueStore;
     }
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SessionAuthRequirement authorizationRequirement)
@@ -40,7 +40,7 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
             return;
         }
 
-        var saveSessionId = (await mRedisClient.GetSessionInfoAsync(userId)).ToString();
+        var saveSessionId = (await mKeyValueStore.GetSessionInfoAsync(userId)).ToString();
 
         if (!saveSessionId.Equals(http.Session.Id))
         {

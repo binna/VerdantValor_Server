@@ -1,8 +1,8 @@
-﻿using Efcore.Repositories;
+﻿using Common;
+using Efcore.Repositories;
 using Common.Helpers;
 using Common.Manager;
 using Common.Web;
-using Redis.Interfaces;
 using Shared.Constants;
 using Shared.Types;
 
@@ -13,18 +13,21 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
-    private readonly IWebServerRedisClient mRedisClient;
+    private readonly IKeyValueStore _mKeyValueStore;
+    private readonly ISecurityHelper mSecurityHelper;
 
     public UsersService(
         ILogger<UsersService> logger,
         IHttpContextAccessor httpContextAccessor,
         IUsersRepository usersRepository,
-        IWebServerRedisClient redisClient)
+        IKeyValueStore keyValueStore,
+        ISecurityHelper securityHelper)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mUsersRepository = usersRepository;
-        mRedisClient = redisClient;
+        _mKeyValueStore = keyValueStore;
+        mSecurityHelper = securityHelper;
     }
 
     public async Task<ApiResponse> JoinAsync(
@@ -68,7 +71,7 @@ public class UsersService
             return ApiResponse
                 .From(EResponseResult.ForbiddenNickname);
 
-        var hashPw = SecurityHelper.ComputeSha512Hash(password);
+        var hashPw = mSecurityHelper.ComputeSha512Hash(password);
         await mUsersRepository.AddAsync(email, nickname, hashPw);
         
         return ApiResponse
@@ -95,10 +98,10 @@ public class UsersService
             return ApiResponse
                 .From(EResponseResult.NoData);
 
-        if (!SecurityHelper.VerifySha512Hash(password, user.Pw))
+        if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
             return ApiResponse.From(EResponseResult.NotMatchPw);
         
-        await mRedisClient.AddSessionInfoAsync(
+        await _mKeyValueStore.AddSessionInfoAsync(
             $"{user.UserId}", 
             mHttpContextAccessor.HttpContext!.Session.Id);
 

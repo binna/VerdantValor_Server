@@ -1,6 +1,6 @@
-﻿using Common.Web;
+﻿using Common;
+using Common.Web;
 using Protocol.Web.Dtos;
-using Redis.Interfaces;
 using Shared.Constants;
 using Shared.Types;
 
@@ -9,14 +9,14 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly IWebServerRedisClient mRedisClient;
+    private readonly IKeyValueStore _mKeyValueStore;
 
     public RankingService(
         ILogger<RankingService> logger, 
-        IWebServerRedisClient redisClient)
+        IKeyValueStore keyValueStore)
     {
         mLogger = logger;
-        mRedisClient = redisClient;
+        _mKeyValueStore = keyValueStore;
     }
 
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
@@ -27,14 +27,14 @@ public class RankingService
                 .From(EResponseResult.InvalidInput);
 
         var redisRankings =
-            await mRedisClient.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+            await _mKeyValueStore.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
         var result = new RankRes();
 
         for (var i = 0; i < redisRankings.Length; i++)
         {
             var info = redisRankings[i];
-            var userInfo = info.Element.ToString().Split("/");
+            var userInfo = info.Element.Split("/");
 
             if (!ulong.TryParse(userInfo[0], out var userId))
             {
@@ -63,10 +63,10 @@ public class RankingService
         var rankingKey = CreateRankingKeyName(rankingType);
         
         var rank = 
-            await mRedisClient.GetMemberRank(rankingKey, member);
+            await _mKeyValueStore.GetMemberRank(rankingKey, member);
 
         var score = 
-            await mRedisClient.GetMemberScore(rankingKey, member);
+            await _mKeyValueStore.GetMemberScore(rankingKey, member);
 
         if (rank == null || score == null)
             return ApiResponse<RankRes>
@@ -96,7 +96,7 @@ public class RankingService
         
         var member = CreateMemberFieldName(userId, nickname);
         
-        await mRedisClient.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
+        await _mKeyValueStore.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
         return ApiResponse
             .From(EResponseResult.Success);
