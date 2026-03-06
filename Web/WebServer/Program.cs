@@ -53,77 +53,85 @@ builder.Services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen();
 
-var mysqlConnUrl = builder.Configuration["DB:MySQL:Url"];
-var host = builder.Configuration["DB:Redis:Host"];
-var port = builder.Configuration["DB:Redis:Port"];
-var serverName = builder.Configuration["Server:Name"];
+var securityOption = builder.Configuration
+    .GetSection("Security")
+    .Get<SecurityOption>(); 
 
-// Redis 기반 세션 공유를 위한 분산 캐시 설정
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = $"{host}:{port},defaultDatabase=3";
-    options.InstanceName = $"{serverName}_";
-});
+var redisOption = builder.Configuration
+    .GetSection("Redis")
+    .Get<RedisOption>();
 
-if (string.IsNullOrWhiteSpace(mysqlConnUrl)
-    || string.IsNullOrWhiteSpace(host) 
-    || string.IsNullOrWhiteSpace(port)
-    || string.IsNullOrWhiteSpace(serverName))
+var mysqlOption = builder.Configuration
+    .GetSection("MySQL")
+    .Get<MysqlOption>();
+
+var serverOption = builder.Configuration
+    .GetSection("Server")
+    .Get<ServerOption>();
+
+// 설정 객체를 Singleton으로 DI에 등록
+builder.Services
+    .AddSingleton(securityOption)
+    .AddSingleton(redisOption)
+    .AddSingleton(mysqlOption)
+    .AddSingleton(serverOption);
+
+if (string.IsNullOrWhiteSpace(mysqlOption.Url)
+    || string.IsNullOrWhiteSpace(redisOption.Host) 
+    || redisOption.Port <= 0
+    || string.IsNullOrWhiteSpace(serverOption.Name) 
+    || string.IsNullOrEmpty(serverOption.SharedLibraryPath))
 {
     Log.Fatal("Configurations are missing required fields. {@fields}", 
-        new { mysqlConnUrl, host, port, serverName });
+        new
+        {
+            mysqlOption.Url, 
+            redisOption.Host, redisOption.Port, 
+            serverOption.Name,
+            GameDataPath = serverOption.SharedLibraryPath
+        });
     Environment.Exit(1);
 }
 
-builder.Services
-    .AddPooledDbContextFactory<AppDbContext>(options => 
-        options.UseMySQL(mysqlConnUrl));
+if (string.IsNullOrWhiteSpace(securityOption.ReqEncryptKey))
+{
+    Log.Fatal("Configurations are missing required fields. {@fields}", 
+        new { securityOption.ReqEncryptKey });
+    Environment.Exit(1);
+}
 
 #region Init
 try
 {
     // AppContext.BaseDirectory
     //  실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
-    var baseDir = AppContext.BaseDirectory;
-    var path = Path.GetFullPath(
-        Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data"));
-    GameDataManager.LoadAllGameData(path);
-    BannedManager.Load();
-    Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
+    var gameDataPath = Path.GetFullPath(
+        Path.Combine(serverOption.BaseDir, serverOption.SharedLibraryPath, "GameData", "Data"));
+    GameDataManager.LoadAllGameData(gameDataPath);
 }
 catch (Exception ex)
 {
     Log.Fatal(ex, "ResponseStatus setup Fail.");
     Environment.Exit(1);
 }
-
-if (!builder.Environment.IsDevelopment())
-{
-    var reqEncryptKey = builder.Configuration["ReqEncryptKey"];
-    if (string.IsNullOrWhiteSpace(reqEncryptKey))
-    {
-        Log.Fatal("Configurations are missing required fields. {@fields}", 
-            new { reqEncryptKey });
-        Environment.Exit(1);
-    }
-
-    try
-    {
-        AppReadonly.Init(reqEncryptKey);
-        Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
-    }
-    catch (Exception ex)
-    {
-        Log.Fatal(ex, "ResponseStatus setup Fail.");
-        Environment.Exit(1);
-    }
-}
 #endregion
+
+// Redis 기반 세션 공유를 위한 분산 캐시 설정
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase=3";
+    options.InstanceName = $"{serverOption.Name}_";
+});
+
+builder.Services
+    .AddPooledDbContextFactory<AppDbContext>(options => 
+        options.UseMySQL(mysqlOption.Url));
 
 // 인증 설정, 커스텀한 인가를 사용하기 위해 반드시 필요하여 형식적으로 작업
 builder.Services.AddAuthentication("PassThroughAuth")
      .AddScheme<AuthenticationSchemeOptions, PassThroughAuthHandler>(
          "PassThroughAuth", null);
+
 // 인가 정책 설정, Attribute([Authorize]) 기반 정책 적용
 builder.Services.AddAuthorization(options => 
     options.AddPolicy(
@@ -138,6 +146,10 @@ builder.Services
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
     ;
+
+builder.Services.AddSingleton<ISecurityHelper>(
+    _ => new SecurityHelper(securityOption.ReqEncryptKey)
+);
 
 var app = builder.Build();
 

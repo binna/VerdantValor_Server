@@ -1,4 +1,5 @@
-﻿using Common.Manager;
+﻿using Common.Constants;
+using Common.Manager;
 using Shared.Types;
 
 namespace Common.Web;
@@ -13,7 +14,7 @@ public class ApiResponse(bool isSuccess, int code, ulong textId)
     {
         if (!GameDataManager.TryResponseResultGet(code, out var responseResult))
             throw new InvalidOperationException(
-                string.Format(ExceptionMessage.RESPONSE_RESULT_NOT_SET, $"{code}", $"{(int)code}"));
+                string.Format(ErrorMessages.RESPONSE_RESULT_NOT_SET, $"{code}", $"{(int)code}"));
         
         return new ApiResponse(
             responseResult.IsSuccess, 

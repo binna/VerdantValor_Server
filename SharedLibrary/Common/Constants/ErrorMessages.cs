@@ -1,6 +1,6 @@
-﻿namespace Common.Web;
+﻿namespace Common.Constants;
 
-public static class ExceptionMessage
+public static class ErrorMessages
 {
     public const string FAILED_TO_LOAD_FILE
         = "Failed to load {0}.";

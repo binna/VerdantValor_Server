@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using Common.Web;
+using Common.Constants;
 using Shared.GameData;
 using Shared.Types;
 
@@ -49,7 +49,7 @@ public class GameDataManager
                 
                 if (!mResponseResultTable.TryGetValue(code, out _))
                     throw new InvalidOperationException(
-                        string.Format(ExceptionMessage.RESPONSE_RESULT_NOT_SET, $"{code}", $"{(int)code}"));
+                        string.Format(ErrorMessages.RESPONSE_RESULT_NOT_SET, $"{code}", $"{(int)code}"));
             }
         });
         
@@ -77,7 +77,7 @@ public class GameDataManager
         
         if (data == null || data.Data.Count == 0)
             throw new InvalidDataException(
-                string.Format(ExceptionMessage.FAILED_TO_LOAD_FILE, $"{filename}"));
+                string.Format(ErrorMessages.FAILED_TO_LOAD_FILE, $"{filename}"));
 
         apply(data.Data);
     }
