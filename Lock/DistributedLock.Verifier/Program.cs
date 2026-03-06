@@ -1,5 +1,6 @@
-﻿using Redis.Driver;
-using RedisLock = Redis.Implementations;
+﻿using Common.Concurrency.Driver;
+using Redis;
+using RedisLock = Common.Concurrency;
 
 namespace DistributedLock.Verifier;
 
