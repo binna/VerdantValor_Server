@@ -10,10 +10,14 @@ namespace WebServer.Pipeline;
 public class DecryptReqMiddleware
 {
     private readonly RequestDelegate mNext;
+    private readonly ISecurityHelper mSecurityHelper;
     
-    public DecryptReqMiddleware(RequestDelegate next)
+    public DecryptReqMiddleware(
+        RequestDelegate next, 
+        ISecurityHelper securityHelper)
     {
         mNext = next;
+        mSecurityHelper = securityHelper;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -54,7 +58,7 @@ public class DecryptReqMiddleware
                 return;
             }
 
-            var request = SecurityHelper.DecryptPayloadToBytes(encryptReq);
+            var request = mSecurityHelper.DecryptPayloadToBytes(encryptReq);
             var newBody = new MemoryStream(request);
 
             context.Response.Body = newBody;

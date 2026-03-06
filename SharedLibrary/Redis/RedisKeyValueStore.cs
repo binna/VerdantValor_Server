@@ -1,18 +1,21 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common.Types;
+using Common.Web;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Redis.Interfaces;
 using StackExchange.Redis;
 
-namespace Redis.Implementations;
+namespace Redis;
 
-public sealed class WebServerRedisClient : IWebServerRedisClient
+// TODO 드라이브 느낌 살려보는 것 좀 더 고민 필요
+
+public sealed class RedisKeyValueStore : IKeyValueStore
 {
     private readonly IDatabase mCoreDatabase;
     private readonly IDatabase mSessionDatabase;
 
-    public WebServerRedisClient(
+    public RedisKeyValueStore(
         IConfiguration configuration,
-        ILogger<IWebServerRedisClient> logger)
+        ILogger<IKeyValueStore> logger)
     {
         var host = configuration["DB:Redis:Host"];
         var port = configuration["DB:Redis:Port"];
@@ -51,9 +54,19 @@ public sealed class WebServerRedisClient : IWebServerRedisClient
         return mCoreDatabase.SortedSetAddAsync(key, member, score);
     }
 
-    public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
+    public async Task<RankingEntry[]> GetTopRankingByType(string key, int rank)
     {
-        return mCoreDatabase.SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+        var entries = await mCoreDatabase
+            .SortedSetRangeByRankWithScoresAsync(key, 0, rank - 1, Order.Descending);
+        
+        var rankings = new RankingEntry[entries.Length];
+        
+        for (var i = 0; i < entries.Length; i++)
+        {
+            rankings[i] = new RankingEntry(entries[i].Element.ToString(), entries[i].Score);
+        }
+
+        return rankings;
     }
 
     public Task<long?> GetMemberRank(string key, string member)
@@ -73,9 +86,10 @@ public sealed class WebServerRedisClient : IWebServerRedisClient
         return mSessionDatabase.StringSetAsync(key, value);
     }
     
-    public Task<RedisValue> GetSessionInfoAsync(string key)
+    public async Task<string> GetSessionInfoAsync(string key)
     {
-        return mSessionDatabase.StringGetAsync(key);
+        var value = await mSessionDatabase.StringGetAsync(key);
+        return value.ToString();
     }
     #endregion
 }

@@ -1,10 +1,9 @@
 ﻿using System.Collections.Concurrent;
-using Redis.Interfaces;
-using StackExchange.Redis;
+using Common.Types;
 
-namespace Redis.Implementations;
+namespace Common.Web;
 
-public sealed class WebServerFakeRedisClient : IWebServerRedisClient
+public sealed class FakeKeyValueStore : IKeyValueStore
 {
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> mCoreHash = new();
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, double>> mCoreSortedSet = new();
@@ -39,15 +38,15 @@ public sealed class WebServerFakeRedisClient : IWebServerRedisClient
         return Task.FromResult(false);
     }
 
-    public Task<SortedSetEntry[]> GetTopRankingByType(string key, int rank)
+    public Task<RankingEntry[]> GetTopRankingByType(string key, int rank)
     {
         if (!mCoreSortedSet.TryGetValue(key, out var sortedSet))
-            return Task.FromResult(Array.Empty<SortedSetEntry>());
+            return Task.FromResult(Array.Empty<RankingEntry>());
         
         var result = sortedSet
             .OrderByDescending(x => x.Value)
             .Take(rank)
-            .Select(x => new SortedSetEntry(x.Key, x.Value))
+            .Select(x => new RankingEntry(x.Key, x.Value))
             .ToArray();
         
         return Task.FromResult(result);
@@ -88,13 +87,9 @@ public sealed class WebServerFakeRedisClient : IWebServerRedisClient
         return Task.FromResult(false);
     }
 
-    public Task<RedisValue> GetSessionInfoAsync(string key)
+    public Task<string> GetSessionInfoAsync(string key)
     {
-        mSessionString.TryGetValue(key, out var value);
-
-        if (value == null)
-            return Task.FromResult(RedisValue.Null);
-        
-        return Task.FromResult<RedisValue>(value);
+        var value = mSessionString.GetValueOrDefault(key, "");
+        return Task.FromResult(value);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Common.Helpers;
 using Org.BouncyCastle.Security;
-using Common.Web;
+using Common.Constants;
 
 namespace Common.Types;
 
@@ -59,7 +59,7 @@ public readonly struct ServerDateTime
     {
         if (!ValidationHelper.IsDateTimeFormat(datetime))
             throw new InvalidParameterException(
-                ExceptionMessage.INVALID_DATETIME_FORMAT);
+                ErrorMessages.INVALID_DATETIME_FORMAT);
 
         return new ServerDateTime(
             DateTimeOffset.Parse(datetime).UtcDateTime);

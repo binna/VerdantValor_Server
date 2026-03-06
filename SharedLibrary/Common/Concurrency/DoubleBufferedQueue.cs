@@ -1,6 +1,20 @@
-﻿namespace Common.Types;
+﻿// Double Buffering 패턴
 
-public class SwapQueue<T>
+// [문제] Queue<T>는 기본적으로 thread-safe가 아니다.
+//      여러 스레드가 동시에 Enqueue와 Dequeue 하면 
+//      처리 순서를 보장할 수 없고, 레이스 컨디션이 발생할 수 있다.
+
+// 왜 위험한가?
+//      큐에 데이터를 넣는 것은 하나의 원자적 연산이 아니라,
+//      만들기 -> 자리 확인 -> 넣기와 같은 여러 단계로 이루어진다.
+//      이 과정에서 여러 스레드가 동시에 접근하면 레이스 컨디션이 발생할 수 있다.
+
+// 결론
+//      공유 자원을 사용하는 순간, 항상 레이스 컨디션 가능성을 먼저 가정해야 한다.
+
+namespace Common.Concurrency;
+
+public class DoubleBufferedQueue<T>
 {
     private Queue<T> mInputQueue = new();
     private Queue<T> mOutputQueue = new();

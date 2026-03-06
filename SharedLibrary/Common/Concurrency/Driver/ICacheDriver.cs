@@ -1,4 +1,4 @@
-﻿namespace Redis.Driver;
+﻿namespace Common.Concurrency.Driver;
 
 public interface ICacheDriver
 {

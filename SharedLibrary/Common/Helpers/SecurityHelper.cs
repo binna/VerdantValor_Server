@@ -1,14 +1,20 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Common.Web;
 using Protocol.Web.Dtos;
 
 namespace Common.Helpers;
 
-public static class SecurityHelper
+public class SecurityHelper : ISecurityHelper
 {
-    public static string ComputeSha512Hash(string plainText)
+    private readonly byte[] mEncryptKey;
+
+    public SecurityHelper(string encryptKey)
+    {
+        mEncryptKey = Encoding.UTF8.GetBytes(encryptKey);
+    }
+
+    public string ComputeSha512Hash(string plainText)
     {
         using var sha512 = SHA512.Create();
         
@@ -28,7 +34,7 @@ public static class SecurityHelper
         return hashString.ToString();
     }
 
-    public static bool VerifySha512Hash(string plainText, string hashText)
+    public bool VerifySha512Hash(string plainText, string hashText)
     {
         return string.Equals(
             ComputeSha512Hash(plainText), 
@@ -36,9 +42,9 @@ public static class SecurityHelper
             StringComparison.OrdinalIgnoreCase);
     }
 
-    public static T? DecryptPayload<T>(EncryptReq request)  
+    public T? DecryptPayload<T>(EncryptReq request)
     {
-        using var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY);
+        using var aesCcm = new AesCcm(mEncryptKey);
         
         var nonceBytes = Convert.FromBase64String(request.Nonce);
         var dataBytes = Convert.FromBase64String(request.Data);
@@ -52,9 +58,9 @@ public static class SecurityHelper
         return JsonSerializer.Deserialize<T>(plaintext);
     }
     
-    public static byte[] DecryptPayloadToBytes(EncryptReq request)  
+    public byte[] DecryptPayloadToBytes(EncryptReq request)
     {
-        using var aesCcm = new AesCcm(AppReadonly.REQ_ENCRYPT_KEY);
+        using var aesCcm = new AesCcm(mEncryptKey);
         
         var nonceBytes = Convert.FromBase64String(request.Nonce);
         var dataBytes = Convert.FromBase64String(request.Data);

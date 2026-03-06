@@ -1,6 +1,6 @@
-﻿using Redis.Driver;
+﻿using Common.Concurrency.Driver;
 
-namespace Redis.Implementations;
+namespace Common.Concurrency;
 
 // Redis 싱글 스레드 기반이며, 명령은 원자적으로 처리된다.
 //  1. SET lock_key lock_token NX PX 3000

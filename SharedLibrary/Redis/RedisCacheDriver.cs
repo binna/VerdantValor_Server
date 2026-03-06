@@ -1,6 +1,7 @@
-﻿using StackExchange.Redis;
+﻿using Common.Concurrency.Driver;
+using StackExchange.Redis;
 
-namespace Redis.Driver;
+namespace Redis;
 
 public class RedisCacheDriver : ICacheDriver, IDisposable
 {
