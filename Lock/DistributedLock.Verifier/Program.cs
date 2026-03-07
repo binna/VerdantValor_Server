@@ -1,4 +1,4 @@
-﻿using Common.Concurrency.Driver;
+﻿using Common.Driver;
 using Redis;
 using RedisLock = Common.Concurrency;
 

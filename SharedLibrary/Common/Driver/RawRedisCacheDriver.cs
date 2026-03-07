@@ -1,7 +1,8 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using Common.Types;
 
-namespace Common.Concurrency.Driver;
+namespace Common.Driver;
 
 // Redis 싱글 스레드 기반이며, 명령은 원자적으로 처리된다.
 //  1. SET lock_key lock_token NX PX 3000
@@ -140,6 +141,41 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         {
             mMutex.Release();
         }
+    }
+
+    // TODO 새로 생긴 거 만들어보기
+    public Task<string> StringGetAsync(string key, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> HashSetAsync(string key, string hashField, string value, ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None,
+        CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> SortedSetAddAsync(string key, string member, double score, ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None,
+        CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RankingEntry[]> SortedSetRangeByRankWithScoresAsync(string key, long start = 0, long stop = -1,
+        ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<long?> SortedSetRankAsync(string key, string member, ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending,
+        CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<double?> SortedSetScoreAsync(string key, string member, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task<string> ScriptEvaluateAsync(

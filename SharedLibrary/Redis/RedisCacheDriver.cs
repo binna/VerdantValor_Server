@@ -1,4 +1,6 @@
-﻿using Common.Concurrency.Driver;
+﻿using System.Buffers;
+using Common.Driver;
+using Common.Types;
 using StackExchange.Redis;
 
 namespace Redis;
@@ -41,6 +43,108 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
             default:
                 return mDatabase.StringSetAsync(key, value, expiry, When.Always);
         }
+    }
+
+    public async Task<string> StringGetAsync(string key, CancellationToken token = default)
+    {
+        var value = await mDatabase.StringGetAsync(key);
+        return value.ToString();
+    }
+    
+    public Task<bool> HashSetAsync(
+        string key,
+        string hashField, 
+        string value,
+        ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None, 
+        CancellationToken token = default)
+    {
+        switch (condition)
+        {
+            case ICacheDriver.ESetCondition.Exists:
+                return mDatabase.HashSetAsync(key, hashField, value, When.Exists);
+            case ICacheDriver.ESetCondition.NotExists:
+                return mDatabase.HashSetAsync(key, hashField, value, When.NotExists);
+            case ICacheDriver.ESetCondition.None:
+            default:
+                return mDatabase.HashSetAsync(key, hashField, value, When.Always);
+        }
+    }
+    
+    public Task<bool> SortedSetAddAsync(
+        string key,
+        string member,
+        double score,
+        ICacheDriver.ESetCondition condition = ICacheDriver.ESetCondition.None,
+        CancellationToken token = default)
+    {
+        switch (condition)
+        {
+            case ICacheDriver.ESetCondition.Exists:
+                return mDatabase.SortedSetAddAsync(key, member, score, When.Exists);
+            case ICacheDriver.ESetCondition.NotExists:
+                return mDatabase.SortedSetAddAsync(key, member, score, When.NotExists);
+            case ICacheDriver.ESetCondition.None:
+            default:
+                return mDatabase.SortedSetAddAsync(key, member, score, When.Always);
+        }
+    }
+
+    public async Task<RankingEntry[]> SortedSetRangeByRankWithScoresAsync(
+        string key,
+        long start = 0,
+        long stop = -1,
+        ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending, 
+        CancellationToken token = default)
+    {
+        SortedSetEntry[] entries;
+
+        switch (order)
+        {
+            case ICacheDriver.EGetOrder.Descending:
+                entries = await mDatabase
+                    .SortedSetRangeByRankWithScoresAsync(key, start, stop, Order.Descending);
+                break;
+            case ICacheDriver.EGetOrder.Ascending:
+            default:
+                entries = await mDatabase
+                    .SortedSetRangeByRankWithScoresAsync(key, start, stop, Order.Ascending);
+                break;
+        }
+
+        var rankings = ArrayPool<RankingEntry>.Shared.Rent(entries.Length);
+        
+        for (var i = 0; i < entries.Length; i++)
+        {
+            rankings[i] = new RankingEntry(entries[i].Element.ToString(), entries[i].Score);
+        }
+
+        return rankings;
+    }
+
+    public Task<long?> SortedSetRankAsync(
+        string key,
+        string member,
+        ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending,
+        CancellationToken token = default)
+    {
+        switch (order)
+        {
+            case ICacheDriver.EGetOrder.Descending:
+                return mDatabase.
+                    SortedSetRankAsync(key, member, Order.Descending);
+            case ICacheDriver.EGetOrder.Ascending:
+            default:
+                return mDatabase.
+                    SortedSetRankAsync(key, member, Order.Ascending);
+        }
+    }
+
+    public Task<double?> SortedSetScoreAsync(
+        string key,
+        string member,
+        CancellationToken token = default)
+    {
+        return mDatabase.SortedSetScoreAsync(key, member);
     }
 
     public async Task<string> ScriptEvaluateAsync(

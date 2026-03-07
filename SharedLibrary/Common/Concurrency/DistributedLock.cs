@@ -1,4 +1,4 @@
-﻿using Common.Concurrency.Driver;
+﻿using Common.Driver;
 
 namespace Common.Concurrency;
 
