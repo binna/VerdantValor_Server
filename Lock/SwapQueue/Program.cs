@@ -1,5 +1,4 @@
 ﻿using Common.Concurrency;
-using Common.Types;
 
 namespace SwapQueue;
 
