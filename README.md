@@ -43,19 +43,19 @@
 ## 웹 서버 구현 항목
 
 #### 서버 구조 설계 
-- MVC 기반 구조에서 비즈니스 로직과 표현 계층을 분리
+- MVC 기반 구조 설계
   - 코드:
     - [Controllers](./Web/WebServer/Controllers)     
     - [Services](./Web/WebServer/Services)
 
-- Repository 패턴으로 서비스 로직과 데이터 접근 로직 분리
+- Repository 패턴 적용으로 서비스 로직과 데이터 접근 계층 분리
   - 코드:
     - Program.cs
       - [Repository DI 설정](./Web/WebServer/Program.cs#L135)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
-- API 단위 트랜잭션 범위를 필터로 관리하여 서비스-데이터 결합도 감소
+- 트랜잭션 범위를 API 단위로 구성하고 필터로 구현
   - 코드:
     - [DBContextActionFilter.cs](./Web/WebServer/Pipeline/DBContextActionFilter.cs)      
 
