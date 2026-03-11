@@ -51,7 +51,7 @@
 - Repository 패턴 적용으로 서비스 로직과 데이터 접근 계층 분리
   - 코드:
     - Program.cs
-      - [Repository DI 설정](./Web/WebServer/Program.cs#L135)
+      - [Repository DI 설정](./Web/WebServer/Program.cs#L146)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
@@ -64,9 +64,9 @@
 - Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지    
   - 코드:
     - Program.cs
-      - [세션 설정](./Web/WebServer/Program.cs#L32)
-      - [세션 사용](./Web/WebServer/Program.cs#L153)
-      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L60)
+      - [세션 설정](./Web/WebServer/Program.cs#L35)
+      - [세션 사용](./Web/WebServer/Program.cs#L170)
+      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L121)
     
     - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
 
@@ -81,6 +81,11 @@
     - [Tcp 라이브러리](./SharedLibrary/Tcp)
 
 - Redis 접근 로직을 Driver 계층으로 분리하고 DI 패턴 적용
+  - 코드:
+      - [TcpClient를 이용한 Redis 연결 및 Collections 기반 Fake Driver 구현](/SharedLibrary/Common/Driver)
+      - [StackExchange.Redis 라이브러리를 이용한 Redis Driver 구현](/SharedLibrary/Redis/RedisCacheDriver.cs)
+      - [사용 예시 - DistributedLock](/SharedLibrary/Concurrency/DistributedLock.cs)
+      - [사용 예시 - Web 서버 KeyValueStore)](/SharedLibrary/Web/KeyValueStore.cs)
     
 - 서버-클라이언트 공용 데이터를 Web, Chat, Shared 3개의 라이브러리로 분리하고 Git Submodule로 관리
   - 코드:
