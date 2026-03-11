@@ -60,25 +60,28 @@
     - [DBContextActionFilter.cs](./Web/WebServer/Pipeline/DBContextActionFilter.cs)      
 
 #### 인증과 세션 관리 
-- 세션 기반 인증 구조를 적용하여 로그인 상태를 서버에서 직접 관리
-- 세션 만료를 서버에서 통제하고, 클라이언트 토큰 조작 가능성을 최소화
-- Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지
+- 세션 기반 인증 구조를 적용하여 로그인 상태와 세션 만료를 서버에서 관리하고 토큰 조작 가능성 최소화    
+- Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지    
   - 코드:
     - Program.cs
       - [세션 설정](./Web/WebServer/Program.cs#L32)
       - [세션 사용](./Web/WebServer/Program.cs#L153)
       - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L60)
+    
     - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
 
 #### 공용 코드 관리 및 서버 확장성 
 - SharedLibrary로 서버 전반의 공용 코드 통합 관리
-- 기능 단위(EF Core, Redis, ADO)로 모듈화하여 의존성 최소화
+- 기능 단위(Ado, Common, EF Core, Redis, Tcp)로 모듈화   
   - 코드:
     - [기본 라이브러리](./SharedLibrary/Common)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)
     - [Redis 라이브러리](./SharedLibrary/Redis)
     - [Ado 라이브러리](./SharedLibrary/Ado)
     - [Tcp 라이브러리](./SharedLibrary/Tcp)
+
+- Redis 접근 로직을 Driver 계층으로 분리하고 DI 패턴 적용
+    
 - 서버-클라이언트 공용 데이터를 Web, Chat, Shared 3개의 라이브러리로 분리하고 Git Submodule로 관리
   - 코드:
     - [VerdantValor_Shared 서브모듈](https://github.com/binna/VerdantValor_Shared)
@@ -87,6 +90,7 @@
 - 미들웨어 기반 글로벌 예외 처리 및 공통 검증 로직 구성
   - 코드:
     - [GlobalExceptionMiddleware.cs 글로벌 예외 처리](./Web/WebServer/Pipeline/GlobalExceptionMiddleware.cs)
+    
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
     - Program.cs
@@ -100,9 +104,8 @@
     - [SecurityHelper.cs 복호화 유틸](./SharedLibrary/Common/Helpers/SecurityHelper.cs)
     - [DecryptReqMiddleware.cs 요청 복호화 미들웨어](./Web/WebServer/Pipeline/DecryptReqMiddleware.cs)
 
-#### 유니테스트를 통한 검증 
-- xUnit + NSubstitute 유닛 테스트 구성
-- 주요 비즈니스 로직과 예외 시나리오를 사전 검증하여 장애 가능성 감소
+#### 유닛 테스트 기반 검증    
+- xUnit + NSubstitute 유닛 테스트 구성    
   - 코드:
     - [웹서버 유니테스트](./Web/WebServer.Test.Unit)
 
