@@ -102,7 +102,7 @@
       - [인증과 인가 설정](./Web/WebServer/Program.cs#L121)
       - [인증과 인가 사용](./Web/WebServer/Program.cs#L155)
     - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
-    - [실제 사용 예시](./Web/WebServer/Controllers/RankingController.cs#L23)
+    - [사용 예시 - RankingController GetRank API](./Web/WebServer/Controllers/RankingController.cs#L23)
     
 - Request Body 암호화를 통해 클라이언트-서버 통신 데이터 보호
   - 코드:
