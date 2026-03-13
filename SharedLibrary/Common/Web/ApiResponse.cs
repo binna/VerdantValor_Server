@@ -12,7 +12,7 @@ public class ApiResponse(bool isSuccess, int code, ulong textId)
     
     public static ApiResponse From(EResponseResult code)
     {
-        if (!GameDataManager.TryResponseResultGet(code, out var responseResult))
+        if (!GameDataManager.ResponseResultTable.TryGet(code, out var responseResult))
             throw new InvalidOperationException(
                 string.Format(ErrorMessages.RESPONSE_RESULT_NOT_SET, $"{code}"));
         
