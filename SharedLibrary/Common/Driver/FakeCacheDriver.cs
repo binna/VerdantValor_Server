@@ -1,22 +1,23 @@
 ﻿using System.Collections.Concurrent;
+using Common.Constants;
 using Common.Types;
 
 namespace Common.Driver;
 
-// Fake driver
-// - TTL not supported
-//////////////////////////////////////
-// Set 반환값
-//  - true: 새 멤버가 추가됨
-//  - false: 이미 존재해서 갱신됨
+// Fake cache driver
+//  - TTL: 지원하지 않음
+//  - ESetCondition: 지원하지 않음
+//  - Script evaluation: 지원하지 않음
+//
+// Set 계열 반환값
+//  - true  : 새 항목이 추가됨
+//  - false : 이미 존재하여 값이 갱신됨
 
 public sealed class FakeCacheDriver : ICacheDriver
 {
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> mHash = new();
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, double>> mSortedSet = new();
     private readonly ConcurrentDictionary<string, string> mString = new();
-    
-    private readonly SemaphoreSlim mMutex = new(1, 1);
     
     public Task<bool> StringSetAsync(
         string key, 
@@ -27,6 +28,9 @@ public sealed class FakeCacheDriver : ICacheDriver
     {
         if (mString.TryAdd(key, value))
             return Task.FromResult(true);
+        
+        // TTL / ESetCondition 지원하지 않음
+        // 옵션을 무시하고 일반 Set 동작으로 처리
         
         mString[key] = value;
         return Task.FromResult(false);
@@ -48,6 +52,9 @@ public sealed class FakeCacheDriver : ICacheDriver
         var hash = mHash
             .GetOrAdd(key, _ => new ConcurrentDictionary<string, string>());
         
+        // ESetCondition 지원하지 않음
+        // 조건을 무시하고 항상 Set 수행
+
         if (hash.TryAdd(hashField, value))
             return Task.FromResult(true);
         
@@ -65,6 +72,9 @@ public sealed class FakeCacheDriver : ICacheDriver
         var sortedSet = mSortedSet
             .GetOrAdd(key, _ => new ConcurrentDictionary<string, double>());
         
+        // ESetCondition 지원하지 않음
+        // 조건 없이 Add 또는 Update 수행
+    
         if (sortedSet.TryAdd(member, score))
             return Task.FromResult(true);
         
@@ -158,7 +168,13 @@ public sealed class FakeCacheDriver : ICacheDriver
 
     public Task<string> ScriptEvaluateAsync(string script, string[] keys, string[] values, CancellationToken token = default)
     {
-        // TODO 스크립트 부분 고민해보기
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(script))
+            throw new ArgumentException(
+                string.Format(ErrorMessages.MUST_NOT_BE_EMPTY, "Script"));
+        
+        // 스크립트 실행 지원하지 않음
+        // Fake driver에서는 빈 결과 반환
+
+        return Task.FromResult("");
     }
 }

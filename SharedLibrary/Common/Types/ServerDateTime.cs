@@ -59,7 +59,9 @@ public readonly struct ServerDateTime
     {
         if (!ValidationHelper.IsDateTimeFormat(datetime))
             throw new InvalidParameterException(
-                ErrorMessages.INVALID_DATETIME_FORMAT);
+                string.Format(
+                    ErrorMessages.INVALID_DATETIME_FORMAT, 
+                    "yyyy-MM-dd HH:mm:ss zzz", datetime));
 
         return new ServerDateTime(
             DateTimeOffset.Parse(datetime).UtcDateTime);

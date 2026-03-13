@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using Common.Constants;
 using Common.Driver;
 using Common.Types;
 using StackExchange.Redis;
@@ -13,7 +14,8 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
     public RedisCacheDriver(string host, string port, int db)
     {
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
-            throw new ArgumentException("Host and port must not be null or empty.");
+            throw new ArgumentException(
+                string.Format(ErrorMessages.MUST_NOT_BE_NULL_OR_EMPTY, "Host and port"));
         
         var endpoint = $"{host}:{port}";
         
@@ -154,7 +156,8 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(script))
-            throw new ArgumentException("script must not be empty.");
+            throw new ArgumentException(
+                string.Format(ErrorMessages.MUST_NOT_BE_EMPTY, "Script"));
         
         var redisKeys = new RedisKey[keys.Length];
         var redisValues = new RedisValue[values.Length];
