@@ -10,10 +10,10 @@ public sealed class RedisKeyValueStore : IKeyValueStore
 
     public RedisKeyValueStore(
         ICacheDriver coreCacheDriver,
-        ICacheDriver cacheDriver)
+        ICacheDriver sessionCacheDriver)
     {
         mCoreCacheDriver = coreCacheDriver;
-        mSessionCacheDriver = cacheDriver;
+        mSessionCacheDriver = sessionCacheDriver;
     }
 
     #region Core

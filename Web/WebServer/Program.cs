@@ -1,4 +1,4 @@
-using Common;
+using Common.Driver;
 using Common.Helpers;
 using Common.Manager;
 using Common.Web;
@@ -119,9 +119,10 @@ catch (Exception ex)
 #endregion
 
 // Redis 기반 세션 공유를 위한 분산 캐시 설정
+var sessionDatabase = 3;
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase=3";
+    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={sessionDatabase }";
     options.InstanceName = $"{serverOption.Name}_";
 });
 
@@ -140,9 +141,14 @@ builder.Services.AddAuthorization(options =>
         "SessionPolicy", 
         policy => policy.Requirements.Add(new SessionAuthRequirement())));
 
+ICacheDriver coreDriver 
+    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", 0);
+ICacheDriver sessionDriver 
+    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", sessionDatabase );
+
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
-    .AddSingleton<IKeyValueStore, RedisKeyValueStore>()
+    .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
     .AddSingleton<IUsersRepository, UsersRepository>()
     .AddSingleton<UsersService>()
     .AddSingleton<RankingService>()
