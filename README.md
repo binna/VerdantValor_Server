@@ -51,7 +51,7 @@
 - Repository 패턴 적용으로 서비스 로직과 데이터 접근 계층 분리
   - 코드:
     - Program.cs
-      - [Repository DI 설정](./Web/WebServer/Program.cs#L149)
+      - [Repository DI 설정](./Web/WebServer/Program.cs#L152)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
