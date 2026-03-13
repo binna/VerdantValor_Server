@@ -84,8 +84,8 @@
   - 코드:
       - [TcpClient를 이용한 Redis 연결 및 Collections 기반 Fake Driver 구현](/SharedLibrary/Common/Driver)
       - [StackExchange.Redis 라이브러리를 이용한 Redis Driver 구현](/SharedLibrary/Redis/RedisCacheDriver.cs)
-      - [사용 예시 - DistributedLock](/SharedLibrary/Concurrency/DistributedLock.cs)
-      - [사용 예시 - Web 서버 KeyValueStore](/SharedLibrary/Web/KeyValueStore.cs)
+      - [사용 예시 - DistributedLock](/SharedLibrary/Common/Concurrency/DistributedLock.cs)
+      - [사용 예시 - Web 서버 KeyValueStore](/SharedLibrary/Common/Web/KeyValueStore.cs)
     
 - 서버-클라이언트 공용 데이터를 Web, Chat, Shared 3개의 라이브러리로 분리하고 Git Submodule로 관리
   - 코드:
