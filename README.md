@@ -51,7 +51,7 @@
 - Repository 패턴 적용으로 서비스 로직과 데이터 접근 계층 분리
   - 코드:
     - Program.cs
-      - [Repository DI 설정](./Web/WebServer/Program.cs#L146)
+      - [Repository DI 설정](./Web/WebServer/Program.cs#L149)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
@@ -65,7 +65,7 @@
   - 코드:
     - Program.cs
       - [세션 설정](./Web/WebServer/Program.cs#L35)
-      - [세션 사용](./Web/WebServer/Program.cs#L170)
+      - [세션 사용](./Web/WebServer/Program.cs#L174)
       - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L121)
     
     - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
@@ -99,8 +99,8 @@
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
     - Program.cs
-      - [인증과 인가 설정](./Web/WebServer/Program.cs#L121)
-      - [인증과 인가 사용](./Web/WebServer/Program.cs#L155)
+      - [인증과 인가 설정](./Web/WebServer/Program.cs#L133)
+      - [인증과 인가 사용](./Web/WebServer/Program.cs#L176)
     - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
     - [사용 예시 - RankingController GetRank API](./Web/WebServer/Controllers/RankingController.cs#L23)
     
