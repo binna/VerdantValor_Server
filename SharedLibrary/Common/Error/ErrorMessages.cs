@@ -1,4 +1,4 @@
-﻿namespace Common.Constants;
+﻿namespace Common.Error;
 
 public static class ErrorMessages
 {
@@ -10,6 +10,12 @@ public static class ErrorMessages
     
     public const string INVALID_DATETIME_FORMAT =
         "Invalid datetime format. Expected: {0}, Actual: {1}.";
+    
+    public const string TABLE_NOT_FOUND = 
+        "Table not found: {0}";
+    
+    public const string MUST_NOT_BE_NULL =
+        "{0} must not be null.";
 
     public const string MUST_NOT_BE_EMPTY =
         "{0} must not be empty.";

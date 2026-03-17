@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Common.Constants;
+using Common.Error;
 using Common.Types;
 
 namespace Common.Driver;

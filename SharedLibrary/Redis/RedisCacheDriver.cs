@@ -1,5 +1,5 @@
 ﻿using System.Buffers;
-using Common.Constants;
+using Common.Error;
 using Common.Driver;
 using Common.Types;
 using StackExchange.Redis;

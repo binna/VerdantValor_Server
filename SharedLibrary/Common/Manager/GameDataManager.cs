@@ -1,37 +1,47 @@
-﻿using System.Text.Json;
-using Common.Constants;
+﻿using Common.Error;
 using Common.GameData;
-using Shared.GameData;
+using Common.GameData.Tables;
 
 namespace Common.Manager;
 
-public class GameDataManager
+public class GameDataManager : ITableRegistry
 {
-    public static ResponseResultTable ResponseResultTable { get; }  = new("ResponseResult");
-    public static ItemTable ItemTable { get; } = new("Item");
-    public static StoreTable StoreTable { get; } = new("Store");
-    
-   public static void LoadAllGameData(string path)
-   {
-       ResponseResultTable.Load(path);
-       ResponseResultTable.Validate();
-       
-       ItemTable.Load(path);
-       ItemTable.Validate();
-       
-       StoreTable.Load(path);
-       StoreTable.Validate();
-   }
-    
-    public static GameData<T> LoadGameData<T>(string path, string filename)
-    {
-        var jsonText = File.ReadAllText($"{path}/{filename}.json");
-        var data = JsonSerializer.Deserialize<GameData<T>>(jsonText);
-        
-        if (data == null || data.Data.Count == 0)
-            throw new InvalidDataException(
-                string.Format(ErrorMessages.FAILED_TO_LOAD_FILE, $"{filename}"));
+    public static ResponseResultTable ResponseResultTable { get; } = new("ResponseResultTable");
+    public static ItemTable ItemTable { get; } = new("ItemTable");
+    public static StoreTable StoreTable { get; } = new("StoreTable");
 
-        return data;
+    private static readonly IBaseTable[] mAllTables =
+    [
+        ResponseResultTable,
+        ItemTable,
+        StoreTable
+    ];
+    
+    public static void LoadAllGameData(string path)
+    {
+        var registry = new GameDataManager();
+        foreach (var table in mAllTables)
+        {
+            table.Load(path);
+        }
+        
+        foreach (var table in mAllTables)
+        {
+            table.CrossValidate(registry);
+        }
+    }
+    
+    public T GetTable<T>() where T : class, IBaseTable
+    {
+        foreach (var table in mAllTables)
+        {
+            if (table is T t)
+                return t;
+
+            throw new InvalidOperationException(
+                string.Format(ErrorMessages.TABLE_NOT_FOUND, typeof(T).Name));
+        }
+    
+        return null;
     }
 }

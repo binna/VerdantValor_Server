@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text;
-using Common.Constants;
+using Common.Error;
 using Common.Types;
 
 namespace Common.Driver;
