@@ -6,13 +6,15 @@ namespace Common.Manager;
 
 public class GameDataManager : ITableRegistry
 {
-    public static ResponseResultTable ResponseResultTable { get; } = new("ResponseResultTable");
-    public static ItemTable ItemTable { get; } = new("ItemTable");
-    public static StoreTable StoreTable { get; } = new("StoreTable");
+    public static ResponseResultTable ResponseResultTable { get; } = new("ResponseResult");
+    public static BannedWordTable BannedWordTable { get; } = new("BannedWord");
+    public static ItemTable ItemTable { get; } = new("Item");
+    public static StoreTable StoreTable { get; } = new("Store");
 
     private static readonly IBaseTable[] mAllTables =
     [
         ResponseResultTable,
+        BannedWordTable,
         ItemTable,
         StoreTable
     ];
@@ -37,11 +39,8 @@ public class GameDataManager : ITableRegistry
         {
             if (table is T t)
                 return t;
-
-            throw new InvalidOperationException(
-                string.Format(ErrorMessages.TABLE_NOT_FOUND, typeof(T).Name));
         }
-    
+        
         return null;
     }
 }

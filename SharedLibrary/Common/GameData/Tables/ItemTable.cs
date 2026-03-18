@@ -7,7 +7,7 @@ public class ItemTable : BaseTable<Item>
     public ItemTable(string tableName) : base(tableName)
     { }
 
-    public override bool Load(string path)
+    public override void Load(string path)
     {
         var data = LoadFromJson<Item>(path, TableName);
         
@@ -17,8 +17,6 @@ public class ItemTable : BaseTable<Item>
         {
             mTable[item.Id] = item;
         }
-
-        return true;
     }
 
     public override void Validate()

@@ -1,7 +1,6 @@
-﻿using Common;
+﻿using Common.GameData.Tables;
 using Efcore.Repositories;
 using Common.Helpers;
-using Common.Manager;
 using Common.Web;
 using Shared.Constants;
 using Shared.Types;
@@ -13,7 +12,7 @@ public class UsersService
     private readonly ILogger<UsersService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IUsersRepository mUsersRepository;
-    private readonly IKeyValueStore _mKeyValueStore;
+    private readonly IKeyValueStore mKeyValueStore;
     private readonly ISecurityHelper mSecurityHelper;
 
     public UsersService(
@@ -26,7 +25,7 @@ public class UsersService
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mUsersRepository = usersRepository;
-        _mKeyValueStore = keyValueStore;
+        mKeyValueStore = keyValueStore;
         mSecurityHelper = securityHelper;
     }
 
@@ -63,11 +62,11 @@ public class UsersService
             return ApiResponse
                 .From(EResponseResult.EmailAlreadyExists);
         
-        if (BannedManager.ContainsBannedWord(email))
+        if (BannedWordTable.ContainsBannedWord(email))
             return ApiResponse
                 .From(EResponseResult.ForbiddenEmail);
 
-        if (BannedManager.ContainsBannedWord(nickname))
+        if (BannedWordTable.ContainsBannedWord(nickname))
             return ApiResponse
                 .From(EResponseResult.ForbiddenNickname);
 
@@ -101,7 +100,7 @@ public class UsersService
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
             return ApiResponse.From(EResponseResult.NotMatchPw);
         
-        await _mKeyValueStore.AddSessionInfoAsync(
+        await mKeyValueStore.AddSessionInfoAsync(
             $"{user.UserId}", 
             mHttpContextAccessor.HttpContext!.Session.Id);
 

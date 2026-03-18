@@ -15,7 +15,7 @@ public abstract class BaseTable<TData> : IBaseTable
         TableName = tableName;
     }
 
-    public abstract bool Load(string path);
+    public abstract void Load(string path);
     public abstract void Validate();
     public abstract void CrossValidate(ITableRegistry registry);
     

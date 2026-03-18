@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Common.Helpers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Efcore.Repositories;
 using Common.Models;
-using Redis.Interfaces;
+using Common.Web;
 using Shared.Types;
 using WebServer.Services;
 using Xunit.Abstractions;
@@ -14,20 +15,23 @@ namespace WebServer.Test.Unit;
 public class UsersServiceTest
 {
     private readonly ITestOutputHelper mOutput;
-    private readonly IHttpContextAccessor mHttpContextAccessor;
+    private readonly IKeyValueStore mKeyValueStore;
     private readonly IUsersRepository mUsersRepository;
     private readonly UsersService mUsersService;
-    
+    private readonly ISecurityHelper mSecurityHelper;
 
     public UsersServiceTest(ITestOutputHelper output)
     {
         mOutput = output;
-        var logger = Substitute.For<ILogger<UsersService>>();
-        mHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
         mUsersRepository = Substitute.For<IUsersRepository>();
-        var redisClient = Substitute.For<IWebServerRedisClient>();
+        mKeyValueStore = Substitute.For<IKeyValueStore>();
+        mSecurityHelper = Substitute.For<ISecurityHelper>();
         mUsersService = Substitute.For<UsersService>(
-            logger, mHttpContextAccessor, mUsersRepository, redisClient);
+            Substitute.For<ILogger<UsersService>>(), 
+            Substitute.For<IHttpContextAccessor>(), 
+            mUsersRepository,
+            mKeyValueStore,
+            mSecurityHelper);
     }
 
     #region 회원가입
@@ -35,9 +39,11 @@ public class UsersServiceTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public async Task Test_Join_Email_파라메터가_비었을때_Fail(string? email)
+    public async Task Test_Join_Email_파라미터가_비었을때_Fail(string? email)
     {
-        var response = await mUsersService.JoinAsync(email, "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync(email, "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
@@ -46,9 +52,11 @@ public class UsersServiceTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public async Task Test_Join_Password_파라메터가_비었을때_Fail(string? password)
+    public async Task Test_Join_Password_파라미터가_비었을때_Fail(string? password)
     {
-        var response = await mUsersService.JoinAsync("binna", password, "shine");
+        var response = await mUsersService
+            .JoinAsync("binna", password, "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
@@ -57,9 +65,11 @@ public class UsersServiceTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public async Task Test_Join_Nickname_파라메터가_비었을때_Fail(string? nickname)
+    public async Task Test_Join_Nickname_파라미터가_비었을때_Fail(string? nickname)
     {
-        var response = await mUsersService.JoinAsync("binna", "1234", nickname);
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", nickname);
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
@@ -71,7 +81,9 @@ public class UsersServiceTest
     [InlineData("binna:)><")]
     public async Task Test_Join_Email_유효하지않는문자_사용할때_Fail(string email)
     {
-        var response = await mUsersService.JoinAsync(email, "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync(email, "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlphabetNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
@@ -79,9 +91,12 @@ public class UsersServiceTest
     [Theory]
     [InlineData("돼지꾸르륵:(")]
     [InlineData("nice:(")]
+    [InlineData("nice/")]
     public async Task Test_Join_Nickname_유효하지않는문자_사용할때_Fail(string nickname)
     {
-        var response = await mUsersService.JoinAsync("binna", "1234", nickname);
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", nickname);
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.NicknameAlphabetKoreanNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
@@ -96,7 +111,9 @@ public class UsersServiceTest
     [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna123")]
     public async Task Test_Join_Email_길이가_범위_밖일때_Fail(string email)
     {
-        var response = await mUsersService.JoinAsync(email, "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync(email, "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailLength}"); 
         Assert.False(response.IsSuccess);
     }
@@ -114,7 +131,9 @@ public class UsersServiceTest
     [InlineData("shineshineshineshineshineshine123")]
     public async Task Test_Join_Nickname_길이가_범위_밖일때_Fail(string nickname)
     {
-        var response = await mUsersService.JoinAsync("binna", "1234", nickname);
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", nickname);
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidNicknameLength}"); 
         Assert.False(response.IsSuccess);
     }
@@ -122,10 +141,13 @@ public class UsersServiceTest
     [Fact]
     public async Task Test_Join_이미_가입된_유저일때_Fail()
     {
-        mUsersRepository.ExistsUserAsync(Arg.Any<string>())
+        mUsersRepository
+            .ExistsUserAsync(Arg.Any<string>())
             .Returns(Task.FromResult(true));
         
-        var response = await mUsersService.JoinAsync("binna", "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlreadyExists}"); 
         Assert.False(response.IsSuccess);
     }
@@ -135,10 +157,13 @@ public class UsersServiceTest
     [InlineData("shiadminne")]
     public async Task Test_Join_Email_금지된_단어일때_Fail(string email)
     {
-        mUsersRepository.ExistsUserAsync(Arg.Any<string>())
+        mUsersRepository
+            .ExistsUserAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mUsersService.JoinAsync(email, "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync(email, "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ForbiddenEmail}"); 
         Assert.False(response.IsSuccess);
     }
@@ -148,10 +173,13 @@ public class UsersServiceTest
     [InlineData("shiadminne")]
     public async Task Test_Join_Nickname_금지된_단어일때_Fail(string nickname)
     {
-        mUsersRepository.ExistsUserAsync(Arg.Any<string>())
+        mUsersRepository
+            .ExistsUserAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mUsersService.JoinAsync("binna", "1234", nickname);
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", nickname);
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ForbiddenNickname}"); 
         Assert.False(response.IsSuccess);
     }
@@ -159,10 +187,13 @@ public class UsersServiceTest
     [Fact]
     public async Task Test_Join_Success()
     {
-        mUsersRepository.ExistsUserAsync(Arg.Any<string>())
+        mUsersRepository
+            .ExistsUserAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mUsersService.JoinAsync("binna", "1234", "shine");
+        var response = await mUsersService
+            .JoinAsync("binna", "1234", "shine");
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }
@@ -173,16 +204,11 @@ public class UsersServiceTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task Test_Login_Email_파라메터가_비었을때_Fail(string? email)
+    public async Task Test_Login_Email_파라미터가_비었을때_Fail(string? email)
     {
-        var user = new Users(
-            "binna", "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        var response = await mUsersService
+            .LoginAsync(email, "1234");
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
-            .Returns(Task.FromResult<Users?>(user));
-        
-        var response = await mUsersService.LoginAsync(email, "1234");
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
@@ -191,16 +217,11 @@ public class UsersServiceTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task Test_Login_Password_파라메터가_비었을때_Fail(string? password)
+    public async Task Test_Login_Password_파라미터가_비었을때_Fail(string? password)
     {
-        var user = new Users(
-            "binna", "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        var response = await mUsersService
+            .LoginAsync("binna", password);
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
-            .Returns(Task.FromResult<Users?>(user));
-        
-        var response = await mUsersService.LoginAsync("binna", password);
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
         Assert.False(response.IsSuccess);
     }
@@ -212,14 +233,9 @@ public class UsersServiceTest
     [InlineData("binna:)><")]
     public async Task Test_Login_Email_유효하지않는문자_사용할때_Fail(string email)
     {
-        var user = new Users(
-            "binna", "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        var response = await mUsersService
+            .LoginAsync(email, "1234");
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
-            .Returns(Task.FromResult<Users?>(user));
-        
-        var response = await mUsersService.JoinAsync(email, "1234", "shine");
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlphabetNumberOnly}"); 
         Assert.False(response.IsSuccess);
     }
@@ -234,14 +250,9 @@ public class UsersServiceTest
     [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna123")]
     public async Task Test_Login_Email_길이가_범위_밖일때_Fail(string email)
     {
-        var user = new Users(
-            "binna", "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        var response = await mUsersService
+            .LoginAsync(email, "1234");
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
-            .Returns(Task.FromResult<Users?>(user));
-        
-        var response = await mUsersService.LoginAsync(email, "1234");
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailLength}"); 
         Assert.False(response.IsSuccess);
     }
@@ -249,14 +260,13 @@ public class UsersServiceTest
     [Fact]
     public async Task Test_Login_Email_가입된_유저를_찾을수없을때_Fail()
     {
-        var user = new Users(
-            "binna", "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        mUsersRepository
+            .FindUserByEmailAsync(Arg.Any<string>())
+            .Returns(Task.FromResult<Users?>(null));
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
-            .Returns(Task.FromResult<Users?>(user));
+        var response = await mUsersService
+            .LoginAsync("shine94", "1234");
         
-        var response = await mUsersService.LoginAsync("shine94", "1234");
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.NoData}"); 
         Assert.False(response.IsSuccess);
     }
@@ -264,15 +274,19 @@ public class UsersServiceTest
     [Fact]
     public async Task Test_Login_Success()
     {
-        var user = new Users(
-            "binna",
-            "shine", 
-            "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db");
+        var user = new Users("binna", "shine", "1234");
         
-        mUsersRepository.FindUserByEmailAsync(user.Email)
+        mUsersRepository
+            .FindUserByEmailAsync(user.Email)
             .Returns(Task.FromResult<Users?>(user));
         
-        var response = await mUsersService.LoginAsync("binna", "1234");
+        mSecurityHelper
+            .VerifySha512Hash(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(true);
+        
+        var response = await mUsersService
+            .LoginAsync(user.Email, user.Pw);
+        
         Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
         Assert.True(response.IsSuccess);
     }

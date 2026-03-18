@@ -13,7 +13,7 @@ namespace Common.Driver;
 //  - true  : 새 항목이 추가됨
 //  - false : 이미 존재하여 값이 갱신됨
 
-public sealed class FakeCacheDriver : ICacheDriver
+public class FakeCacheDriver : ICacheDriver
 {
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> mHash = new();
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, double>> mSortedSet = new();

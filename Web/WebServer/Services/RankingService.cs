@@ -1,5 +1,4 @@
-﻿using Common;
-using Common.Web;
+﻿using Common.Web;
 using Protocol.Web.Dtos;
 using Shared.Constants;
 using Shared.Types;
@@ -9,14 +8,14 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly IKeyValueStore _mKeyValueStore;
+    private readonly IKeyValueStore mKeyValueStore;
 
     public RankingService(
         ILogger<RankingService> logger, 
         IKeyValueStore keyValueStore)
     {
         mLogger = logger;
-        _mKeyValueStore = keyValueStore;
+        mKeyValueStore = keyValueStore;
     }
 
     public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
@@ -27,7 +26,7 @@ public class RankingService
                 .From(EResponseResult.InvalidInput);
 
         var redisRankings =
-            await _mKeyValueStore.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
+            await mKeyValueStore.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
 
         var result = new RankRes();
 
@@ -63,10 +62,10 @@ public class RankingService
         var rankingKey = CreateRankingKeyName(rankingType);
         
         var rank = 
-            await _mKeyValueStore.GetMemberRank(rankingKey, member);
+            await mKeyValueStore.GetMemberRank(rankingKey, member);
 
         var score = 
-            await _mKeyValueStore.GetMemberScore(rankingKey, member);
+            await mKeyValueStore.GetMemberScore(rankingKey, member);
 
         if (rank == null || score == null)
             return ApiResponse<RankRes>
@@ -96,7 +95,7 @@ public class RankingService
         
         var member = CreateMemberFieldName(userId, nickname);
         
-        await _mKeyValueStore.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
+        await mKeyValueStore.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
         return ApiResponse
             .From(EResponseResult.Success);

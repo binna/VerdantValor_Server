@@ -8,7 +8,7 @@ public class StoreTable : BaseTable<Store>
     public StoreTable(string tableName) : base(tableName)
     { }
 
-    public override bool Load(string path)
+    public override void Load(string path)
     {
         var data = LoadFromJson<Store>(path, TableName);
         
@@ -18,8 +18,6 @@ public class StoreTable : BaseTable<Store>
         {
             mTable[store.Id] = store;
         }
-
-        return true;
     }
 
     public override void Validate()
@@ -62,7 +60,7 @@ public class StoreTable : BaseTable<Store>
             
             foreach (var price in store.Prices)
             {
-                if (price.Value <= 0)
+                if (price.Value < 0)
                 {
                     errors.Add(new ValidationError(
                         context: $"StoreId={store.Id},Currency={price.Currency}",

@@ -16,7 +16,7 @@ public class ResponseResultTable : BaseTable<ResponseResult>
         return mResultMap.TryGetValue(id, out responseResult);
     }
 
-    public override bool Load(string path)
+    public override void Load(string path)
     {
         var data = LoadFromJson<ResponseResult>(path, TableName);
 
@@ -26,8 +26,6 @@ public class ResponseResultTable : BaseTable<ResponseResult>
         {
             mResultMap[(EResponseResult)info.Code] = (info.IsSuccess, info.TextId);
         }
-
-        return true;
     }
 
     public override void Validate()

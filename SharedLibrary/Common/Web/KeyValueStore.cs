@@ -3,7 +3,7 @@ using Common.Types;
 
 namespace Common.Web;
 
-public sealed class RedisKeyValueStore : IKeyValueStore
+public class RedisKeyValueStore : IKeyValueStore
 {
     private readonly ICacheDriver mCoreCacheDriver;
     private readonly ICacheDriver mSessionCacheDriver;

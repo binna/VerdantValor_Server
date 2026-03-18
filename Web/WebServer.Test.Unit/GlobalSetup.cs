@@ -1,6 +1,5 @@
 ﻿using Common.Manager;
 using Serilog;
-using Shared.Constants;
 
 namespace WebServer.Test.Unit;
 
@@ -10,15 +9,9 @@ public class GlobalSetupResponseStatus
     {
         var baseDir = AppContext.BaseDirectory;
         var path = Path.GetFullPath(
-            Path.Combine(baseDir, AppConstant.SHARED_LIBRARY_PATH, "GameData", "Data"));
+            Path.Combine(baseDir, "..\\..\\..\\..\\..\\VerdantValorShared\\Shared", "GameData", "Data"));
         GameDataManager.LoadAllGameData(path);
         Log.Information("Response Status setup success. {@path}", new { jsonPath = path });
-        
-#if LIVE
-        var reqEncryptKey = "ABCDEFGHIJKLMNOP";
-        AppReadonly.Init(reqEncryptKey);
-        Log.Information("Request Encrypt Key setup success. {@reqEncryptKey}", new { reqEncryptKey });
-#endif
     }
 }
 

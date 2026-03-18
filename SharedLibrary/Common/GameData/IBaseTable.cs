@@ -2,8 +2,8 @@
 
 public interface IBaseTable
 {
-    public string TableName { get; }
-    public bool Load(string path);
-    public void Validate();
-    public void CrossValidate(ITableRegistry registry);
+    string TableName { get; }
+    void Load(string path);
+    void Validate();
+    void CrossValidate(ITableRegistry registry);
 }
