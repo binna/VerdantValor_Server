@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Common.Error;
 using MySql.Data.MySqlClient;
 
 namespace Ado;
@@ -13,27 +12,18 @@ public sealed class DbFactory
 {
     private readonly string mMysqlConnUrl;
     
-    public DbFactory(
-        IConfiguration configuration,
-        ILogger<DbFactory> logger)
+    public DbFactory(string mysqlConnUrl)
     {
-        var mysqlConnUrl = configuration["DB:MySQL:Url"];
-        
         if (string.IsNullOrWhiteSpace(mysqlConnUrl))
-        {
-            logger.LogCritical("Configurations are missing required fields. {@fields}", 
-                new { mysqlConnUrl });
-            Environment.Exit(1);
-        }
-        
-        logger.LogInformation("DB connection success. {@context}", new { mysqlConnUrl = mMysqlConnUrl });
+            throw new ArgumentNullException(
+                nameof(mysqlConnUrl), 
+                string.Format(ErrorMessages.MUST_NOT_BE_NULL, "MySQL connection URL"));
+
+        mMysqlConnUrl = mysqlConnUrl;
     }
 
     public MySqlConnection CreateConnection()
     {
-        if (mMysqlConnUrl == null)
-            throw new ArgumentNullException(nameof(mMysqlConnUrl), "MySQL connection URL cannot be null.");
-        
         // 매번 새 커넥션을 쓰는 것처럼 보이지만
         // 드라이브에서 커넥션 풀까지 코드가 짜여 있기 때문에
         // 커넥션 풀 재사용 한다

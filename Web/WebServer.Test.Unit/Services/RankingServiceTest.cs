@@ -7,7 +7,7 @@ using Shared.Types;
 using WebServer.Services;
 using Xunit.Abstractions;
 
-namespace WebServer.Test.Unit;
+namespace WebServer.Test.Unit.Services;
 
 [Collection("GlobalSetup ResponseStatus")]
 public class RankingServiceTest

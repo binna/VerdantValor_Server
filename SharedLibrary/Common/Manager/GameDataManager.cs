@@ -1,5 +1,4 @@
-﻿using Common.Error;
-using Common.GameData;
+﻿using Common.GameData;
 using Common.GameData.Tables;
 
 namespace Common.Manager;

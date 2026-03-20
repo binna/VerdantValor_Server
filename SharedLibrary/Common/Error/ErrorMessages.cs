@@ -12,7 +12,7 @@ public static class ErrorMessages
         "Invalid datetime format. Expected: {0}, Actual: {1}.";
     
     public const string TABLE_NOT_FOUND = 
-        "Table not found: {0}";
+        "Table not found: {0}.";
     
     public const string MUST_NOT_BE_NULL =
         "{0} must not be null.";
@@ -42,11 +42,14 @@ public static class ErrorMessages
         "RESP unsupported type: {0}.";
 
     public const string RESP_PARSE_ERROR =
-        "RESP parse error: {0}";
+        "RESP parse error: {0}.";
     
     public const string REDIS_DISCONNECTED =
         "Redis disconnected.";
 
     public const string OPERATION_CANCELED =
         "Operation canceled. Method: {0}.";
+
+    public const string MUST_BE_VALID_AES_KEY_SIZE
+        = "Encrypt Key must be 16, 24, or 32 bytes for AES. Actual size: {0}.";
 }

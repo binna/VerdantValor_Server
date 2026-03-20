@@ -1,17 +1,35 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Common.Error;
 using Protocol.Web.Dtos;
 
 namespace Common.Helpers;
 
 public class SecurityHelper : ISecurityHelper
 {
+    private const int NONCE_SIZE = 12;
+    private const int TAG_SIZE = 16;
+    
     private readonly byte[] mEncryptKey;
 
     public SecurityHelper(string encryptKey)
     {
+        if (string.IsNullOrWhiteSpace(encryptKey))
+            throw new ArgumentNullException(
+                nameof(encryptKey), 
+                string.Format(ErrorMessages.MUST_NOT_BE_NULL, "Encrypt Key"));
+        
         mEncryptKey = Encoding.UTF8.GetBytes(encryptKey);
+
+        if (mEncryptKey.Length != 32
+            && mEncryptKey.Length != 24
+            && mEncryptKey.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(encryptKey),
+                string.Format(ErrorMessages.MUST_BE_VALID_AES_KEY_SIZE, mEncryptKey.Length));
+        }
     }
 
     public string ComputeSha512Hash(string plainText)
@@ -42,7 +60,33 @@ public class SecurityHelper : ISecurityHelper
             StringComparison.OrdinalIgnoreCase);
     }
 
-    public T? DecryptPayload<T>(EncryptReq request)
+    public EncryptReq EncryptPayload<T>(T data)
+    {
+        if (data == null)
+            throw new ArgumentNullException(
+                nameof(data),
+                string.Format(ErrorMessages.MUST_NOT_BE_NULL, nameof(data)));
+        
+        using var aesCcm = new AesCcm(mEncryptKey);
+
+        var nonceBytes = RandomNumberGenerator.GetBytes(NONCE_SIZE);
+        var tagBytes = new byte[TAG_SIZE];
+        
+        var dataText = JsonSerializer.Serialize(data);
+        var dataBytes = Encoding.UTF8.GetBytes(dataText);
+        var cipherBytes = new byte[dataBytes.Length];
+
+        aesCcm.Encrypt(nonceBytes, dataBytes, cipherBytes, tagBytes);
+
+        return new EncryptReq
+        {
+            Nonce = Convert.ToBase64String(nonceBytes),
+            Tag = Convert.ToBase64String(tagBytes),
+            Data = Convert.ToBase64String(cipherBytes)
+        };
+    }
+
+    public T DecryptPayload<T>(EncryptReq request)
     {
         using var aesCcm = new AesCcm(mEncryptKey);
         
