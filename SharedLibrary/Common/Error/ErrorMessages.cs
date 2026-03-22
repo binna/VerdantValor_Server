@@ -26,6 +26,9 @@ public static class ErrorMessages
     public const string MUST_BE_GREATER_THAN_ZERO =
         "{0} must be greater than zero.";
 
+    public const string MUST_BE_NON_NEGATIVE =
+        "{0} must be non-negative.";
+
     public const string RESP_MISMATCH =
         "RESP mismatch. Expected: {0}, Actual: {1}.";
     

@@ -80,6 +80,10 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
             throw new ArgumentException(
                 string.Format(ErrorMessages.MUST_BE_GREATER_THAN_ZERO, "Port"));
         
+        if (db < 0)
+            throw new ArgumentException(
+                string.Format(ErrorMessages.MUST_BE_NON_NEGATIVE, "DB"));
+        
         mTcpClient = new TcpClient();
         mTcpClient.Connect(host, port);
         mStream = mTcpClient.GetStream();

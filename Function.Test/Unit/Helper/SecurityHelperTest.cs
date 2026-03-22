@@ -5,7 +5,6 @@ using Xunit.Abstractions;
 
 namespace Function.Test.Unit.Helper;
 
-[Collection("GlobalSetup ResponseStatus")]
 public class SecurityHelperTest
 {
     private readonly ITestOutputHelper mOutput;
@@ -36,7 +35,7 @@ public class SecurityHelperTest
     [InlineData("ABCDFGHIJKLMNOPQ")]
     [InlineData("ABCDFGHIJKLMNOPQRSTUVWXY")]
     [InlineData("ABCDFGHIJKLMNOPQRSTUVWXYZABCDFGH")]
-    public void Test_EncryptKey_정상일때_Success(string encryptKey)
+    public void Test_EncryptKey_Success(string encryptKey)
     {
         new SecurityHelper(encryptKey);
     }
