@@ -286,7 +286,8 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
 
     public async Task<long?> SortedSetRankAsync(
         string key, 
-        string member, ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending,
+        string member, 
+        ICacheDriver.EGetOrder order = ICacheDriver.EGetOrder.Ascending,
         CancellationToken token = default)
     {
         // ZRANK key member     오름차순
