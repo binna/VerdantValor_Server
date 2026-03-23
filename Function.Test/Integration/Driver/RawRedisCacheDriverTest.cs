@@ -36,7 +36,7 @@ public class RawRedisCacheDriverTest
         await rawRedisDriver.StringSetAsync(key, value, TimeSpan.FromMilliseconds(1000));
         var response = await rawRedisDriver.StringGetAsync(key);
         
-        Assert.Equal(response, value);
+        Assert.Equal(value, response);
     }
     
     [Theory]

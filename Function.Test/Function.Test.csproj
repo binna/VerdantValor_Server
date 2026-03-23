@@ -20,10 +20,10 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SharedLibrary\Common\Common.csproj" />
+      <ProjectReference Include="..\SharedLibrary\Redis\Redis.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Integration\" />
       <Folder Include="Unit\" />
     </ItemGroup>
 
