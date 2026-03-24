@@ -23,8 +23,4 @@
       <ProjectReference Include="..\..\SharedLibrary\Redis\Redis.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Unit\" />
-    </ItemGroup>
-
 </Project>
