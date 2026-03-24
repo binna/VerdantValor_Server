@@ -18,7 +18,7 @@ public class Users
     public string Pw { get; private set; } = string.Empty;
     
     [MaxLength(255)]
-    public string? DeviceId { get; private set; }
+    public string DeviceId { get; private set; } = string.Empty;
     
     public ServerDateTime CreatedAt { get; private set; }
     
@@ -37,7 +37,7 @@ public class Users
         UpdatedAt = now;
     }
 
-    public static async Task<Users?> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
+    public static async Task<Users> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
     {
         if (!await reader.ReadAsync(token))
             return null;

@@ -88,16 +88,9 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         mTcpClient.Connect(host, port);
         mStream = mTcpClient.GetStream();
         
-        mStream.Write("PING\r\n"u8);
-
-        var response = ReadResponse().Data[0];
-        if (!response.StartsWith("PONG", StringComparison.Ordinal))
-            throw new InvalidOperationException(
-                string.Format(ErrorMessages.RESP_MISMATCH, "PONG", response));
-        
         mStream.Write(Encoding.UTF8.GetBytes($"SELECT {db}\r\n"));
         
-        response = ReadResponse().Data[0];
+        var response = ReadResponse().Data[0];
         if (!response.StartsWith("OK", StringComparison.Ordinal))
             throw new InvalidOperationException(
                 string.Format(ErrorMessages.RESP_MISMATCH, "OK", response));

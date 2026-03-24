@@ -21,7 +21,7 @@ public class DistributedLockTest
 
     [Theory]
     [InlineData("GainItem:1", "RandomToken", 5)]
-    public async Task Test_TryAcquireLockAsync_동시호출시_하나만_획득_Success(string lockKey, string lockToken, int repeatNum)
+    public async Task Test_TryAcquireLockAsync_동시호출시_하나만_획득(string lockKey, string lockToken, int repeatNum)
     {
         var acquiredCount = 0;
         List<Task> acquireTasks = [];
@@ -45,7 +45,7 @@ public class DistributedLockTest
     
     [Theory]
     [InlineData("GainItem:2", "RandomToken")]
-    public async Task Test_TryReleaseLockAsync_락획득후_정상토큰으로_해제시_Success(string lockKey, string lockToken)
+    public async Task Test_TryReleaseLockAsync_락획득후_정상토큰으로_해제(string lockKey, string lockToken)
     {
         var bAcquired = 
             await mDistributedLock.TryAcquireLockAsync(lockKey, lockToken);
