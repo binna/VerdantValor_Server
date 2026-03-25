@@ -18,8 +18,7 @@ public class RankingService
         mKeyValueStore = keyValueStore;
     }
 
-    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(
-        ERanking rankingType, int limit)
+    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(ERanking rankingType, int limit)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
             return ApiResponse<RankRes>
@@ -53,10 +52,7 @@ public class RankingService
             .From(EResponseResult.Success, result);
     }
 
-    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(
-        ERanking rankingType, 
-        string userId, string nickname, 
-        ELanguage language = ELanguage.En)
+    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(ERanking rankingType, string userId, string nickname)
     {
         var member = CreateMemberFieldName(userId, nickname);
         var rankingKey = CreateRankingKeyName(rankingType);
@@ -85,9 +81,7 @@ public class RankingService
             .From(EResponseResult.Success, result);
     }
 
-    public async Task<ApiResponse> AddScore(
-        ERanking rankingType, 
-        string userId, string nickname, double score)
+    public async Task<ApiResponse> AddScore(ERanking rankingType, string userId, string nickname, double score)
     {
         if (score <= 0)
             return ApiResponse

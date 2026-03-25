@@ -7,30 +7,29 @@ using Shared.Types;
 
 namespace WebServer.Services;
 
-public class UsersService
+public class GameUserService
 {
-    private readonly ILogger<UsersService> mLogger;
+    private readonly ILogger<GameUserService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IUsersRepository mUsersRepository;
+    private readonly IGameUserRepository mGameUserRepository;
     private readonly IKeyValueStore mKeyValueStore;
     private readonly ISecurityHelper mSecurityHelper;
 
-    public UsersService(
-        ILogger<UsersService> logger,
+    public GameUserService(
+        ILogger<GameUserService> logger,
         IHttpContextAccessor httpContextAccessor,
-        IUsersRepository usersRepository,
+        IGameUserRepository gameUserRepository,
         IKeyValueStore keyValueStore,
         ISecurityHelper securityHelper)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
-        mUsersRepository = usersRepository;
+        mGameUserRepository = gameUserRepository;
         mKeyValueStore = keyValueStore;
         mSecurityHelper = securityHelper;
     }
 
-    public async Task<ApiResponse> JoinAsync(
-        string email, string password, string nickname)
+    public async Task<ApiResponse> JoinAsync(string email, string password, string nickname)
     {
         if (string.IsNullOrWhiteSpace(email)
             || string.IsNullOrWhiteSpace(password)
@@ -56,7 +55,7 @@ public class UsersService
             return ApiResponse
                 .From(EResponseResult.InvalidNicknameLength);
         
-        var bExistsUser = await mUsersRepository.ExistsUserAsync(email);
+        var bExistsUser = await mGameUserRepository.ExistsAsync(email);
         
         if (bExistsUser)
             return ApiResponse
@@ -71,14 +70,13 @@ public class UsersService
                 .From(EResponseResult.ForbiddenNickname);
 
         var hashPw = mSecurityHelper.ComputeSha512Hash(password);
-        await mUsersRepository.AddAsync(email, nickname, hashPw);
+        await mGameUserRepository.AddAsync(email, nickname, hashPw);
         
         return ApiResponse
             .From(EResponseResult.Success);
     }
 
-    public async Task<ApiResponse> LoginAsync(
-        string email, string password)
+    public async Task<ApiResponse> LoginAsync(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email)
             || string.IsNullOrWhiteSpace(password))
@@ -91,7 +89,7 @@ public class UsersService
             < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
             return ApiResponse.From(EResponseResult.InvalidEmailLength);
         
-        var user = await mUsersRepository.FindUserByEmailAsync(email);
+        var user = await mGameUserRepository.FindByEmailAsync(email);
 
         if (user == null)
             return ApiResponse
@@ -101,8 +99,7 @@ public class UsersService
             return ApiResponse.From(EResponseResult.NotMatchPw);
         
         await mKeyValueStore.AddSessionInfoAsync(
-            $"{user.UserId}", 
-            mHttpContextAccessor.HttpContext!.Session.Id);
+            $"{user.UserId}", mHttpContextAccessor.HttpContext!.Session.Id);
 
         mHttpContextAccessor.SetUserSession(
             $"{user.UserId}", $"{user.Nickname}");

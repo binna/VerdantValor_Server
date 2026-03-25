@@ -10,13 +10,13 @@ namespace WebServer.Controllers;
 
 [Route($"{AppConstant.WEB_SERVER_API_BASE}/[controller]")]
 [ApiController]
-public class UsersController : Controller
+public class GameUserController : Controller
 {
-    private readonly UsersService mUsersService;
+    private readonly GameUserService mGameUserService;
 
-    public UsersController(UsersService usersService)
+    public GameUserController(GameUserService gameUserService)
     {
-        mUsersService = usersService;
+        mGameUserService = gameUserService;
     }
 
     [HttpPost("Auth")]
@@ -29,10 +29,10 @@ public class UsersController : Controller
         switch (authType)
         {
             case EAuth.Join:
-                return await mUsersService.JoinAsync(
+                return await mGameUserService.JoinAsync(
                     request.Email, request.Pw, request.Nickname);
             case EAuth.Login:
-                return await mUsersService.LoginAsync(
+                return await mGameUserService.LoginAsync(
                     request.Email, request.Pw);
         }
         

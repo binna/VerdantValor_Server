@@ -4,30 +4,30 @@ using Common.Models;
 
 namespace Efcore.Repositories;
 
-public class UsersRepository : IUsersRepository
+public class GameUserRepository : IGameUserRepository
 {
     private readonly IHttpContextAccessor mHttpContextAccessor;
 
-    public UsersRepository(IHttpContextAccessor httpContextAccessor)
+    public GameUserRepository(IHttpContextAccessor httpContextAccessor)
     {
         mHttpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<Users?> FindUserByEmailAsync(string email)
+    public async Task<GameUser?> FindByEmailAsync(string email)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        return await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        return await dbContext.GameUser.FirstOrDefaultAsync(u => u.Email == email);
     }
     
-    public async Task<bool> ExistsUserAsync(string email)
+    public async Task<bool> ExistsAsync(string email)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        return await dbContext.Users.AnyAsync(u => u.Email == email);
+        return await dbContext.GameUser.AnyAsync(u => u.Email == email);
     }
     
     public async Task AddAsync(string email, string nickname, string password)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        await dbContext.Users.AddAsync(new Users(nickname, email, password));
+        await dbContext.GameUser.AddAsync(new GameUser(nickname, email, password));
     }
 }

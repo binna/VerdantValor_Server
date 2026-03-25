@@ -149,8 +149,8 @@ ICacheDriver sessionDriver
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
-    .AddSingleton<IUsersRepository, UsersRepository>()
-    .AddSingleton<UsersService>()
+    .AddSingleton<IGameUserRepository, GameUserRepository>()
+    .AddSingleton<GameUserService>()
     .AddSingleton<RankingService>()
     ;
 
