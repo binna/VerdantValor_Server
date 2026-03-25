@@ -19,6 +19,12 @@ public class DBContextActionFilter : ActionFilterAttribute
 
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        var hasSkip = context.ActionDescriptor.EndpointMetadata
+            .Any(x => x is SkipDbContextActionFilterAttribute);
+
+        if (hasSkip)
+            return;
+        
         // 매번 새 커넥션을 쓰는 것처럼 보이지만
         // 드라이브에서 커넥션 풀까지 코드가 짜여 있기 때문에
         // 커넥션 풀 재사용 한다
@@ -26,21 +32,29 @@ public class DBContextActionFilter : ActionFilterAttribute
         context.HttpContext.Items.Add("dbContext", dbContext);
         context.HttpContext.Items.Add("isChange", false);
         
-        await next();
+        var executedContext = await next();
 
-        if (dbContext.ChangeTracker.HasChanges())
+        if (executedContext.Result is ObjectResult objectResult)
         {
-            var result = await dbContext.SaveChangesAsync();
+            var response = (ApiResponse)objectResult.Value;
 
-            if (result <= 0)
+            if (response is { IsSuccess: true })
             {
-                context.Result = new ContentResult
+                if (dbContext.ChangeTracker.HasChanges())
                 {
-                    StatusCode = StatusCodes.Status200OK,
-                    ContentType = "application/json",
-                    Content = JsonSerializer.Serialize(
-                        ApiResponse.From(EResponseResult.DbError))
-                };
+                    var result = await dbContext.SaveChangesAsync();
+
+                    if (result <= 0)
+                    {
+                        context.Result = new ContentResult
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            ContentType = "application/json",
+                            Content = JsonSerializer.Serialize(
+                                ApiResponse.From(EResponseResult.DbError))
+                        };
+                    }
+                }
             }
         }
     }
