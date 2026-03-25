@@ -9,13 +9,22 @@ public sealed class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Users> Users { get; set; } = null!;
+    public DbSet<GameUser> GameUser { get; set; } = null!;
+    public DbSet<Purchase> Purchase { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .Entity<Users>()
-            .HasKey(u => u.UserId);
+            .Entity<GameUser>(entity =>
+            {
+                entity.HasKey(e => e.UserId);
+            })
+            .Entity<Purchase>(entity =>
+            {
+                entity.HasKey(table => table.PurchaseId);
+                entity.HasIndex(table => new { table.UserId, table.StoreId }).IsUnique();
+            })
+            ;
     }
 
      protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

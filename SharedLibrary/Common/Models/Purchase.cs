@@ -5,7 +5,7 @@ namespace Common.Models;
 
 public class Purchase
 {
-    public int PurchaseId { get; private set; }
+    public ulong PurchaseId { get; private set; }
     
     public int StoreId { get; private set; }
     
@@ -18,4 +18,17 @@ public class Purchase
     public ServerDateTime UpdatedAt { get; private set; }
     
     public ServerDateTime? CompletedAt { get; private set; }
+    
+    
+    private Purchase() { }
+
+    public Purchase(int storeId, ulong userId)
+    { 
+        var now = ServerDateTime.Now;
+        StoreId = storeId;
+        PurchaseState = EPurchaseState.InProgress;
+        UserId = userId;
+        CreatedAt = now;
+        UpdatedAt = now;
+    }
 }

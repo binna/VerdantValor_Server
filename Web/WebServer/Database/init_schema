@@ -18,6 +18,21 @@ CREATE TABLE gameUser (
 	UNIQUE KEY unique_gameUser_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+DROP TABLE purchase;
+CREATE TABLE purchase (
+	purchaseId	BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	storeId     INT             NOT NULL,
+	state       INT             NOT NULL,
+	userId      BIGINT UNSIGNED NOT NULL,
+
+	createdAt	DATETIME(6)     NOT NULL,
+	updatedAt	DATETIME(6)     NOT NULL,
+	completedAt	DATETIME(6)     NULL,
+
+	PRIMARY KEY (purchaseId),
+	UNIQUE KEY unique_purchase_userId_storeId (userId, storeId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("binna", "binna", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
 INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user1", "user1", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
 INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user2", "user2", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");

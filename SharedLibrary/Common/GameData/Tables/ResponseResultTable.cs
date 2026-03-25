@@ -4,6 +4,7 @@ using Shared.Types;
 
 namespace Common.GameData.Tables;
 
+// mTable 대신 mResultMap을 사용
 public class ResponseResultTable : BaseTable<ResponseResult>
 {
     private Dictionary<EResponseResult, (bool IsSuccess, ulong TextId)> mResultMap = [];
