@@ -150,8 +150,10 @@ builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
+    .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<GameUserService>()
     .AddSingleton<RankingService>()
+    .AddSingleton<StoreService>()
     ;
 
 builder.Services.AddSingleton<ISecurityHelper>(

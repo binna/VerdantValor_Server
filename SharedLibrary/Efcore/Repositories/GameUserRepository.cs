@@ -18,7 +18,13 @@ public class GameUserRepository : IGameUserRepository
         var dbContext = mHttpContextAccessor.GetAppDbContext();
         return await dbContext.GameUser.FirstOrDefaultAsync(u => u.Email == email);
     }
-    
+
+    public async Task<GameUser?> FindByUserIdAsync(ulong userId)
+    {
+        var dbContext = mHttpContextAccessor.GetAppDbContext();
+        return await dbContext.GameUser.FirstOrDefaultAsync(u => u.UserId == userId);
+    }
+
     public async Task<bool> ExistsAsync(string email)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();

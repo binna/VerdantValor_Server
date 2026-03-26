@@ -10,7 +10,8 @@ CREATE TABLE gameUser (
 	email		VARCHAR(50)		NOT NULL,
 	pw			CHAR(128)		NOT NULL,
 	deviceId	VARCHAR(255)    NULL,
-
+	gold		BIGINT UNSIGNED NOT NULL,
+	exp		    BIGINT UNSIGNED NOT NULL,
 	createdAt	DATETIME(6)     NOT NULL,
 	updatedAt	DATETIME(6)     NOT NULL,
 
@@ -20,37 +21,51 @@ CREATE TABLE gameUser (
 
 DROP TABLE purchase;
 CREATE TABLE purchase (
-	purchaseId	BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	id	BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	storeId     INT             NOT NULL,
 	state       INT             NOT NULL,
 	userId      BIGINT UNSIGNED NOT NULL,
-
 	createdAt	DATETIME(6)     NOT NULL,
 	updatedAt	DATETIME(6)     NOT NULL,
 	completedAt	DATETIME(6)     NULL,
 
-	PRIMARY KEY (purchaseId),
+	PRIMARY KEY (id),
 	UNIQUE KEY unique_purchase_userId_storeId (userId, storeId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("binna", "binna", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user1", "user1", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user2", "user2", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user3", "user3", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user4", "user4", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user5", "user5", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user6", "user7", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user7", "user6", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user8", "user8", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user9", "user9", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user10", "user10", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user11", "user11", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user12", "user12", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user13", "user13", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user14", "user14", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user15", "user15", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user16", "user16", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user17", "user17", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user18", "user18", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user19", "user19", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
-INSERT INTO gameUser (nickname, email, pw, createdAt, updatedAt) VALUES ("user20", "user20", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+DROP TABLE inventory;
+CREATE TABLE inventory (
+	id	        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+	itemId      INT             NOT NULL,
+	state       INT             NOT NULL,
+	userId      BIGINT UNSIGNED NOT NULL,
+	createdAt	DATETIME(6)     NOT NULL,
+	updatedAt	DATETIME(6)     NOT NULL,
+	ExpiredAt	DATETIME(6)     NULL,
+	UsedAt	    DATETIME(6)     NULL,
+
+	PRIMARY KEY (id),
+	UNIQUE KEY unique_purchase_userId_storeId (userId, storeId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "binna", "binna", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user1", "user1", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user2", "user2", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637",  "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user3", "user3", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user4", "user4", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user5", "user5", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user6", "user7", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user7", "user6", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user8", "user8", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user9", "user9", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user10", "user10", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user11", "user11", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user12", "user12", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user13", "user13", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user14", "user14", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user15", "user15", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user16", "user16", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user17", "user17", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user18", "user18", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user19", "user19", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");
+INSERT INTO gameUser (gold, exp, nickname, email, pw, createdAt, updatedAt) VALUES (0, 0, "user20", "user20", "d404559f602eab6fd602ac7680dacbfaadd13630335e951f097af3900e9de176b6db28512f2e000b9d04fba5133e8b1c6e8df59db3a8ab9d60be4b97cc9e81db", "2025-10-22 16:14:41.069637", "2025-10-22 16:14:41.069637");

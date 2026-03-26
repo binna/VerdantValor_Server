@@ -29,8 +29,9 @@ public readonly struct ServerDateTime
     }
 
     public static ServerDateTime Now =>
-        new(DateTime.UtcNow
-            .AddTicks(mUtcDiffTicks));
+        new(DateTime.UtcNow.AddTicks(mUtcDiffTicks));
+    
+    public long Value => mDateTime.Ticks + mUtcDiffTicks;
 
     public DateTime DateTime => mDateTime.AddTicks(mUtcDiffTicks);
 
@@ -65,5 +66,15 @@ public readonly struct ServerDateTime
 
         return new ServerDateTime(
             DateTimeOffset.Parse(datetime).UtcDateTime);
+    }
+    
+    public static bool operator <=(ServerDateTime left, ServerDateTime right)
+    {
+        return left.Value <= right.Value;
+    }
+
+    public static bool operator >=(ServerDateTime left, ServerDateTime right)
+    {
+        return left.Value >= right.Value;
     }
 }

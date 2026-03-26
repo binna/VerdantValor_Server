@@ -21,7 +21,7 @@ public sealed class AppDbContext : DbContext
             })
             .Entity<Purchase>(entity =>
             {
-                entity.HasKey(table => table.PurchaseId);
+                entity.HasKey(table => table.Id);
                 entity.HasIndex(table => new { table.UserId, table.StoreId }).IsUnique();
             })
             ;

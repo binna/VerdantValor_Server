@@ -1,8 +1,11 @@
-﻿using Common.Concurrency;
+﻿using Common.Manager;
+using Common.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Redis;
+using Protocol.Web.Dtos;
 using Shared.Constants;
+using Shared.Types;
+using WebServer.Services;
 
 namespace WebServer.Controllers;
 
@@ -10,26 +13,27 @@ namespace WebServer.Controllers;
 [ApiController]
 public class StoreController : Controller
 {
-    private readonly DistributedLock mRedis;
+    private readonly ILogger<StoreController> mLogger;
+    private readonly StoreService mStoreService;
     
-    public StoreController()
+    public StoreController(
+        ILogger<StoreController> logger,
+        StoreService storeService)
     {
-        var cacheDriver = new RedisCacheDriver("localhost", "6379", 10);
-        mRedis = new DistributedLock(cacheDriver, 1000);
+        mLogger = logger;
+        mStoreService = storeService; 
     }
 
-    [HttpGet("Buy")]
-    [AllowAnonymous]
-    public async void Buy()
+    [HttpPost("Buy")]
+    [Authorize(Policy = "SessionPolicy")]
+    public async Task<ApiResponse> Buy([FromBody] BuyReq request)
     {
-        // TODO 생애 최소 구매를 여러번 호출 시 어떻게 동기화를 보장 할 것인가?
-        //  간단하게 레디스 분산락을 이용한다
-        //  그렇지만 ttl이 만료됬을때를 고려해야 한다
-        //  1. 분산락 획득한다
-        //  2. DB에 먼저 데이터를 만든다 (이때 결제중으로 만들어 둔다) 
-        //  3. 구매를 완료하고 상태값을 구매 완료로 바꾼다.
-        //  4. 분산락 해제한다
-        //  만약 중간에 TTL이 만료되거나 문제가 있다면 구매 불가하게 만들 예정
-        //  (관리자를 통해서만 가능하도록)
+        if (!GameDataManager.StoreTable.TryGet(request.StoreId, out var store))
+            return ApiResponse.From(EResponseResult.StoreNotFound);
+        
+        if (!ulong.TryParse(this.GetUserId(), out var userId))
+            return ApiResponse.From(EResponseResult.InvalidUserId);
+       
+        return await mStoreService.BuyAsync(store, userId);
     }
 }

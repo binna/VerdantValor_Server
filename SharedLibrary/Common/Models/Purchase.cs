@@ -5,11 +5,11 @@ namespace Common.Models;
 
 public class Purchase
 {
-    public ulong PurchaseId { get; private set; }
+    public ulong Id { get; private set; }
     
     public int StoreId { get; private set; }
     
-    public EPurchaseState PurchaseState { get; private set; }
+    public EPurchaseState State { get; private set; }
     
     public ulong UserId { get; private set; }   // FK
     
@@ -26,9 +26,15 @@ public class Purchase
     { 
         var now = ServerDateTime.Now;
         StoreId = storeId;
-        PurchaseState = EPurchaseState.InProgress;
+        State = EPurchaseState.InProgress;
         UserId = userId;
         CreatedAt = now;
         UpdatedAt = now;
+    }
+    
+    public void MarkAsCompleted()
+    {
+        State = EPurchaseState.Completed;
+        CompletedAt = ServerDateTime.Now;
     }
 }

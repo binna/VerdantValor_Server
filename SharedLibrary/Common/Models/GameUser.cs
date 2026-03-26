@@ -17,6 +17,10 @@ public class GameUser
     [StringLength(128)]
     public string Pw { get; private set; } = string.Empty;
     
+    public long Gold { get; private set; }
+    
+    public long Exp { get; private set; }
+    
     [MaxLength(255)]
     public string? DeviceId { get; private set; }
     
@@ -35,6 +39,30 @@ public class GameUser
         Pw = password;
         CreatedAt = now;
         UpdatedAt = now;
+    }
+
+    public bool GainGold(int amount)
+    {
+        if (amount <= 0)
+            return false;
+
+        checked
+        {
+            Gold += amount;
+            return true;
+        }
+    }
+    
+    public bool GainExp(int amount)
+    {
+        if (amount <= 0)
+            return false;
+
+        checked
+        {
+            Gold += amount;
+            return true;
+        }
     }
 
     public static async Task<GameUser> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
