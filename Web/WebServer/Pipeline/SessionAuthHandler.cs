@@ -29,10 +29,6 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
 
         var userId = http.Session.GetString("userId");
         var nickname = http.Session.GetString("nickname");
-        var langStr = http.Session.GetString("language");
-
-        if (!Enum.TryParse<ELanguage>(langStr, out var language))
-            language = ELanguage.En;
 
         if (userId == null || nickname == null)
         {
@@ -48,9 +44,8 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
             return;
         }
 
-        http.Items["UserId"] = userId;
+        http.Items["userId"] = userId;
         http.Items["nickname"] = nickname;
-        http.Items["language"] = language;
 
         context.Succeed(authorizationRequirement);
     }

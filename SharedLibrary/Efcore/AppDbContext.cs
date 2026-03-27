@@ -11,6 +11,7 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<GameUser> GameUser { get; set; } = null!;
     public DbSet<Purchase> Purchase { get; set; } = null!;
+    public DbSet<Inventory> Inventory { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,11 @@ public sealed class AppDbContext : DbContext
             {
                 entity.HasKey(table => table.Id);
                 entity.HasIndex(table => new { table.UserId, table.StoreId }).IsUnique();
+            })
+            .Entity<Inventory>(entity =>
+            {
+                entity.HasKey(table => table.Id);
+                entity.HasIndex(table => new { table.UserId, table.ItemId }).IsUnique();
             })
             ;
     }

@@ -1,3 +1,4 @@
+using Common.Concurrency;
 using Common.Driver;
 using Common.Helpers;
 using Common.Manager;
@@ -122,7 +123,7 @@ catch (Exception ex)
 var sessionDatabase = 3;
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={sessionDatabase }";
+    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={sessionDatabase}";
     options.InstanceName = $"{serverOption.Name}_";
 });
 
@@ -144,13 +145,18 @@ builder.Services.AddAuthorization(options =>
 ICacheDriver coreDriver 
     = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", 0);
 ICacheDriver sessionDriver 
-    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", sessionDatabase );
+    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", sessionDatabase);
+ICacheDriver distributedLockDriver 
+    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", 2);
+var distributedLockExpiryMs = 1000;
 
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
+    .AddSingleton(new DistributedLock(distributedLockDriver, distributedLockExpiryMs))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
+    .AddSingleton<IInventoryRepository, InventoryRepository>()
     .AddSingleton<GameUserService>()
     .AddSingleton<RankingService>()
     .AddSingleton<StoreService>()

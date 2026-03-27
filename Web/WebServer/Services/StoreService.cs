@@ -3,7 +3,6 @@ using Common.Manager;
 using Common.Models;
 using Common.Web;
 using Efcore.Repositories;
-using Redis;
 using Shared.GameData;
 using Shared.Types;
 
@@ -14,19 +13,21 @@ public class StoreService
     private readonly ILogger<StoreService> mLogger;
     private readonly IPurchaseRepository mPurchaseRepository;
     private readonly IGameUserRepository mGameUserRepository;
+    private readonly IInventoryRepository mInventoryRepository;
     private readonly DistributedLock mDistributedLock;
     
     public StoreService(
         ILogger<StoreService> logger,
         IPurchaseRepository purchaseRepository,
-        IGameUserRepository gameUserRepository)
+        IGameUserRepository gameUserRepository, 
+        IInventoryRepository inventoryRepository,
+        DistributedLock distributedLock)
     {
         mLogger = logger;
         mPurchaseRepository = purchaseRepository; 
         mGameUserRepository = gameUserRepository;
-        
-        var cacheDriver = new RedisCacheDriver("localhost", "6379", 10);
-        mDistributedLock = new DistributedLock(cacheDriver, 1000);
+        mInventoryRepository = inventoryRepository;
+        mDistributedLock = distributedLock;
     }
     
     public async Task<ApiResponse> BuyAsync(Store store, ulong userId)
@@ -34,9 +35,7 @@ public class StoreService
         var key = $"Buy:{userId}";
         var token = $"{Guid.NewGuid()}";
         
-        Console.WriteLine(key);
-        
-        var bAcquired =  await mDistributedLock.TryAcquireLockAsync(key, token);
+        var bAcquired = await mDistributedLock.TryAcquireLockAsync(key, token);
         
         if (!bAcquired)
             return ApiResponse.From(EResponseResult.LockAcquisitionFailed);
@@ -45,11 +44,13 @@ public class StoreService
         {
             var count = await mPurchaseRepository.CountAsync(userId, store.Id);
             
-            if (count > store.MaxPurchaseCount)
+            if (count >= store.MaxPurchaseCount)
                 return ApiResponse.From(EResponseResult.PurchaseLimitExceeded);
         }
         
-        var purchase = await mPurchaseRepository.AddAsync(store.Id, userId);
+        var purchase = await mPurchaseRepository.AddAndSaveAsync(store.Id, userId);
+        
+        // TODO 추후 결제 로직 추가 필요
 
         var bGain = await GainItem(store.Items, userId);
         
@@ -61,7 +62,8 @@ public class StoreService
         if (!bReleased)
             return ApiResponse.From(EResponseResult.LockReleaseFailed);
         
-        await mPurchaseRepository.MarkAsCompletedAsync(purchase);
+        await mPurchaseRepository.MarkAsCompletedAsync(purchase.Id);
+        
         return ApiResponse.From(EResponseResult.Success);
     }
     
@@ -71,9 +73,6 @@ public class StoreService
         
         foreach (var item in Items)
         {
-            Console.WriteLine(item.Id);
-            Console.WriteLine(item.Amount);
-
             if (GameDataManager.ItemTable.TryGet(item.Id, out var value))
             {
                 switch (value.ItemKind)
@@ -101,7 +100,7 @@ public class StoreService
                             return false;
                         break;
                     case EItemKind.Potion:
-                        // TODO 인벤토리 테이블 만들 필요 있음
+                        await mInventoryRepository.AddAsync(item.Id, item.Amount, userId);
                         break;
                 }
             }
