@@ -14,14 +14,14 @@ public class StoreService
     private readonly IPurchaseRepository mPurchaseRepository;
     private readonly IGameUserRepository mGameUserRepository;
     private readonly IInventoryRepository mInventoryRepository;
-    private readonly DistributedLock mDistributedLock;
+    private readonly IDistributedLock mDistributedLock;
     
     public StoreService(
         ILogger<StoreService> logger,
         IPurchaseRepository purchaseRepository,
         IGameUserRepository gameUserRepository, 
         IInventoryRepository inventoryRepository,
-        DistributedLock distributedLock)
+        IDistributedLock distributedLock)
     {
         mLogger = logger;
         mPurchaseRepository = purchaseRepository; 
@@ -50,7 +50,9 @@ public class StoreService
         
         var purchase = await mPurchaseRepository.AddAndSaveAsync(store.Id, userId);
         
-        // TODO 추후 결제 로직 추가 필요
+        // TODO
+        //  추후 결제 로직 추가 필요
+        //  지금 Price로 하고 있는데 여기의 통화 단위를 실제 결제하는 거랑 Gold랑 어떻게 분리할지 고민 필요
 
         var bGain = await GainItem(store.Items, userId);
         

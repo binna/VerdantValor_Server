@@ -20,7 +20,7 @@ namespace Common.Concurrency;
 //  LockRelease      : 토큰 비교 후 안전한 락 해제
 //  LockExtend       : 현재 보유 중인 락의 TTL 연장
 
-public sealed class DistributedLock
+public class DistributedLock : IDistributedLock
 {
     private const string RELEASE_LOCK_IF_OWNER_SCRIPT =
         "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
@@ -34,9 +34,9 @@ public sealed class DistributedLock
         mLockExpiry = TimeSpan.FromMilliseconds(expiryMs);
     }
 
-    public Task<bool> TryAcquireLockAsync(string lockKey, string lockToken)
+    public async Task<bool> TryAcquireLockAsync(string lockKey, string lockToken)
     {
-        return mCacheDriver
+        return await mCacheDriver
             .StringSetAsync(lockKey, lockToken, mLockExpiry, ICacheDriver.ESetCondition.NotExists);
     }
 

@@ -153,7 +153,7 @@ var distributedLockExpiryMs = 1000;
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
-    .AddSingleton(new DistributedLock(distributedLockDriver, distributedLockExpiryMs))
+    .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, distributedLockExpiryMs))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<IInventoryRepository, InventoryRepository>()
