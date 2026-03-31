@@ -51,7 +51,7 @@
 - Repository 패턴 적용으로 서비스 로직과 데이터 접근 계층 분리
   - 코드:
     - Program.cs
-      - [Repository DI 설정](./Web/WebServer/Program.cs#L152)
+      - [Repository DI 설정](./Web/WebServer/Program.cs#L157)
     - [EF Core 라이브러리](./SharedLibrary/Efcore)     
     - [Repositories](./SharedLibrary/Efcore/Repositories)
 
@@ -64,9 +64,9 @@
 - Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지    
   - 코드:
     - Program.cs
-      - [세션 설정](./Web/WebServer/Program.cs#L35)
-      - [세션 사용](./Web/WebServer/Program.cs#L174)
-      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L121)
+      - [세션 설정](./Web/WebServer/Program.cs#L36)
+      - [세션 사용](./Web/WebServer/Program.cs#L182)
+      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L122)
     
     - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
 
