@@ -63,7 +63,7 @@ public class StoreTable : BaseTable<Store>
                 if (price.Value < 0)
                 {
                     errors.Add(new ValidationError(
-                        context: $"StoreId={store.Id},Currency={price.Currency}",
+                        context: $"StoreId={store.Id},Currency={price.Key}",
                         field: nameof(price.Value),
                         type: ValidationError.ValidationErrorType.InvalidValue,
                         message: $"Invalid price: {price.Value}. Price must be greater than 0."));

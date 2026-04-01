@@ -159,6 +159,7 @@ builder.Services
     .AddSingleton<IInventoryRepository, InventoryRepository>()
     .AddSingleton<GameUserService>()
     .AddSingleton<RankingService>()
+    .AddSingleton<ItemService>()
     .AddSingleton<StoreService>()
     ;
 

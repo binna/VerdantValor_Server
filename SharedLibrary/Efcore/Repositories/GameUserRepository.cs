@@ -36,4 +36,10 @@ public class GameUserRepository : IGameUserRepository
         var dbContext = mHttpContextAccessor.GetAppDbContext();
         await dbContext.GameUser.AddAsync(new GameUser(nickname, email, password));
     }
+
+    public async Task AddAsync(GameUser user)
+    {
+        var dbContext = mHttpContextAccessor.GetAppDbContext();
+        await dbContext.GameUser.AddAsync(user);
+    }
 }

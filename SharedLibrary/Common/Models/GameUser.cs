@@ -43,7 +43,7 @@ public class GameUser
 
     public bool GainGold(int amount)
     {
-        if (amount <= 0)
+        if (amount < 0)
             return false;
 
         checked
@@ -53,9 +53,21 @@ public class GameUser
         }
     }
     
+    public bool UseGold(int amount)
+    {
+        if (amount < 0)
+            return false;
+
+        checked
+        {
+            Gold -= amount;
+            return true;
+        }
+    }
+    
     public bool GainExp(int amount)
     {
-        if (amount <= 0)
+        if (amount < 0)
             return false;
 
         checked

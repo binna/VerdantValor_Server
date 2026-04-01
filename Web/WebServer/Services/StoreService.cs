@@ -1,5 +1,4 @@
 ﻿using Common.Concurrency;
-using Common.Manager;
 using Common.Models;
 using Common.Web;
 using Efcore.Repositories;
@@ -13,21 +12,21 @@ public class StoreService
     private readonly ILogger<StoreService> mLogger;
     private readonly IPurchaseRepository mPurchaseRepository;
     private readonly IGameUserRepository mGameUserRepository;
-    private readonly IInventoryRepository mInventoryRepository;
     private readonly IDistributedLock mDistributedLock;
+    private readonly ItemService mItemService;
     
     public StoreService(
         ILogger<StoreService> logger,
         IPurchaseRepository purchaseRepository,
-        IGameUserRepository gameUserRepository, 
-        IInventoryRepository inventoryRepository,
-        IDistributedLock distributedLock)
+        IGameUserRepository gameUserRepository,
+        IDistributedLock distributedLock,
+        ItemService itemService)
     {
         mLogger = logger;
-        mPurchaseRepository = purchaseRepository; 
+        mPurchaseRepository = purchaseRepository;
         mGameUserRepository = gameUserRepository;
-        mInventoryRepository = inventoryRepository;
         mDistributedLock = distributedLock;
+        mItemService = itemService;
     }
     
     public async Task<ApiResponse> BuyAsync(Store store, ulong userId)
@@ -50,13 +49,19 @@ public class StoreService
         
         var purchase = await mPurchaseRepository.AddAndSaveAsync(store.Id, userId);
         
-        // TODO
-        //  추후 결제 로직 추가 필요
-        //  지금 Price로 하고 있는데 여기의 통화 단위를 실제 결제하는 거랑 Gold랑 어떻게 분리할지 고민 필요
-
-        var bGain = await GainItem(store.Items, userId);
+        var user = await mGameUserRepository.FindByUserIdAsync(userId);
         
-        if (!bGain)
+        if (user == null)
+            return ApiResponse.From(EResponseResult.NoData);
+
+        var bPurchaseSuccess = Purchase(store.PriceType, store.Prices, user);
+        
+        if (!bPurchaseSuccess)
+            return ApiResponse.From(EResponseResult.PurchaseFailed);
+        
+        var bItemGranted = await mItemService.GainItem(store.Items, user);
+        
+        if (!bItemGranted)
             return ApiResponse.From(EResponseResult.ItemCreationFailed);
         
         var bReleased = await mDistributedLock.TryReleaseLockAsync(key, token);
@@ -68,45 +73,19 @@ public class StoreService
         
         return ApiResponse.From(EResponseResult.Success);
     }
-    
-    private async Task<bool> GainItem(Store.Item[] Items, ulong userId)
+
+    private bool Purchase(ECurrencyType priceType, Dictionary<ECurrency, decimal> prices, GameUser user)
     {
-        GameUser user = null;
-        
-        foreach (var item in Items)
+        if (priceType == ECurrencyType.Game)
         {
-            if (GameDataManager.ItemTable.TryGet(item.Id, out var value))
-            {
-                switch (value.ItemKind)
-                {
-                    case EItemKind.Gold:
-                        if (user == null)
-                        {
-                            user = await mGameUserRepository.FindByUserIdAsync(userId);
-                            if (user == null)
-                                return false;
-                        }
-
-                        if (!user.GainGold(item.Amount))
-                            return false;
-                        break;
-                    case EItemKind.Exp:
-                        if (user == null)
-                        {
-                            user = await mGameUserRepository.FindByUserIdAsync(userId);
-                            if (user == null)
-                                return false;
-                        }
-
-                        if (!user.GainExp(item.Amount))
-                            return false;
-                        break;
-                    case EItemKind.Potion:
-                        await mInventoryRepository.AddAsync(item.Id, item.Amount, userId);
-                        break;
-                }
-            }
+            if (user.Gold < prices[ECurrency.Gold])
+                return false;
+            
+            return user.UseGold((int)prices[ECurrency.Gold]);;
         }
+        
+        // TODO 유료 결제
+        Console.WriteLine("유료 결제");
         return true;
     }
 }
