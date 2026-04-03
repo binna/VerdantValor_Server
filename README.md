@@ -139,7 +139,7 @@
 
 개발 환경에서 MySQL 또는 Redis가 없어도 서버를 실행하고 기능을 테스트할 수 있도록 구성했습니다.
 
-1. 설정파일 확인
+1. 설정파일 확인    
    `appsettings.Development.json`에서 아래 항목을 확인합니다.    
    
    ```json
