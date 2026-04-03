@@ -160,10 +160,10 @@
 2. 주의 사항
    * InMemory DB는 실제 DB(MySQL)와 동작 방식이 다를 수 있습니다.
    * Redis 미사용 시 분산 환경 테스트는 불가능합니다.
-   * FakeCacheDriver는 일부 기능이 구현이 되어 있지 않습니다.
-     * TTL
+   * FakeCacheDriver는 일부 기능이 구현되어 있지 않습니다.
+     * TTL 미지원
      * ESetCondition: 키 존재 여부 기반 조건부 Set(NX/XX) 미지원
-     * Script evaluation
+     * Script evaluation(Lua) 미지원
 
 <br><br>
 
