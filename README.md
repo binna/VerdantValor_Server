@@ -19,7 +19,8 @@
 1. [기술스택](#기술스택)
 2. [웹 서버 구현 항목](#웹-서버-구현-항목)
 3. [소켓 서버 구현 항목](#소켓-서버-구현-항목)
-4. [사이드 프로젝트 (TCP 에코 브로드캐스트 서버)](#사이드-프로젝트-tcp-에코-브로드캐스트-서버)
+4. [DB/Redis 없이도 웹 서버 실행 가이드](dbredis-없이도-웹-서버-실행-가이드)
+5. [사이드 프로젝트 (TCP 에코 브로드캐스트 서버)](#사이드-프로젝트-tcp-에코-브로드캐스트-서버)
 
 <br><br>
 
@@ -132,6 +133,37 @@
     - [Chat 패킷 라이브러리](https://github.com/binna/VerdantValor_Shared/tree/main/Protocol/Chat)
     - [Chat 기본 틀](https://github.com/binna/VerdantValor_Shared/tree/main/Protocol/Chat/Frames)
 
+<br><br>
+
+## DB/Redis 없이도 웹 서버 실행 가이드
+
+개발 환경에서 MySQL 또는 Redis가 없어도 서버를 실행하고 기능을 테스트할 수 있도록 구성했습니다.
+
+1. 설정파일 확인
+   `appsettings.Development.json`에서 아래 항목을 확인합니다.    
+   
+   ```json
+   "Database": {
+     "Mode": "InMemory"
+   },
+   "Redis": {
+     "Enabled": false
+   }
+   ```
+   
+   * Database.Mode = InMemory    
+     EF Core InMemory DB 사용
+       
+   * Redis.Enabled = false
+     Redis 대신 FakeCacheDriver 사용
+  
+2. 주의 사항
+   * InMemory DB는 실제 DB(MySQL)와 동작 방식이 다를 수 있습니다.
+   * Redis 미사용 시 분산 환경 테스트는 불가능합니다.
+   * FakeCacheDriver는 일부 기능이 구현이 되어 있지 않습니다.
+     * TTL
+     * ESetCondition
+     * Script evaluation
 
 <br><br>
 
