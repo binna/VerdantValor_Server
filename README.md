@@ -154,7 +154,7 @@
    * Database.Mode = InMemory    
      EF Core InMemory DB 사용
        
-   * Redis.Enabled = false
+   * Redis.Enabled = false    
      Redis 대신 FakeCacheDriver 사용
   
 2. 주의 사항
