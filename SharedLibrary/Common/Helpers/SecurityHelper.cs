@@ -98,6 +98,10 @@ public class SecurityHelper : ISecurityHelper
         aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
 
         var plaintext = Encoding.UTF8.GetString(plainBytes);
+        
+        // TODO
+        //  Throw 처리함,, 
+        //  래핑을 해서 쓰면 좋을 거 같다
     
         return JsonSerializer.Deserialize<T>(plaintext);
     }

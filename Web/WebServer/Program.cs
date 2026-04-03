@@ -64,38 +64,40 @@ var redisOption = builder.Configuration
     .GetSection("Redis")
     .Get<RedisOption>();
 
-var mysqlOption = builder.Configuration
-    .GetSection("MySQL")
-    .Get<MysqlOption>();
+var dbOption = builder.Configuration
+    .GetSection("Database")
+    .Get<DatabaseOption>();
 
 var serverOption = builder.Configuration
     .GetSection("Server")
     .Get<ServerOption>();
 
+var pathOption = builder.Configuration
+    .GetSection("Path")
+    .Get<PathOption>();
+
 // 설정 객체를 Singleton으로 DI에 등록
 builder.Services
     .AddSingleton(securityOption)
-    .AddSingleton(redisOption)
-    .AddSingleton(mysqlOption)
     .AddSingleton(serverOption);
-
-if (string.IsNullOrWhiteSpace(mysqlOption.Url)
+// TODO 설정도 모드별로 구분 필요
+if (string.IsNullOrWhiteSpace(dbOption.Url)
     || string.IsNullOrWhiteSpace(redisOption.Host) 
     || redisOption.Port <= 0
     || string.IsNullOrWhiteSpace(serverOption.Name) 
-    || string.IsNullOrEmpty(serverOption.SharedLibraryPath))
+    || string.IsNullOrEmpty(pathOption.SharedLibrary))
 {
     Log.Fatal("Configurations are missing required fields. {@fields}", 
         new
         {
-            mysqlOption.Url, 
+            dbOption.Url, 
             redisOption.Host, redisOption.Port, 
             serverOption.Name,
-            GameDataPath = serverOption.SharedLibraryPath
+            GameDataPath = pathOption.SharedLibrary
         });
     Environment.Exit(1);
 }
-
+// TODO 키 검사 부분 필요, 길이 제한이 필요
 if (string.IsNullOrWhiteSpace(securityOption.ReqEncryptKey))
 {
     Log.Fatal("Configurations are missing required fields. {@fields}", 
@@ -106,11 +108,7 @@ if (string.IsNullOrWhiteSpace(securityOption.ReqEncryptKey))
 #region Init
 try
 {
-    // AppContext.BaseDirectory
-    //  실행 중인 애플리케이션의 주 실행 파일(host executable)이 위치한 디렉터리 경로를 반환
-    var gameDataPath = Path.GetFullPath(
-        Path.Combine(serverOption.BaseDir, serverOption.SharedLibraryPath, "GameData", "Data"));
-    GameDataManager.LoadAllGameData(gameDataPath);
+    GameDataManager.LoadAllGameData(pathOption.GameData);
 }
 catch (Exception ex)
 {
@@ -119,17 +117,34 @@ catch (Exception ex)
 }
 #endregion
 
-// Redis 기반 세션 공유를 위한 분산 캐시 설정
-var sessionDatabase = 3;
-builder.Services.AddStackExchangeRedisCache(options =>
+if (redisOption.Enabled)
 {
-    options.Configuration = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={sessionDatabase}";
-    options.InstanceName = $"{serverOption.Name}_";
-});
+    var redisUrl = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={redisOption.SessionDbNum}";
 
-builder.Services
-    .AddPooledDbContextFactory<AppDbContext>(options => 
-        options.UseMySQL(mysqlOption.Url));
+    // Redis 기반 세션 공유를 위한 분산 캐시 설정
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisUrl;
+        options.InstanceName = $"{serverOption.Name}_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
+if (dbOption.Mode == EDatabaseMode.InMemory)
+{
+    builder.Services
+        .AddPooledDbContextFactory<AppDbContext>(options =>
+            options.UseInMemoryDatabase(serverOption.Name));
+}
+else
+{
+    builder.Services
+        .AddPooledDbContextFactory<AppDbContext>(options => 
+            options.UseMySQL(dbOption.Url));
+}
 
 // 인증 설정, 커스텀한 인가를 사용하기 위해 반드시 필요하여 형식적으로 작업
 builder.Services.AddAuthentication("PassThroughAuth")
@@ -142,18 +157,27 @@ builder.Services.AddAuthorization(options =>
         "SessionPolicy", 
         policy => policy.Requirements.Add(new SessionAuthRequirement())));
 
-ICacheDriver coreDriver 
-    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", 0);
-ICacheDriver sessionDriver 
-    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", sessionDatabase);
-ICacheDriver distributedLockDriver 
-    = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", 2);
-var distributedLockExpiryMs = 1000;
+ICacheDriver coreDriver;
+ICacheDriver sessionDriver;
+ICacheDriver distributedLockDriver;
+
+if (redisOption.Enabled)
+{
+    coreDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.CoreDbNum);
+    sessionDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.SessionDbNum);
+    distributedLockDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.LockDbNum);
+}
+else
+{
+    coreDriver = new FakeCacheDriver();
+    sessionDriver = new FakeCacheDriver();
+    distributedLockDriver = new FakeCacheDriver();
+}
 
 builder.Services
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
-    .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, distributedLockExpiryMs))
+    .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, redisOption.LockExpiryMs))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<IInventoryRepository, InventoryRepository>()
@@ -186,7 +210,7 @@ app.UseSession();           // 세션
 app.UseAuthentication();    // 사용자 인증
 app.UseAuthorization();     // 정책 기반 인가
 
-//if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
