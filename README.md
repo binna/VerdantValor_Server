@@ -162,7 +162,7 @@
    * Redis 미사용 시 분산 환경 테스트는 불가능합니다.
    * FakeCacheDriver는 일부 기능이 구현이 되어 있지 않습니다.
      * TTL
-     * ESetCondition
+     * ESetCondition: 키 존재 여부 기반 조건부 Set(NX/XX) 미지원
      * Script evaluation
 
 <br><br>
