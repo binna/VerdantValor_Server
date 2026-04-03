@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Common.Error;
+using Mysqlx.Expect;
 using Protocol.Web.Dtos;
 
 namespace Common.Helpers;
@@ -30,6 +31,19 @@ public class SecurityHelper : ISecurityHelper
                 nameof(encryptKey),
                 string.Format(ErrorMessages.MUST_BE_VALID_AES_KEY_SIZE, mEncryptKey.Length));
         }
+    }
+    
+    public static bool IsValidEncryptionKey(string encryptKey)
+    {
+        if (string.IsNullOrWhiteSpace(encryptKey))
+            return false;
+
+        if (encryptKey.Length != 32
+            && encryptKey.Length != 24
+            && encryptKey.Length != 16)
+            return false;
+
+        return true;
     }
 
     public string ComputeSha512Hash(string plainText)
@@ -98,11 +112,6 @@ public class SecurityHelper : ISecurityHelper
         aesCcm.Decrypt(nonceBytes, dataBytes, tagBytes, plainBytes);
 
         var plaintext = Encoding.UTF8.GetString(plainBytes);
-        
-        // TODO
-        //  Throw 처리함,, 
-        //  래핑을 해서 쓰면 좋을 거 같다
-    
         return JsonSerializer.Deserialize<T>(plaintext);
     }
     

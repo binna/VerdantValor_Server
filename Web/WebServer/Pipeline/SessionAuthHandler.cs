@@ -1,6 +1,5 @@
 ﻿using Common.Web;
 using Microsoft.AspNetCore.Authorization;
-using Shared.Types;
 
 namespace WebServer.Pipeline;
 
@@ -36,7 +35,7 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
             return;
         }
 
-        var saveSessionId = (await mKeyValueStore.GetSessionInfoAsync(userId)).ToString();
+        var saveSessionId = await mKeyValueStore.GetSessionInfoAsync(userId);
 
         if (!saveSessionId.Equals(http.Session.Id))
         {

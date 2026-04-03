@@ -13,6 +13,7 @@ using Redis;
 using WebServer.options;
 using WebServer.Pipeline;
 using WebServer.Services;
+using WebServer.types;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,28 +81,60 @@ var pathOption = builder.Configuration
 builder.Services
     .AddSingleton(securityOption)
     .AddSingleton(serverOption);
-// TODO 설정도 모드별로 구분 필요
-if (string.IsNullOrWhiteSpace(dbOption.Url)
-    || string.IsNullOrWhiteSpace(redisOption.Host) 
-    || redisOption.Port <= 0
-    || string.IsNullOrWhiteSpace(serverOption.Name) 
-    || string.IsNullOrEmpty(pathOption.SharedLibrary))
+
+if (redisOption.Enabled)
 {
-    Log.Fatal("Configurations are missing required fields. {@fields}", 
+    if (string.IsNullOrWhiteSpace(redisOption.Host) 
+        || redisOption.Port <= 0
+        || redisOption.CoreDbNum < 0
+        || redisOption.SessionDbNum < 0
+        || redisOption.LockDbNum < 0)
+    {
+        Log.Fatal("Invalid Redis configuration. {@fields}", 
+            new
+            {
+                redisOption.Host,
+                redisOption.Port,
+                redisOption.CoreDbNum,
+                redisOption.SessionDbNum,
+                redisOption.LockDbNum
+            });
+        Environment.Exit(1);
+    }
+}
+
+if (dbOption.Mode == EDatabaseMode.MySql)
+{
+    if (string.IsNullOrWhiteSpace(dbOption.Url))
+    {
+        Log.Fatal("Invalid MySql configuration. {@fields}", 
+            new
+            {
+                dbOption.Url 
+            });
+        Environment.Exit(1);
+    }
+}
+
+
+if (string.IsNullOrWhiteSpace(serverOption.Name) 
+    || string.IsNullOrEmpty(pathOption.SharedLibrary) 
+    || redisOption.LockExpiryMs <= 0)
+{
+    Log.Fatal("Invalid configuration. {@fields}", 
         new
         {
-            dbOption.Url, 
-            redisOption.Host, redisOption.Port, 
             serverOption.Name,
-            GameDataPath = pathOption.SharedLibrary
+            pathOption.SharedLibrary,
+            redisOption.LockExpiryMs
         });
     Environment.Exit(1);
 }
-// TODO 키 검사 부분 필요, 길이 제한이 필요
-if (string.IsNullOrWhiteSpace(securityOption.ReqEncryptKey))
+
+if (string.IsNullOrWhiteSpace(securityOption.ReqEncryptKey) 
+    || !SecurityHelper.IsValidEncryptionKey(securityOption.ReqEncryptKey))
 {
-    Log.Fatal("Configurations are missing required fields. {@fields}", 
-        new { securityOption.ReqEncryptKey });
+    Log.Fatal("Encryption key configuration is invalid.");
     Environment.Exit(1);
 }
 
@@ -175,6 +208,7 @@ else
 }
 
 builder.Services
+    .AddSingleton<ISecurityHelper>(new SecurityHelper(securityOption.ReqEncryptKey))
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
     .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
     .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, redisOption.LockExpiryMs))
@@ -186,10 +220,6 @@ builder.Services
     .AddSingleton<ItemService>()
     .AddSingleton<StoreService>()
     ;
-
-builder.Services.AddSingleton<ISecurityHelper>(
-    _ => new SecurityHelper(securityOption.ReqEncryptKey)
-);
 
 var app = builder.Build();
 

@@ -34,7 +34,7 @@ public class GameUserRepository : IGameUserRepository
     public async Task AddAsync(string email, string nickname, string password)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        await dbContext.GameUser.AddAsync(new GameUser(nickname, email, password));
+        await dbContext.GameUser.AddAsync(new GameUser(email, nickname, password));
     }
 
     public async Task AddAsync(GameUser user)

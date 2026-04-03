@@ -1,4 +1,6 @@
-﻿namespace WebServer.options;
+﻿using WebServer.types;
+
+namespace WebServer.options;
 
 public class DatabaseOption
 {
