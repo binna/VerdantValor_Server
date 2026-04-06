@@ -113,7 +113,7 @@
 #### 유닛 테스트 기반 검증    
 - xUnit + NSubstitute 유닛 테스트 구성    
   - 코드:
-    - [웹서버 유닛테스트](./Web/WebServer.Test.Unit)
+    - [웹서버 유닛테스트](./Test/WebServer.Test.Unit)
     - [기능 테스트 (유닛/통합)](./Test/Function.Test)
 
 <br><br>
