@@ -22,8 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{EB5A961A-337
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer", "Web\WebServer\WebServer.csproj", "{788A3350-9B94-407B-89DA-74A21C19E688}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Unit", "Web\WebServer.Test.Unit\WebServer.Test.Unit.csproj", "{CE4A8FBB-667F-4367-80E8-EAABE9BF48D4}"
-EndProject
+
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Echo", "Echo", "{57CD5E72-A238-4940-9E93-14237E5DD591}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer", "Echo\EchoServer\EchoServer.csproj", "{9B3D17BF-DBF3-4AD8-B69F-F53AFA9BAF29}"
@@ -45,6 +44,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EchoServer.LoadTester", "Test\EchoServer.LoadTester\EchoServer.LoadTester.csproj", "{15794A60-3326-4BB1-A88C-0DCE4D75DB66}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Function.Test", "Test\Function.Test\Function.Test.csproj", "{C4E957C1-D520-41D5-86B7-F958F8B8A7CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebServer.Test.Unit", "Test\WebServer.Test.Unit\WebServer.Test.Unit.csproj", "{CE4A8FBB-667F-4367-80E8-EAABE9BF48D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Test\Playground\Playground.csproj", "{91342D95-6186-4CD5-8DD5-118AFE87D47D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -116,6 +119,10 @@ Global
 		{C4E957C1-D520-41D5-86B7-F958F8B8A7CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4E957C1-D520-41D5-86B7-F958F8B8A7CF}.Development|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4E957C1-D520-41D5-86B7-F958F8B8A7CF}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{91342D95-6186-4CD5-8DD5-118AFE87D47D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91342D95-6186-4CD5-8DD5-118AFE87D47D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91342D95-6186-4CD5-8DD5-118AFE87D47D}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{91342D95-6186-4CD5-8DD5-118AFE87D47D}.Development|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{039E3CAE-38DB-4FFF-907C-41675A603D1B} = {1EF9613A-23CE-452D-BF45-8B911B09DBC9}
@@ -135,5 +142,6 @@ Global
 		{15794A60-3326-4BB1-A88C-0DCE4D75DB66} = {10E077DD-3A3C-4FD5-B7D0-D9BF157249DE}
 		{C4E957C1-D520-41D5-86B7-F958F8B8A7CF} = {10E077DD-3A3C-4FD5-B7D0-D9BF157249DE}
 		{CE4A8FBB-667F-4367-80E8-EAABE9BF48D4} = {10E077DD-3A3C-4FD5-B7D0-D9BF157249DE}
+		{91342D95-6186-4CD5-8DD5-118AFE87D47D} = {10E077DD-3A3C-4FD5-B7D0-D9BF157249DE}
 	EndGlobalSection
 EndGlobal
