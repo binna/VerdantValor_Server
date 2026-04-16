@@ -1,5 +1,4 @@
-﻿using Common.GameData.Tables;
-using Efcore.Repositories;
+﻿using Efcore.Repositories;
 using Common.Helpers;
 using Common.Web;
 using Shared.Constants;
@@ -31,29 +30,17 @@ public class GameUserService
 
     public async Task<ApiResponse> JoinAsync(string email, string password, string nickname)
     {
-        if (string.IsNullOrWhiteSpace(email)
-            || string.IsNullOrWhiteSpace(password)
-            || string.IsNullOrWhiteSpace(nickname))
-            return ApiResponse
-                .From(EResponseResult.EmptyRequiredField);
-
-        if (!ValidationHelper.IsValidEmail(email))
-            return ApiResponse
-                .From(EResponseResult.EmailAlphabetNumberOnly);
+        var responseResult = ValidationHelper.IsValidEmail(email, ValidationHelper.EValidationFlags.CheckBannedWord);
+        if (responseResult != EResponseResult.Success)
+            return ApiResponse.From(responseResult);
         
-        if (!ValidationHelper.IsValidNickname(nickname))
-            return ApiResponse
-                .From(EResponseResult.NicknameAlphabetKoreanNumberOnly);
-
-        if (email.Length is 
-                < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
-            return ApiResponse
-                .From(EResponseResult.InvalidEmailLength);
-
-        if (nickname.Length is 
-                < AppConstant.NICKNAME_MIN_LENGTH or > AppConstant.NICKNAME_MAX_LENGTH)
-            return ApiResponse
-                .From(EResponseResult.InvalidNicknameLength);
+        responseResult = ValidationHelper.IsValidPassWord(password);
+        if (responseResult != EResponseResult.Success)
+            return ApiResponse.From(responseResult);
+        
+        responseResult = ValidationHelper.IsValidNickname(nickname, ValidationHelper.EValidationFlags.CheckBannedWord);
+        if (responseResult != EResponseResult.Success)
+            return ApiResponse.From(responseResult);
         
         var bExistsUser = await mGameUserRepository.ExistsAsync(email);
         
@@ -61,29 +48,24 @@ public class GameUserService
             return ApiResponse
                 .From(EResponseResult.EmailAlreadyExists);
         
-        if (BannedWordTable.ContainsBannedWord(email))
-            return ApiResponse
-                .From(EResponseResult.ForbiddenEmail);
-
-        if (BannedWordTable.ContainsBannedWord(nickname))
-            return ApiResponse
-                .From(EResponseResult.ForbiddenNickname);
+        // TODO 현재 진행중인데 같은 email로 요청이 들어온다면,,,,
+        //  디비에서 유효성 검사하긴 하지만, 그래도 서버 내에서 막는 로직, 레디스 이용 예정
 
         var hashPw = mSecurityHelper.ComputeSha512Hash(password);
         await mGameUserRepository.AddAsync(email, nickname, hashPw);
         
-        return ApiResponse
-            .From(EResponseResult.Success);
+        return ApiResponse.From(EResponseResult.Success);
     }
 
     public async Task<ApiResponse> LoginAsync(string email, string password)
     {
-        if (string.IsNullOrWhiteSpace(email)
-            || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(password))
             return ApiResponse.From(EResponseResult.EmptyRequiredField);
 
-        if (!ValidationHelper.IsValidEmail(email))
-            return ApiResponse.From(EResponseResult.EmailAlphabetNumberOnly);
+        var responseResult = ValidationHelper.IsValidEmail(email, ValidationHelper.EValidationFlags.None);
+
+        if (responseResult != EResponseResult.Success)
+            return ApiResponse.From(responseResult);
         
         if (email.Length is 
             < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)

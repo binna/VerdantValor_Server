@@ -84,7 +84,7 @@ public class GameUserServiceTest
         var response = await mGameUserService
             .JoinAsync(email, "1234", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlphabetNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailFormat}"); 
         Assert.False(response.IsSuccess);
     }
 
@@ -97,7 +97,7 @@ public class GameUserServiceTest
         var response = await mGameUserService
             .JoinAsync("binna", "1234", nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.NicknameAlphabetKoreanNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidNicknameFormat}"); 
         Assert.False(response.IsSuccess);
     }
     
@@ -236,7 +236,7 @@ public class GameUserServiceTest
         var response = await mGameUserService
             .LoginAsync(email, "1234");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlphabetNumberOnly}"); 
+        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailFormat}"); 
         Assert.False(response.IsSuccess);
     }
     
