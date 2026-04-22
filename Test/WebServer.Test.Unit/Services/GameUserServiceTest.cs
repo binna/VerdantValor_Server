@@ -1,9 +1,9 @@
 ﻿using Common.Helpers;
+using Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Efcore.Repositories;
-using Common.Models;
 using Common.Web;
 using Shared.Types;
 using WebServer.Services;
@@ -41,11 +41,10 @@ public class GameUserServiceTest
     [InlineData("  ")]
     public async Task Test_Join_Email_파라미터가_비었을때_Fail(string? email)
     {
-        var response = await mGameUserService
-            .JoinAsync(email, "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync(email, "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
     
     [Theory]
@@ -54,11 +53,10 @@ public class GameUserServiceTest
     [InlineData("  ")]
     public async Task Test_Join_Password_파라미터가_비었을때_Fail(string? password)
     {
-        var response = await mGameUserService
-            .JoinAsync("binna", password, "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", password, "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
     
     [Theory]
@@ -67,55 +65,77 @@ public class GameUserServiceTest
     [InlineData("  ")]
     public async Task Test_Join_Nickname_파라미터가_비었을때_Fail(string? nickname)
     {
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", nickname);
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
-
+    
     [Theory]
-    [InlineData("돼지꾸르륵")]
-    [InlineData("돼지꾸르륵:(")]
-    [InlineData("binna:)")]
-    [InlineData("binna:)><")]
+    [InlineData("돼지꾸르륵@naver.com")]
+    [InlineData("돼지꾸르륵:(@naver.com")]
+    [InlineData("binna:)@naver.com")]
+    [InlineData("binna:)><@naver.com")]
     public async Task Test_Join_Email_유효하지않는문자_사용할때_Fail(string email)
     {
-        var response = await mGameUserService
-            .JoinAsync(email, "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync(email, "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailFormat}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal( $"{EResponseResult.InvalidEmailFormat}", $"{responseResult}"); 
     }
-
+    
+    [Theory]
+    [InlineData("159753456")]
+    [InlineData("alphahappy")]
+    [InlineData("Alphahappy")]
+    [InlineData("Alphahappy123")]
+    public async Task Test_Join_Password_유효하지않는문자_사용할때_Fail(string password)
+    {
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", password, "shine");
+        
+        Assert.Equal( $"{EResponseResult.InvalidPasswordFormat}", $"{responseResult}"); 
+    }
+    
     [Theory]
     [InlineData("돼지꾸르륵:(")]
     [InlineData("nice:(")]
     [InlineData("nice/")]
     public async Task Test_Join_Nickname_유효하지않는문자_사용할때_Fail(string nickname)
     {
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", nickname);
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidNicknameFormat}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.InvalidNicknameFormat}", $"{responseResult}"); 
     }
     
     [Theory]
-    [InlineData("binn")]
-    [InlineData("bin")]
-    [InlineData("bi")]
-    [InlineData("b")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna1")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna12")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna123")]
+    [InlineData("binn@naver.com")]
+    [InlineData("bin@naver.com")]
+    [InlineData("bi@naver.com")]
+    [InlineData("b@naver.com")]
+    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna1@naver.com")]
+    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna12@naver.com")]
+    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna123@naver.com")]
     public async Task Test_Join_Email_길이가_범위_밖일때_Fail(string email)
     {
-        var response = await mGameUserService
-            .JoinAsync(email, "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync(email, "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailLength}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.InvalidEmailLength}", $"{responseResult}"); 
+    }
+    
+    [Theory]
+    [InlineData("Alph12^")]
+    [InlineData("Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha")]
+    [InlineData("Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&")]
+    [InlineData("Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&Alpha123^&")]
+    public async Task Test_Join_Password_길이가_범위_밖일때_Fail(string password)
+    {
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", password, "shine");
+        
+        Assert.Equal($"{EResponseResult.InvalidPasswordLength}", $"{responseResult}"); 
     }
     
     [Theory]
@@ -131,11 +151,10 @@ public class GameUserServiceTest
     [InlineData("shineshineshineshineshineshine123")]
     public async Task Test_Join_Nickname_길이가_범위_밖일때_Fail(string nickname)
     {
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", nickname);
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidNicknameLength}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.InvalidNicknameLength}", $"{responseResult}"); 
     }
     
     [Fact]
@@ -145,27 +164,25 @@ public class GameUserServiceTest
             .ExistsAsync(Arg.Any<string>())
             .Returns(Task.FromResult(true));
         
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmailAlreadyExists}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmailAlreadyExists}", $"{responseResult}"); 
     }
     
     [Theory]
-    [InlineData("admin")]
-    [InlineData("shiadminne")]
+    [InlineData("admin@naver.com")]
+    [InlineData("shiadminne@binna.company")]
     public async Task Test_Join_Email_금지된_단어일때_Fail(string email)
     {
         mGameUserRepository
             .ExistsAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mGameUserService
-            .JoinAsync(email, "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync(email, "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ForbiddenEmail}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal( $"{EResponseResult.ForbiddenEmail}", $"{responseResult}"); 
     }
     
     [Theory]
@@ -177,11 +194,10 @@ public class GameUserServiceTest
             .ExistsAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", nickname);
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ForbiddenNickname}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.ForbiddenNickname}", $"{responseResult}"); 
     }
     
     [Fact]
@@ -191,14 +207,13 @@ public class GameUserServiceTest
             .ExistsAsync(Arg.Any<string>())
             .Returns(Task.FromResult(false));
         
-        var response = await mGameUserService
-            .JoinAsync("binna", "1234", "shine");
+        var responseResult = await mGameUserService
+            .JoinAsync("every5116@naver.com", "Alpha123^", "shine");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.Success}", $"{responseResult}"); 
     }
     #endregion
-
+    
     #region 로그인
     [Theory]
     [InlineData(null)]
@@ -206,11 +221,9 @@ public class GameUserServiceTest
     [InlineData("   ")]
     public async Task Test_Login_Email_파라미터가_비었을때_Fail(string? email)
     {
-        var response = await mGameUserService
-            .LoginAsync(email, "1234");
+        var responseResult = await mGameUserService.LoginAsync(email, "Alpha123^");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
     
     [Theory]
@@ -219,42 +232,9 @@ public class GameUserServiceTest
     [InlineData("   ")]
     public async Task Test_Login_Password_파라미터가_비었을때_Fail(string? password)
     {
-        var response = await mGameUserService
-            .LoginAsync("binna", password);
+        var responseResult = await mGameUserService.LoginAsync("every5116@naver.com", password);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.EmptyRequiredField}"); 
-        Assert.False(response.IsSuccess);
-    }
-    
-    [Theory]
-    [InlineData("돼지꾸르륵")]
-    [InlineData("돼지꾸르륵:(")]
-    [InlineData("binna:)")]
-    [InlineData("binna:)><")]
-    public async Task Test_Login_Email_유효하지않는문자_사용할때_Fail(string email)
-    {
-        var response = await mGameUserService
-            .LoginAsync(email, "1234");
-        
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailFormat}"); 
-        Assert.False(response.IsSuccess);
-    }
-    
-    [Theory]
-    [InlineData("binn")]
-    [InlineData("bin")]
-    [InlineData("bi")]
-    [InlineData("b")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna1")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna12")]
-    [InlineData("binnabinnabinnabinnabinnabinnabinnabinnabinnabinna123")]
-    public async Task Test_Login_Email_길이가_범위_밖일때_Fail(string email)
-    {
-        var response = await mGameUserService
-            .LoginAsync(email, "1234");
-        
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidEmailLength}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
     
     [Fact]
@@ -264,17 +244,16 @@ public class GameUserServiceTest
             .FindByEmailAsync(Arg.Any<string>())
             .Returns(Task.FromResult<GameUser?>(null));
         
-        var response = await mGameUserService
-            .LoginAsync("shine94", "1234");
+        var responseResult = await mGameUserService
+            .LoginAsync("every5116@naver.com", "Alpha123^");
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.NoData}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.NoData}", $"{responseResult}"); 
     }
     
     [Fact]
     public async Task Test_Login_Success()
     {
-        var user = new GameUser("binna", "shine", "1234");
+        var user = new GameUser("every5116@naver.com", "shine", "Alpha123^");
         
         mGameUserRepository
             .FindByEmailAsync(user.Email)
@@ -284,11 +263,10 @@ public class GameUserServiceTest
             .VerifySha512Hash(Arg.Any<string>(), Arg.Any<string>())
             .Returns(true);
         
-        var response = await mGameUserService
+        var responseResult = await mGameUserService
             .LoginAsync(user.Email, user.Pw);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.Success}", $"{responseResult}"); 
     }
     #endregion
 }

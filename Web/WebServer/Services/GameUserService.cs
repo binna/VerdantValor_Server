@@ -1,7 +1,7 @@
-﻿using Efcore.Repositories;
+﻿using Common.GameData.Tables;
+using Efcore.Repositories;
 using Common.Helpers;
 using Common.Web;
-using Shared.Constants;
 using Shared.Types;
 
 namespace WebServer.Services;
@@ -28,25 +28,29 @@ public class GameUserService
         mSecurityHelper = securityHelper;
     }
 
-    public async Task<ApiResponse> JoinAsync(string email, string password, string nickname)
+    public async Task<EResponseResult> JoinAsync(string email, string password, string nickname)
     {
-        var responseResult = ValidationHelper.IsValidEmail(email, ValidationHelper.EValidationFlags.CheckBannedWord);
+        var responseResult = ValidationHelper.IsValidEmail(email);
         if (responseResult != EResponseResult.Success)
-            return ApiResponse.From(responseResult);
+            return responseResult;
         
-        responseResult = ValidationHelper.IsValidPassWord(password);
+        responseResult = ValidationHelper.IsValidPassword(password);
         if (responseResult != EResponseResult.Success)
-            return ApiResponse.From(responseResult);
+            return responseResult;
         
-        responseResult = ValidationHelper.IsValidNickname(nickname, ValidationHelper.EValidationFlags.CheckBannedWord);
+        responseResult = ValidationHelper.IsValidNickname(nickname);
         if (responseResult != EResponseResult.Success)
-            return ApiResponse.From(responseResult);
+            return responseResult;
+        
+        if (BannedWordTable.ContainsBannedWord(email))
+            return EResponseResult.ForbiddenEmail;
+        
+        if (BannedWordTable.ContainsBannedWord(nickname))
+            return EResponseResult.ForbiddenNickname;
         
         var bExistsUser = await mGameUserRepository.ExistsAsync(email);
-        
         if (bExistsUser)
-            return ApiResponse
-                .From(EResponseResult.EmailAlreadyExists);
+            return EResponseResult.EmailAlreadyExists;
         
         // TODO 현재 진행중인데 같은 email로 요청이 들어온다면,,,,
         //  디비에서 유효성 검사하긴 하지만, 그래도 서버 내에서 막는 로직, 레디스 이용 예정
@@ -54,31 +58,20 @@ public class GameUserService
         var hashPw = mSecurityHelper.ComputeSha512Hash(password);
         await mGameUserRepository.AddAsync(email, nickname, hashPw);
         
-        return ApiResponse.From(EResponseResult.Success);
+        return EResponseResult.Success;
     }
 
-    public async Task<ApiResponse> LoginAsync(string email, string password)
+    public async Task<EResponseResult> LoginAsync(string email, string password)
     {
-        if (string.IsNullOrWhiteSpace(password))
-            return ApiResponse.From(EResponseResult.EmptyRequiredField);
-
-        var responseResult = ValidationHelper.IsValidEmail(email, ValidationHelper.EValidationFlags.None);
-
-        if (responseResult != EResponseResult.Success)
-            return ApiResponse.From(responseResult);
-        
-        if (email.Length is 
-            < AppConstant.EAMIL_MIN_LENGTH or > AppConstant.EAMIL_MAX_LENGTH)
-            return ApiResponse.From(EResponseResult.InvalidEmailLength);
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            return EResponseResult.EmptyRequiredField;
         
         var user = await mGameUserRepository.FindByEmailAsync(email);
-
         if (user == null)
-            return ApiResponse
-                .From(EResponseResult.NoData);
+            return EResponseResult.NoData;
 
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
-            return ApiResponse.From(EResponseResult.NotMatchPw);
+            return EResponseResult.NotMatchPw;
         
         await mKeyValueStore.AddSessionInfoAsync(
             $"{user.UserId}", mHttpContextAccessor.HttpContext!.Session.Id);
@@ -86,6 +79,6 @@ public class GameUserService
         mHttpContextAccessor.SetUserSession(
             $"{user.UserId}", $"{user.Nickname}");
         
-        return ApiResponse.From(EResponseResult.Success);
+        return EResponseResult.Success;
     }
 }

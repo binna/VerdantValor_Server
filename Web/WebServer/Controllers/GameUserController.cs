@@ -12,10 +12,14 @@ namespace WebServer.Controllers;
 [ApiController]
 public class GameUserController : Controller
 {
+    readonly ILogger<GameUserController> mLogger;
     private readonly GameUserService mGameUserService;
 
-    public GameUserController(GameUserService gameUserService)
+    public GameUserController(
+        ILogger<GameUserController> logger,
+        GameUserService gameUserService)
     {
+        mLogger = logger;
         mGameUserService = gameUserService;
     }
 
@@ -26,16 +30,22 @@ public class GameUserController : Controller
         if (!Enum.TryParse<EAuth>(request.AuthType, out var authType))
             return ApiResponse.From(EResponseResult.InvalidInput);
 
+        EResponseResult responseResult;
+
         switch (authType)
         {
             case EAuth.Join:
-                return await mGameUserService.JoinAsync(
-                    request.Email, request.Pw, request.Nickname);
+                responseResult = await mGameUserService.JoinAsync(request.Email, request.Pw, request.Nickname);
+                break;
             case EAuth.Login:
-                return await mGameUserService.LoginAsync(
-                    request.Email, request.Pw);
+                responseResult = await mGameUserService.LoginAsync(request.Email, request.Pw);
+                break;
+            default:
+                responseResult = EResponseResult.InvalidAuthType;
+                mLogger.LogError("Invalid authType {AuthType}", authType);
+                break;
         }
         
-        return ApiResponse.From(EResponseResult.Success);
+        return ApiResponse.From(responseResult);
     }
 }
