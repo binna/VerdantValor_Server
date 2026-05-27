@@ -1,5 +1,5 @@
-﻿using Common.Types;
-using Common.Web;
+﻿using Common.KeyValueStore;
+using Common.Types;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shared.Constants;
@@ -13,13 +13,13 @@ namespace WebServer.Test.Unit.Services;
 public class RankingServiceTest
 {
     private readonly ITestOutputHelper mOutput;
-    private readonly IKeyValueStore mKeyValueStore;
+    private readonly IWebKeyValueStore mKeyValueStore;
     private readonly RankingService mRankingService;
 
     public RankingServiceTest(ITestOutputHelper output)
     {
         mOutput = output;
-        mKeyValueStore = Substitute.For<IKeyValueStore>();
+        mKeyValueStore = Substitute.For<IWebKeyValueStore>();
         mRankingService = Substitute.For<RankingService>(
             Substitute.For<ILogger<RankingService>>(),
             mKeyValueStore);

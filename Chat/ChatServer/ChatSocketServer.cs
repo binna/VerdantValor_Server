@@ -1,9 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using Common.KeyValueStore;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Protocol.Chat.Payloads;
+using Redis;
 using Shared.Types;
 using Tcp;
 
@@ -27,12 +29,14 @@ public class ChatSocketServer : NetworkSocket
     private static bool mbUpdated;
     
     private readonly TcpListener mListener;
+    private readonly ISessionKeyValueStore sessionKeyValueStore;
     
     // TODO 비정상 종료에 대한 로직 필요
     //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
     
     // TODO 나중에 동기화 고려 필요
     //      타임스템프 + userId 조합으로 string으로 변경 예정
+    
     private static int roomCount = 0;
     
     private static readonly Timer UpdateRoomIdsTimer = 
@@ -53,6 +57,10 @@ public class ChatSocketServer : NetworkSocket
     {
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
+        
+        sessionKeyValueStore = 
+            new SessionKeyValueStore(
+                new RedisCacheDriver("localhost", $"{6379}", 2));
     }
     
     public override async Task StartAsync()

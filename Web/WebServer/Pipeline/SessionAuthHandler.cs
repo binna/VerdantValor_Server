@@ -1,4 +1,4 @@
-﻿using Common.Web;
+﻿using Common.KeyValueStore;
 using Microsoft.AspNetCore.Authorization;
 
 namespace WebServer.Pipeline;
@@ -8,12 +8,12 @@ public class SessionAuthRequirement : IAuthorizationRequirement { }
 public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
 {
     private readonly IHttpContextAccessor mHttpContextAccessor;
-    private readonly IKeyValueStore mKeyValueStore;
+    private readonly ISessionKeyValueStore mSessionKeyValueStore;
 
-    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, IKeyValueStore keyValueStore)
+    public SessionAuthHandler(IHttpContextAccessor httpContextAccessor, ISessionKeyValueStore sessionKeyValueStore)
     {
         mHttpContextAccessor = httpContextAccessor;
-        mKeyValueStore = keyValueStore;
+        mSessionKeyValueStore = sessionKeyValueStore;
     }
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SessionAuthRequirement authorizationRequirement)
@@ -35,7 +35,7 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
             return;
         }
 
-        var saveSessionId = await mKeyValueStore.GetSessionInfoAsync(userId);
+        var saveSessionId = await mSessionKeyValueStore.GetSessionInfoAsync(userId);
 
         if (!saveSessionId.Equals(http.Session.Id))
         {

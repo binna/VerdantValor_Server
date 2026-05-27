@@ -9,6 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\SharedLibrary\Ado\Ado.csproj" />
+      <ProjectReference Include="..\..\SharedLibrary\Redis\Redis.csproj" />
       <ProjectReference Include="..\..\SharedLibrary\Tcp\Tcp.csproj" />
       <ProjectReference Include="..\..\VerdantValorShared\Shared\Shared.csproj" />
     </ItemGroup>

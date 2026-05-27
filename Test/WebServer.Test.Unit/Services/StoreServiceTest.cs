@@ -2,7 +2,6 @@
 using Common.Driver;
 using Common.Manager;
 using Common.Models;
-using Common.Web;
 using Efcore.Repositories;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -17,7 +16,6 @@ namespace WebServer.Test.Unit.Services;
 public class StoreServiceTest
 {
     private readonly ITestOutputHelper mOutput;
-    private readonly IKeyValueStore mKeyValueStore;
     private readonly IPurchaseRepository mPurchaseRepository;
     private readonly IGameUserRepository mGameUserRepository;
     private readonly IInventoryRepository mInventoryRepository;

@@ -1,10 +1,10 @@
 ﻿using Common.Helpers;
+using Common.KeyValueStore;
 using Common.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Efcore.Repositories;
-using Common.Web;
 using Shared.Types;
 using WebServer.Services;
 using Xunit.Abstractions;
@@ -15,7 +15,7 @@ namespace WebServer.Test.Unit.Services;
 public class GameUserServiceTest
 {
     private readonly ITestOutputHelper mOutput;
-    private readonly IKeyValueStore mKeyValueStore;
+    private readonly ISessionKeyValueStore mKeyValueStore;
     private readonly IGameUserRepository mGameUserRepository;
     private readonly GameUserService mGameUserService;
     private readonly ISecurityHelper mSecurityHelper;
@@ -24,7 +24,7 @@ public class GameUserServiceTest
     {
         mOutput = output;
         mGameUserRepository = Substitute.For<IGameUserRepository>();
-        mKeyValueStore = Substitute.For<IKeyValueStore>();
+        mKeyValueStore = Substitute.For<ISessionKeyValueStore>();
         mSecurityHelper = Substitute.For<ISecurityHelper>();
         mGameUserService = Substitute.For<GameUserService>(
             Substitute.For<ILogger<GameUserService>>(), 

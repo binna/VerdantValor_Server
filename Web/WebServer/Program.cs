@@ -1,6 +1,7 @@
 using Common.Concurrency;
 using Common.Driver;
 using Common.Helpers;
+using Common.KeyValueStore;
 using Common.Manager;
 using Common.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -190,27 +191,28 @@ builder.Services.AddAuthorization(options =>
         "SessionPolicy", 
         policy => policy.Requirements.Add(new SessionAuthRequirement())));
 
-ICacheDriver coreDriver;
-ICacheDriver sessionDriver;
+ICacheDriver cacheDriver;
+ICacheDriver sessionCacheDriver;
 ICacheDriver distributedLockDriver;
 
 if (redisOption.Enabled)
 {
-    coreDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.CoreDbNum);
-    sessionDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.SessionDbNum);
+    cacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.CoreDbNum);
+    sessionCacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.SessionDbNum);
     distributedLockDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.LockDbNum);
 }
 else
 {
-    coreDriver = new FakeCacheDriver();
-    sessionDriver = new FakeCacheDriver();
+    cacheDriver = new FakeCacheDriver();
+    sessionCacheDriver = new FakeCacheDriver();
     distributedLockDriver = new FakeCacheDriver();
 }
 
 builder.Services
     .AddSingleton<ISecurityHelper>(new SecurityHelper(securityOption.ReqEncryptKey))
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
-    .AddSingleton<IKeyValueStore>(new RedisKeyValueStore(coreDriver, sessionDriver))
+    .AddSingleton<IWebKeyValueStore>(new WebKeyValueStore(cacheDriver))
+    .AddSingleton<ISessionKeyValueStore>(new SessionKeyValueStore(sessionCacheDriver))
     .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, redisOption.LockExpiryMs))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()

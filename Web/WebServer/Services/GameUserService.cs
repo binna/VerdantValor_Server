@@ -1,7 +1,7 @@
 ﻿using Common.GameData.Tables;
 using Efcore.Repositories;
 using Common.Helpers;
-using Common.Web;
+using Common.KeyValueStore;
 using Shared.Types;
 
 namespace WebServer.Services;
@@ -11,20 +11,20 @@ public class GameUserService
     private readonly ILogger<GameUserService> mLogger;
     private readonly IHttpContextAccessor mHttpContextAccessor;
     private readonly IGameUserRepository mGameUserRepository;
-    private readonly IKeyValueStore mKeyValueStore;
+    private readonly ISessionKeyValueStore mSessionKeyValueStore;
     private readonly ISecurityHelper mSecurityHelper;
 
     public GameUserService(
         ILogger<GameUserService> logger,
         IHttpContextAccessor httpContextAccessor,
         IGameUserRepository gameUserRepository,
-        IKeyValueStore keyValueStore,
+        ISessionKeyValueStore sessionKeyValueStore,
         ISecurityHelper securityHelper)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mGameUserRepository = gameUserRepository;
-        mKeyValueStore = keyValueStore;
+        mSessionKeyValueStore = sessionKeyValueStore;
         mSecurityHelper = securityHelper;
     }
 
@@ -73,7 +73,7 @@ public class GameUserService
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
             return EResponseResult.NotMatchPw;
         
-        await mKeyValueStore.AddSessionInfoAsync(
+        await mSessionKeyValueStore.AddSessionInfoAsync(
             $"{user.UserId}", mHttpContextAccessor.HttpContext!.Session.Id);
 
         mHttpContextAccessor.SetUserSession(

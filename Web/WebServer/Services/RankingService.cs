@@ -1,4 +1,5 @@
-﻿using Common.Web;
+﻿using Common.KeyValueStore;
+using Common.Web;
 using Protocol.Web.Dtos;
 using Shared.Constants;
 using Shared.Types;
@@ -8,11 +9,11 @@ namespace WebServer.Services;
 public class RankingService
 {
     private readonly ILogger<RankingService> mLogger;
-    private readonly IKeyValueStore mKeyValueStore;
+    private readonly IWebKeyValueStore mKeyValueStore;
 
     public RankingService(
         ILogger<RankingService> logger, 
-        IKeyValueStore keyValueStore)
+        IWebKeyValueStore keyValueStore)
     {
         mLogger = logger;
         mKeyValueStore = keyValueStore;
