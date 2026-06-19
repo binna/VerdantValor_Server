@@ -2,7 +2,6 @@
 using System.Text;
 using System.Text.Json;
 using Common.Error;
-using Mysqlx.Expect;
 using Protocol.Web.Dtos;
 
 namespace Common.Helpers;

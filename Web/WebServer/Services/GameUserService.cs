@@ -2,6 +2,7 @@
 using Efcore.Repositories;
 using Common.Helpers;
 using Common.KeyValueStore;
+using Common.Types;
 using Shared.Types;
 
 namespace WebServer.Services;
@@ -61,9 +62,9 @@ public class GameUserService
         return EResponseResult.Success;
     }
 
-    public async Task<EResponseResult> LoginAsync(string email, string password)
+    public async Task<EResponseResult> LoginAsync(string email, string password, string deviceId)
     {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(deviceId))
             return EResponseResult.EmptyRequiredField;
         
         var user = await mGameUserRepository.FindByEmailAsync(email);
@@ -73,12 +74,22 @@ public class GameUserService
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
             return EResponseResult.NotMatchPw;
         
+        // TODO 이건 추가적인 UserID에 대한 세션 저장
+        //  이걸 세션구조의 문서처럼 저장하는게 맞음 -> 완료
+        //  그리고 세션 번호는 서버 전체가 공유해야하는 거고 Config에서 Common으로 static 상수로 빼야할 듯
         await mSessionKeyValueStore.AddSessionInfoAsync(
-            $"{user.UserId}", mHttpContextAccessor.HttpContext!.Session.Id);
+            $"{user.UserId}", 
+            new UserSessionInfo
+            {
+                SessionId = mHttpContextAccessor.HttpContext!.Session.Id,
+                DeviceId = deviceId
+            });
 
         mHttpContextAccessor.SetUserSession(
             $"{user.UserId}", $"{user.Nickname}");
         
         return EResponseResult.Success;
     }
+    
+    // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분
 }

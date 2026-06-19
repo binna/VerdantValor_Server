@@ -38,7 +38,7 @@ public class GameUserController : Controller
                 responseResult = await mGameUserService.JoinAsync(request.Email, request.Pw, request.Nickname);
                 break;
             case EAuth.Login:
-                responseResult = await mGameUserService.LoginAsync(request.Email, request.Pw);
+                responseResult = await mGameUserService.LoginAsync(request.Email, request.Pw, request.DeviceId);
                 break;
             default:
                 responseResult = EResponseResult.InvalidAuthType;

@@ -221,7 +221,8 @@ public class GameUserServiceTest
     [InlineData("   ")]
     public async Task Test_Login_Email_파라미터가_비었을때_Fail(string? email)
     {
-        var responseResult = await mGameUserService.LoginAsync(email, "Alpha123^");
+        var responseResult = await mGameUserService
+            .LoginAsync(email, "Alpha123^", "deviceId");
         
         Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
@@ -232,7 +233,20 @@ public class GameUserServiceTest
     [InlineData("   ")]
     public async Task Test_Login_Password_파라미터가_비었을때_Fail(string? password)
     {
-        var responseResult = await mGameUserService.LoginAsync("every5116@naver.com", password);
+        var responseResult = await mGameUserService
+            .LoginAsync("every5116@naver.com", password, "deviceId");
+        
+        Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
+    }
+    
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Test_Login_deviceId_파라미터가_비었을때_Fail(string? deviceId)
+    {
+        var responseResult = await mGameUserService
+            .LoginAsync("every5116@naver.com", "Alpha123", deviceId);
         
         Assert.Equal($"{EResponseResult.EmptyRequiredField}", $"{responseResult}"); 
     }
@@ -245,7 +259,7 @@ public class GameUserServiceTest
             .Returns(Task.FromResult<GameUser?>(null));
         
         var responseResult = await mGameUserService
-            .LoginAsync("every5116@naver.com", "Alpha123^");
+            .LoginAsync("every5116@naver.com", "Alpha123^", "deviceId");
         
         Assert.Equal($"{EResponseResult.NoData}", $"{responseResult}"); 
     }
@@ -264,7 +278,7 @@ public class GameUserServiceTest
             .Returns(true);
         
         var responseResult = await mGameUserService
-            .LoginAsync(user.Email, user.Pw);
+            .LoginAsync(user.Email, user.Pw, "deviceId");
         
         Assert.Equal($"{EResponseResult.Success}", $"{responseResult}"); 
     }
