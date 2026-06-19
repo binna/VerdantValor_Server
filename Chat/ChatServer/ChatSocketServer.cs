@@ -13,9 +13,13 @@ namespace ChatServer;
 
 public class ChatSocketServer : NetworkSocket
 {
+    private const string TestIp = "127.0.0.1";
+    private static ConcurrentDictionary<string, byte> mSessionIdSet = [];
     private static ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
     private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
+    private static ISessionKeyValueStore mSessionKeyValueStore = new SessionKeyValueStore(
+        new RedisCacheDriver("localhost", $"{6379}", 2));
 
     private static Packet<RoomListRes> mRoomListResPacket = new(
         EPacket.RoomList,
@@ -102,13 +106,19 @@ public class ChatSocketServer : NetworkSocket
     #region 패킷 핸들러 함수 모음
     private static async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        // TODO 유효성 검사가 필요
-        //  레디스 뎐결해서 레디스 세션ID와 pid가 일치하는지 확인하기
-        
         var payload = MemoryPackSerializer.Deserialize<LoginReq>(socketContext.PayloadBuffer);
-                        
+
+        var data = 
+            await mSessionKeyValueStore.GetUserSessionInfoAsync($"{payload.UserId}");
+
+        if (payload.SessionId != data.SessionId)
+        {
+            Console.WriteLine($"로그인 실패");
+            return;
+        }
+
         socketContext.SetSession(payload.SessionId, payload.UserId);
-        Console.WriteLine($"sessionId:{payload.SessionId}//userId:{payload.UserId}");
+        Console.WriteLine($"WebSessionId:{payload.SessionId}//userId:{payload.UserId}");
         
         mConnectedClient.TryRemove(socketContext.Client, out _);
         mLoginSessions.TryAdd(payload.UserId, socketContext.Session);
@@ -118,6 +128,12 @@ public class ChatSocketServer : NetworkSocket
         
         var response = new CreateRoomRes { Code = (int)EResponseResult.Success };
         var packet = new Packet<CreateRoomRes>(EPacket.Login, response);
+
+        data.ChatServerIp = TestIp;
+        await mSessionKeyValueStore.AddUserSessionInfoAsync($"{payload.UserId}", data);
+
+        // TODO 리턴값을 만들어주기
+        //   이것도 웹처럼 응답값을 포함한
         await WritePacket(socketContext.Stream, packet, cancellationToken);
     }
     

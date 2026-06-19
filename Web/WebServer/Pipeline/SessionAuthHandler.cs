@@ -35,7 +35,7 @@ public class SessionAuthHandler : AuthorizationHandler<SessionAuthRequirement>
             return;
         }
 
-        var saveSessionId = await mSessionKeyValueStore.GetSessionInfoAsync(userId);
+        var saveSessionId = await mSessionKeyValueStore.GetUserSessionInfoAsync(userId);
 
         if (!saveSessionId.Equals(http.Session.Id))
         {

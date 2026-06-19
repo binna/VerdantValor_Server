@@ -40,6 +40,7 @@ public class GameUserController : Controller
             case EAuth.Login:
                 responseResult = await mGameUserService.LoginAsync(request.Email, request.Pw, request.DeviceId);
                 break;
+            // TODO 로그아웃
             default:
                 responseResult = EResponseResult.InvalidAuthType;
                 mLogger.LogError("Invalid authType {AuthType}", authType);

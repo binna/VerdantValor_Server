@@ -13,14 +13,16 @@ public class SessionKeyValueStore : ISessionKeyValueStore
         mCacheDriver = cacheDriver;
     }
     
-    public Task<bool> AddSessionInfoAsync(string key, UserSessionInfo value)
+    public Task<bool> AddUserSessionInfoAsync(string key, UserSessionInfo value)
     {
+        // TODO 인코딩을 해야할 수도
         return mCacheDriver.StringSetAsync(key, JsonSerializer.Serialize(value));
     }
     
-    public async Task<string> GetSessionInfoAsync(string key)
+    public async Task<UserSessionInfo> GetUserSessionInfoAsync(string key)
     {
-        var value = await mCacheDriver.StringGetAsync(key);
-        return value;
+        // TODO 만약 인코딩을 했다면 디코딩을 해야할 수도
+        var json = await mCacheDriver.StringGetAsync(key);
+        return JsonSerializer.Deserialize<UserSessionInfo>(json);
     }
 }

@@ -77,7 +77,7 @@ public class GameUserService
         // TODO 이건 추가적인 UserID에 대한 세션 저장
         //  이걸 세션구조의 문서처럼 저장하는게 맞음 -> 완료
         //  그리고 세션 번호는 서버 전체가 공유해야하는 거고 Config에서 Common으로 static 상수로 빼야할 듯
-        await mSessionKeyValueStore.AddSessionInfoAsync(
+        await mSessionKeyValueStore.AddUserSessionInfoAsync(
             $"{user.UserId}", 
             new UserSessionInfo
             {
@@ -92,4 +92,6 @@ public class GameUserService
     }
     
     // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분
+    
+    // TODO 로그아웃
 }
