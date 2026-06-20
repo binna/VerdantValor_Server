@@ -13,12 +13,19 @@ namespace ChatServer;
 
 public class ChatSocketServer : NetworkSocket
 {
-    private const string TestIp = "127.0.0.1";
-    private static ConcurrentDictionary<string, byte> mSessionIdSet = [];
-    private static ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
-    private static ConcurrentDictionary<ulong, Session> mLoginSessions = [];
+    // TODO 나중에 세션 관리하는 매니저를 만들 예정
+    //  Manager는 상태와 객체를 관리하고, Service는 비즈니스 로직을 수행한다.
+    //  Manager = 관리한다 (Manage)
+    //  Service = 일을 한다 (Do)
+    
+    // TODO 연결된 세션, 그리고 로그인 성공한 세션 나누기
+    //  연결된 세션은 로그인을 뭘하든지 리스폰 날리기
+    
+    private ConcurrentDictionary<string, byte> mSessionIdSet = [];
+    private ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
+    private ConcurrentDictionary<ulong, Session> mLoginSessions = [];
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
-    private static ISessionKeyValueStore mSessionKeyValueStore = new SessionKeyValueStore(
+    private ISessionKeyValueStore mSessionKeyValueStore = new SessionKeyValueStore(
         new RedisCacheDriver("localhost", $"{6379}", 2));
 
     private static Packet<RoomListRes> mRoomListResPacket = new(
@@ -32,6 +39,7 @@ public class ChatSocketServer : NetworkSocket
 
     private static bool mbUpdated;
     
+    private readonly string mMyIp;
     private readonly TcpListener mListener;
     private readonly ISessionKeyValueStore sessionKeyValueStore;
     
@@ -41,13 +49,15 @@ public class ChatSocketServer : NetworkSocket
     // TODO 나중에 동기화 고려 필요
     //      타임스템프 + userId 조합으로 string으로 변경 예정
     
-    private static int roomCount = 0;
+    private int roomCount = 0;
     
-    private static readonly Timer UpdateRoomIdsTimer = 
+    private readonly Timer UpdateRoomIdsTimer = 
         new(UpdateRoomIds, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
     public ChatSocketServer(IPAddress ipAddress, int port, CancellationToken cancellationToken = default)
-        : base(new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
+        : base(cancellationToken)
+    {
+        PacketHandlers = new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
         {
             [EPacket.Login] = HandleLoginAsync,
             [EPacket.CreateRoom] = HandleCreateRoomAsync,
@@ -57,14 +67,17 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.ExitRoom] = HandleExitRoomAsync,
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
-        }, cancellationToken)
-    {
+        };
+        
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
         
         sessionKeyValueStore = 
             new SessionKeyValueStore(
                 new RedisCacheDriver("localhost", $"{6379}", 2));
+        
+        mMyIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
+        Console.WriteLine($"Chat Server Start : {mMyIp}");
     }
     
     public override async Task StartAsync()
@@ -102,10 +115,18 @@ public class ChatSocketServer : NetworkSocket
         };
         mRoomListResPacket = new Packet<RoomListRes>(EPacket.RoomList, payload);
     }
+    
+    private static Packet<T> CreateResponsePacket<T>(EPacket type, EResponseResult code) where T : struct, IPacketBody, IResponsePacket
+    {
+        var response = new T { Code = (int)code };
+        return new Packet<T>(type, response);
+    }
 
     #region 패킷 핸들러 함수 모음
-    private static async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
+        // TODO 결국 웹서버 세션 ID가이 키 같은 느낌
+        //      웹 서버의 유효기간에 맞춰서 TTL 설정하기
         var payload = MemoryPackSerializer.Deserialize<LoginReq>(socketContext.PayloadBuffer);
 
         var data = 
@@ -113,7 +134,8 @@ public class ChatSocketServer : NetworkSocket
 
         if (payload.SessionId != data.SessionId)
         {
-            Console.WriteLine($"로그인 실패");
+            var packet = CreateResponsePacket<CreateRoomRes>(EPacket.Login, EResponseResult.LoginFailed); 
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
             return;
         }
 
@@ -126,18 +148,16 @@ public class ChatSocketServer : NetworkSocket
         socketContext.IsLogin = true;
         Console.WriteLine("연결된 유저: " + mLoginSessions.Count);
         
-        var response = new CreateRoomRes { Code = (int)EResponseResult.Success };
-        var packet = new Packet<CreateRoomRes>(EPacket.Login, response);
-
-        data.ChatServerIp = TestIp;
+        data.ChatServerIp = mMyIp;
         await mSessionKeyValueStore.AddUserSessionInfoAsync($"{payload.UserId}", data);
 
-        // TODO 리턴값을 만들어주기
-        //   이것도 웹처럼 응답값을 포함한
-        await WritePacket(socketContext.Stream, packet, cancellationToken);
+        {
+            var packet = CreateResponsePacket<CreateRoomRes>(EPacket.Login, EResponseResult.Success); 
+            await WritePacket(socketContext.Stream, packet, cancellationToken);
+        }
     }
     
-    private static async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
@@ -175,7 +195,7 @@ public class ChatSocketServer : NetworkSocket
     }
 
     // TODO 삭제랑 로그아웃 둘다 작업 필요
-    private static async Task HandleDeleteRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleDeleteRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         LoginRes response;
         
@@ -195,7 +215,7 @@ public class ChatSocketServer : NetworkSocket
         await WritePacket(socketContext.Stream, packet, cancellationToken);
     }
 
-    private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
@@ -211,7 +231,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
@@ -256,7 +276,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
@@ -291,7 +311,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private  async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         if (!socketContext.IsLogin)
         {
@@ -322,7 +342,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task HandleDisconnectAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleDisconnectAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         Console.WriteLine("[SERVER] Client disconnected");
         if (!socketContext.IsLogin)
@@ -336,7 +356,7 @@ public class ChatSocketServer : NetworkSocket
     }
     #endregion
     
-    private static async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessageRes> packet, CancellationToken cancellationToken)
+    private async Task BroadcastChatMessageAsync(int roomId, Packet<SendMessageRes> packet, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
@@ -347,7 +367,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
+    private async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
     {
         if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
         {
@@ -361,7 +381,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
     
-    private static async Task DeleteRoomAsync(int roomId, CancellationToken cancellationToken)
+    private async Task DeleteRoomAsync(int roomId, CancellationToken cancellationToken)
     {
         await BroadcastRoomNotificationAsync(
             roomId, 

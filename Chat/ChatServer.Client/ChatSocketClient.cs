@@ -27,18 +27,19 @@ public class ChatSocketClient : NetworkSocket
     private readonly SocketContext mSocketContext;
     
     public ChatSocketClient(IPAddress ipAddress, int port, CancellationToken cancellationToken = default) 
-        : base(
-            new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
-            {
-                [EPacket.Login] = HandleLoginAsync,
-                [EPacket.CreateRoom] = HandleCreateRoomAsync,
-                [EPacket.RoomList] = HandleRoomListAsync,
-                [EPacket.EnterRoom] = HandleEnterRoomAsync,
-                [EPacket.ExitRoom] = HandleExitRoomAsync,
-                [EPacket.SendMessage] = HandleSendMessageAsync,
-                [EPacket.RoomNotification] = HandleRoomNotificationAsync
-            }, cancellationToken)
+        : base(cancellationToken)
     {
+        PacketHandlers = new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
+        {
+            [EPacket.Login] = HandleLoginAsync,
+            [EPacket.CreateRoom] = HandleCreateRoomAsync,
+            [EPacket.RoomList] = HandleRoomListAsync,
+            [EPacket.EnterRoom] = HandleEnterRoomAsync,
+            [EPacket.ExitRoom] = HandleExitRoomAsync,
+            [EPacket.SendMessage] = HandleSendMessageAsync,
+            [EPacket.RoomNotification] = HandleRoomNotificationAsync
+        };
+            
         mClient = new TcpClient(ipAddress.ToString(), port);
         mSocketContext = new SocketContext(mClient);
     }
@@ -75,13 +76,15 @@ public class ChatSocketClient : NetworkSocket
     public async Task SendLoginReqAsync(ulong userId)
     {
         mSocketContext.SetSession($"{Guid.NewGuid()}", userId);
-        
+
+        Console.WriteLine(mSocketContext.Session.SessionId);
         var packet = 
+            
             new Packet<LoginReq>(
                 EPacket.Login, 
                 new LoginReq
                 {
-                    SessionId = mSocketContext.Session.SessionId,
+                    SessionId = "fbcea9db-07c7-3fde-151f-e00849cef1d3",
                     UserId = userId
                 });
         await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mCts.Token);
@@ -114,7 +117,7 @@ public class ChatSocketClient : NetworkSocket
     #endregion
     
     #region 패킷 핸들러 함수 모음
-    private static async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<LoginRes>(socketContext.PayloadBuffer);
 
@@ -132,7 +135,7 @@ public class ChatSocketClient : NetworkSocket
         }
     }
 
-    private static async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleCreateRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<CreateRoomRes>(socketContext.PayloadBuffer);
 
@@ -156,7 +159,7 @@ public class ChatSocketClient : NetworkSocket
     // TODO Delete Room
     
     
-    private static async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleRoomListAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<RoomListRes>(socketContext.PayloadBuffer);
         
@@ -179,7 +182,7 @@ public class ChatSocketClient : NetworkSocket
         }
     }
     
-    private static async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleEnterRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<EnterRoomRes>(socketContext.PayloadBuffer);
         
@@ -203,7 +206,7 @@ public class ChatSocketClient : NetworkSocket
         }
     }
 
-    private static async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private  async Task HandleExitRoomAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<ExitRoomRes>(socketContext.PayloadBuffer);
         
@@ -224,13 +227,13 @@ public class ChatSocketClient : NetworkSocket
         }
     }
     
-    private static async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<SendMessageRes>(socketContext.PayloadBuffer);
         Console.WriteLine($"|유저 {payload.userId} 대화||||{payload.Message}");
     }
     
-    private static async Task HandleRoomNotificationAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    private async Task HandleRoomNotificationAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
         var payload = MemoryPackSerializer.Deserialize<RoomNotification>(socketContext.PayloadBuffer);
         Console.WriteLine($"*공지사항* {payload.Notification}");

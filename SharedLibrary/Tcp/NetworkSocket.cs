@@ -14,17 +14,25 @@ public abstract class NetworkSocket
         PacketReady,
         BufferDrained
     }
+
+    private Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers = [];
     
     protected readonly CancellationTokenSource mCts;
     
-    private readonly 
-        Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
+    protected Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> PacketHandlers
+    {
+        set
+        {
+            if (mPacketHandlers.Count > 0)
+                throw new InvalidOperationException("PacketHandlers는 한 번만 설정할 수 있습니다.");
+
+            mPacketHandlers = value;
+        }
+    }
     
-    public NetworkSocket(
-        Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> packetHandlers, 
+    protected NetworkSocket(
         CancellationToken cancellationToken = default)
     {
-        mPacketHandlers = packetHandlers;
         mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 

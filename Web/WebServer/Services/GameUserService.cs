@@ -72,7 +72,7 @@ public class GameUserService
             return EResponseResult.NoData;
 
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
-            return EResponseResult.NotMatchPw;
+            return EResponseResult.PasswordMismatch;
         
         // TODO 이건 추가적인 UserID에 대한 세션 저장
         //  이걸 세션구조의 문서처럼 저장하는게 맞음 -> 완료
