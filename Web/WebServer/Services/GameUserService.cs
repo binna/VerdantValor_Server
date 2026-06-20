@@ -3,7 +3,9 @@ using Efcore.Repositories;
 using Common.Helpers;
 using Common.KeyValueStore;
 using Common.Types;
+using Protocol.Web.Dtos;
 using Shared.Types;
+using WebServer.options;
 
 namespace WebServer.Services;
 
@@ -14,19 +16,22 @@ public class GameUserService
     private readonly IGameUserRepository mGameUserRepository;
     private readonly ISessionKeyValueStore mSessionKeyValueStore;
     private readonly ISecurityHelper mSecurityHelper;
+    private readonly ServerOption mServerOption;
 
     public GameUserService(
         ILogger<GameUserService> logger,
         IHttpContextAccessor httpContextAccessor,
         IGameUserRepository gameUserRepository,
         ISessionKeyValueStore sessionKeyValueStore,
-        ISecurityHelper securityHelper)
+        ISecurityHelper securityHelper,
+        ServerOption serverOption)
     {
         mLogger = logger;
         mHttpContextAccessor = httpContextAccessor;
         mGameUserRepository = gameUserRepository;
         mSessionKeyValueStore = sessionKeyValueStore;
         mSecurityHelper = securityHelper;
+        mServerOption = serverOption;
     }
 
     public async Task<EResponseResult> JoinAsync(string email, string password, string nickname)
@@ -62,34 +67,37 @@ public class GameUserService
         return EResponseResult.Success;
     }
 
-    public async Task<EResponseResult> LoginAsync(string email, string password, string deviceId)
+    public async Task<(EResponseResult, AuthRes)> LoginAsync(string email, string password, string deviceId)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(deviceId))
-            return EResponseResult.EmptyRequiredField;
+            return (EResponseResult.EmptyRequiredField, new AuthRes());
         
         var user = await mGameUserRepository.FindByEmailAsync(email);
         if (user == null)
-            return EResponseResult.NoData;
+            return (EResponseResult.NoData, new AuthRes());
 
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
-            return EResponseResult.PasswordMismatch;
+            return (EResponseResult.PasswordMismatch, new AuthRes());
         
-        // TODO 이건 추가적인 UserID에 대한 세션 저장
-        //  이걸 세션구조의 문서처럼 저장하는게 맞음 -> 완료
-        //  그리고 세션 번호는 서버 전체가 공유해야하는 거고 Config에서 Common으로 static 상수로 빼야할 듯
+        // TODO 세션 번호는 서버 전체가 공유해야하는 거고 Config에서 Common으로 static 상수로 빼야할 듯
+        // TODO TTL 추가
+        var sessionId = $"{mServerOption.Name}_{Guid.NewGuid():N}";
         await mSessionKeyValueStore.AddUserSessionInfoAsync(
             $"{user.UserId}", 
             new UserSessionInfo
             {
-                SessionId = mHttpContextAccessor.HttpContext!.Session.Id,
+                SessionId = sessionId,
                 DeviceId = deviceId
             });
 
         mHttpContextAccessor.SetUserSession(
             $"{user.UserId}", $"{user.Nickname}");
         
-        return EResponseResult.Success;
+        return (EResponseResult.Success, new AuthRes { SessionId = sessionId });
     }
+    
+    // TODO 5분의 한번씩 하트비트,, ㅎㅎ 
+    //  그럼 일거양득으로 둘다 10분씩 늘릴 수 있음
     
     // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분
     

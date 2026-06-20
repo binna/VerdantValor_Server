@@ -33,19 +33,16 @@ public class RankingController : Controller
         switch (rankingScope)
         {
             case ERankingScope.My:
-            {
                 var nickname = this.GetNickname();
-                return await mRankingService.GetMemberRankAsync(
-                    rankingType, userId, nickname);
-            }
+                return await mRankingService
+                    .GetMemberRankAsync(rankingType, userId, nickname);
             case ERankingScope.Global:
-            {
-                return await mRankingService.GetTopRankingAsync(
-                    rankingType, request.Limit);
-            }
+                return await mRankingService
+                    .GetTopRankingAsync(rankingType, request.Limit);
+            default:
+                return ApiResponse<RankRes>
+                    .From(EResponseResult.Success);
         }
-        return ApiResponse<RankRes>
-            .From(EResponseResult.Success);
     }
 
     [HttpPost("Entries")]

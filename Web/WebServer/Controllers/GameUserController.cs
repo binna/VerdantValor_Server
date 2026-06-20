@@ -25,28 +25,28 @@ public class GameUserController : Controller
 
     [HttpPost("Auth")]
     [AllowAnonymous]
-    public async Task<ApiResponse> Auth([FromBody] AuthReq request)
+    public async Task<ApiResponse<AuthRes>> Auth([FromBody] AuthReq request)
     {
         if (!Enum.TryParse<EAuth>(request.AuthType, out var authType))
-            return ApiResponse.From(EResponseResult.InvalidInput);
-
-        EResponseResult responseResult;
+            return ApiResponse<AuthRes>
+                .From(EResponseResult.InvalidInput);
 
         switch (authType)
         {
             case EAuth.Join:
-                responseResult = await mGameUserService.JoinAsync(request.Email, request.Pw, request.Nickname);
-                break;
+                var code = await mGameUserService
+                    .JoinAsync(request.Email, request.Pw, request.Nickname);
+                return ApiResponse<AuthRes>.From(code);
             case EAuth.Login:
-                responseResult = await mGameUserService.LoginAsync(request.Email, request.Pw, request.DeviceId);
+                var result = await mGameUserService
+                    .LoginAsync(request.Email, request.Pw, request.DeviceId);
+                return ApiResponse<AuthRes>.From(result.Item1, result.Item2);
                 break;
+            case EAuth.Logout:
             // TODO 로그아웃
             default:
-                responseResult = EResponseResult.InvalidAuthType;
                 mLogger.LogError("Invalid authType {AuthType}", authType);
-                break;
+                return ApiResponse<AuthRes>.From(EResponseResult.InvalidAuthType);
         }
-        
-        return ApiResponse.From(responseResult);
     }
 }
