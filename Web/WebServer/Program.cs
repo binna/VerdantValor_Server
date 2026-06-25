@@ -1,3 +1,4 @@
+using Common;
 using Common.Concurrency;
 using Common.Driver;
 using Common.Helpers;
@@ -37,7 +38,9 @@ builder.Configuration
 // 세션 설정
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(10);
+    if (!builder.Environment.IsDevelopment())
+        options.IdleTimeout = TimeSpan.FromMinutes(ShareServerConst.SESSION_EXPIRE_MINUTES);
+    
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".VerdantValor.Session";
@@ -84,20 +87,13 @@ builder.Services
 
 if (redisOption.Enabled)
 {
-    if (string.IsNullOrWhiteSpace(redisOption.Host) 
-        || redisOption.Port <= 0
-        || redisOption.CoreDbNum < 0
-        || redisOption.SessionDbNum < 0
-        || redisOption.LockDbNum < 0)
+    if (string.IsNullOrWhiteSpace(redisOption.Host) || redisOption.Port <= 0)
     {
         Log.Fatal("Invalid Redis configuration. {@fields}", 
             new
             {
                 redisOption.Host,
                 redisOption.Port,
-                redisOption.CoreDbNum,
-                redisOption.SessionDbNum,
-                redisOption.LockDbNum
             });
         Environment.Exit(1);
     }
@@ -118,15 +114,13 @@ if (dbOption.Mode == EDatabaseMode.MySql)
 
 
 if (string.IsNullOrWhiteSpace(serverOption.Name) 
-    || string.IsNullOrEmpty(pathOption.SharedLibrary) 
-    || redisOption.LockExpiryMs <= 0)
+    || string.IsNullOrEmpty(pathOption.SharedLibrary))
 {
     Log.Fatal("Invalid configuration. {@fields}", 
         new
         {
             serverOption.Name,
-            pathOption.SharedLibrary,
-            redisOption.LockExpiryMs
+            pathOption.SharedLibrary
         });
     Environment.Exit(1);
 }
@@ -152,7 +146,7 @@ catch (Exception ex)
 
 if (redisOption.Enabled)
 {
-    var redisUrl = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={redisOption.SessionDbNum}";
+    var redisUrl = $"{redisOption.Host}:{redisOption.Port},defaultDatabase={ShareServerConst.WEB_SESSION_DB_NUM}";
 
     // Redis 기반 세션 공유를 위한 분산 캐시 설정
     builder.Services.AddStackExchangeRedisCache(options =>
@@ -196,9 +190,9 @@ ICacheDriver distributedLockDriver;
 
 if (redisOption.Enabled)
 {
-    cacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.CoreDbNum);
-    sessionCacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.SessionDbNum);
-    distributedLockDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", redisOption.LockDbNum);
+    cacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", ShareServerConst.CORE_DB_NUM);
+    sessionCacheDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", ShareServerConst.USER_SESSION_DB_NUM);
+    distributedLockDriver = new RedisCacheDriver(redisOption.Host, $"{redisOption.Port}", ShareServerConst.LOCK_DB_NUM);
 }
 else
 {
@@ -208,11 +202,20 @@ else
 }
 
 builder.Services
-    .AddSingleton<ISecurityHelper>(new SecurityHelper(securityOption.ReqEncryptKey))
+    .AddSingleton<ISecurityHelper>(
+        new SecurityHelper(
+            securityOption.ReqEncryptKey))
     .AddSingleton<IAuthorizationHandler, SessionAuthHandler>()
-    .AddSingleton<IWebKeyValueStore>(new WebKeyValueStore(cacheDriver))
-    .AddSingleton<ISessionKeyValueStore>(new SessionKeyValueStore(sessionCacheDriver))
-    .AddSingleton<IDistributedLock>(new DistributedLock(distributedLockDriver, redisOption.LockExpiryMs))
+    .AddSingleton<IWebKeyValueStore>(
+        new WebKeyValueStore(cacheDriver))
+    .AddSingleton<ISessionKeyValueStore>(
+        new SessionKeyValueStore(
+            sessionCacheDriver, 
+            builder.Environment.IsDevelopment() ? 0 : ShareServerConst.SESSION_EXPIRE_MS))
+    .AddSingleton<IDistributedLock>(
+        new DistributedLock(
+            distributedLockDriver, 
+            ShareServerConst.LOCK_EXPIRY_MS))
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<IInventoryRepository, InventoryRepository>()

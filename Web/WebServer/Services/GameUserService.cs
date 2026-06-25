@@ -79,8 +79,6 @@ public class GameUserService
         if (!mSecurityHelper.VerifySha512Hash(password, user.Pw))
             return (EResponseResult.PasswordMismatch, new AuthRes());
         
-        // TODO 세션 번호는 서버 전체가 공유해야하는 거고 Config에서 Common으로 static 상수로 빼야할 듯
-        // TODO TTL 추가
         var sessionId = $"{mServerOption.Name}_{Guid.NewGuid():N}";
         await mSessionKeyValueStore.AddUserSessionInfoAsync(
             $"{user.UserId}", 
@@ -97,7 +95,7 @@ public class GameUserService
     }
     
     // TODO 5분의 한번씩 하트비트,, ㅎㅎ 
-    //  그럼 일거양득으로 둘다 10분씩 늘릴 수 있음
+    //  그럼 일거양득으로 둘다 5분씩 늘릴 수 있음
     
     // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분
     

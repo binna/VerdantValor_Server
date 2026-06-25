@@ -1,11 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using Common.KeyValueStore;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Protocol.Chat.Payloads;
-using Redis;
 using Shared.Types;
 using Tcp;
 
@@ -13,20 +11,12 @@ namespace ChatServer;
 
 public class ChatSocketServer : NetworkSocket
 {
-    // TODO 나중에 세션 관리하는 매니저를 만들 예정
-    //  Manager는 상태와 객체를 관리하고, Service는 비즈니스 로직을 수행한다.
-    //  Manager = 관리한다 (Manage)
-    //  Service = 일을 한다 (Do)
+    private readonly string mServerIp;
+    private readonly TcpListener mListener;
+    private readonly SessionManager mSessionManager;
     
-    // TODO 연결된 세션, 그리고 로그인 성공한 세션 나누기
-    //  연결된 세션은 로그인을 뭘하든지 리스폰 날리기
-    
-    private ConcurrentDictionary<string, byte> mSessionIdSet = [];
-    private ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
-    private ConcurrentDictionary<ulong, Session> mLoginSessions = [];
+    private static bool mbUpdated;
     private static ConcurrentDictionary<int, ConcurrentDictionary<ulong, Session>> mRoomSessions = [];
-    private ISessionKeyValueStore mSessionKeyValueStore = new SessionKeyValueStore(
-        new RedisCacheDriver("localhost", $"{6379}", 2));
 
     private static Packet<RoomListRes> mRoomListResPacket = new(
         EPacket.RoomList,
@@ -36,19 +26,9 @@ public class ChatSocketServer : NetworkSocket
             RoomCount = 0,
             RoomIds = []
         });
-
-    private static bool mbUpdated;
-    
-    private readonly string mMyIp;
-    private readonly TcpListener mListener;
-    private readonly ISessionKeyValueStore sessionKeyValueStore;
-    
-    // TODO 비정상 종료에 대한 로직 필요
-    //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
     
     // TODO 나중에 동기화 고려 필요
     //      타임스템프 + userId 조합으로 string으로 변경 예정
-    
     private int roomCount = 0;
     
     private readonly Timer UpdateRoomIdsTimer = 
@@ -69,15 +49,16 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.Disconnect] = HandleDisconnectAsync,
         };
         
+        // TODO 로그인 후 소속된 서버나(= 이거 월드로 바꾸자) 파티 파악
+        //  우선 파티 유지가 필요할까?! 흠,, 로그아웃되면 기본적으로 파티는 나가지는 것으로 정하자
+        
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
+
+        mSessionManager = new SessionManager();
         
-        sessionKeyValueStore = 
-            new SessionKeyValueStore(
-                new RedisCacheDriver("localhost", $"{6379}", 2));
-        
-        mMyIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
-        Console.WriteLine($"Chat Server Start : {mMyIp}");
+        mServerIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
+        Console.WriteLine($"[info] Chat Server Start - {mServerIp}");
     }
     
     public override async Task StartAsync()
@@ -85,15 +66,18 @@ public class ChatSocketServer : NetworkSocket
         while (!mCts.Token.IsCancellationRequested)
         {
             var tcpClient = await mListener.AcceptTcpClientAsync(mCts.Token);
-            Console.WriteLine($"[SERVER] Client connected: {tcpClient.Client.RemoteEndPoint}");
+            Console.WriteLine($"[info] Client connected - {tcpClient.Client.RemoteEndPoint}");
 
-            mConnectedClient.TryAdd(tcpClient, 0);
+            mSessionManager.ConnectedClient.TryAdd(tcpClient, 0);
             
             var socketContext = new SocketContext(tcpClient);
             _ = HandleClientReadAsync(socketContext, mCts.Token);
         }
     }
 
+    #region 파티, 월드(추후 나중에)
+    // TODO 이건 파티
+    //      파티는 브로드캐스트가 맞는거 같음
     private static void UpdateRoomIds(object? o)
     {
         if (!mbUpdated)
@@ -115,24 +99,16 @@ public class ChatSocketServer : NetworkSocket
         };
         mRoomListResPacket = new Packet<RoomListRes>(EPacket.RoomList, payload);
     }
+    #endregion
     
-    private static Packet<T> CreateResponsePacket<T>(EPacket type, EResponseResult code) where T : struct, IPacketBody, IResponsePacket
-    {
-        var response = new T { Code = (int)code };
-        return new Packet<T>(type, response);
-    }
-
     #region 패킷 핸들러 함수 모음
     private async Task HandleLoginAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        // TODO 결국 웹서버 세션 ID가이 키 같은 느낌
-        //      웹 서버의 유효기간에 맞춰서 TTL 설정하기
         var payload = MemoryPackSerializer.Deserialize<LoginReq>(socketContext.PayloadBuffer);
 
-        var data = 
-            await mSessionKeyValueStore.GetUserSessionInfoAsync($"{payload.UserId}");
+        var userSessionInfo = await mSessionManager.GetUserSessionInfoAsync($"{payload.UserId}");
 
-        if (payload.SessionId != data.SessionId)
+        if (payload.SessionId != userSessionInfo.SessionId)
         {
             var packet = CreateResponsePacket<CreateRoomRes>(EPacket.Login, EResponseResult.LoginFailed); 
             await WritePacket(socketContext.Stream, packet, cancellationToken);
@@ -140,16 +116,16 @@ public class ChatSocketServer : NetworkSocket
         }
 
         socketContext.SetSession(payload.SessionId, payload.UserId);
-        Console.WriteLine($"WebSessionId:{payload.SessionId}//userId:{payload.UserId}");
+        Console.WriteLine($"[info] WebSessionId - {payload.SessionId} / userId - {payload.UserId}");
         
-        mConnectedClient.TryRemove(socketContext.Client, out _);
-        mLoginSessions.TryAdd(payload.UserId, socketContext.Session);
+        mSessionManager.ConnectedClient.TryRemove(socketContext.Client, out _);
+        mSessionManager.LoginSessions.TryAdd(payload.UserId, socketContext.Session);
 
         socketContext.IsLogin = true;
-        Console.WriteLine("연결된 유저: " + mLoginSessions.Count);
+        Console.WriteLine("[info] 연결된 유저: " + mSessionManager.LoginSessions.Count);
         
-        data.ChatServerIp = mMyIp;
-        await mSessionKeyValueStore.AddUserSessionInfoAsync($"{payload.UserId}", data);
+        userSessionInfo.ChatServerIp = mServerIp;
+        await mSessionManager.AddUserSessionInfoAsync($"{payload.UserId}", userSessionInfo);
 
         {
             var packet = CreateResponsePacket<CreateRoomRes>(EPacket.Login, EResponseResult.Success); 

@@ -26,11 +26,18 @@ public class DistributedLock : IDistributedLock
         "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
     
     private readonly ICacheDriver mCacheDriver;
-    private readonly TimeSpan mLockExpiry;
+    private readonly TimeSpan? mLockExpiry;
 
     public DistributedLock(ICacheDriver cacheDriver, long expiryMs)
     {
         mCacheDriver = cacheDriver;
+        
+        if (expiryMs == 0)
+        {
+            mLockExpiry = null;
+            return;
+        }
+
         mLockExpiry = TimeSpan.FromMilliseconds(expiryMs);
     }
 

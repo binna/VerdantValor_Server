@@ -8,6 +8,9 @@ namespace Tcp;
 
 public abstract class NetworkSocket
 {
+    // TODO 비정상 종료에 대한 로직 필요
+    //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
+    
     private enum ReadPacketReturn
     {
         NeedMoreData,
@@ -47,7 +50,7 @@ public abstract class NetworkSocket
         
             if (read == 0)
             {
-                Console.WriteLine("disconnected");
+                Console.WriteLine("[info] disconnected");
                 return;
             }
             
@@ -68,6 +71,12 @@ public abstract class NetworkSocket
                     break;
             }
         }
+    }
+    
+    protected static Packet<T> CreateResponsePacket<T>(EPacket type, EResponseResult code) where T : struct, IPacketBody, IResponsePacket
+    {
+        var response = new T { Code = (int)code };
+        return new Packet<T>(type, response);
     }
 
     protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : struct, IPacketBody
