@@ -112,7 +112,7 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
                     .SortedSetRangeByRankWithScoresAsync(key, start, stop, Order.Ascending);
                 break;
         }
-var rankings = new RankingEntry[entries.Length];
+        var rankings = new RankingEntry[entries.Length];
         
         for (var i = 0; i < entries.Length; i++)
         {
