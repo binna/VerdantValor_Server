@@ -120,7 +120,14 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         }
 
         return rankings;
-        
+    }
+    
+    public async Task<bool> KeyExpireAsync(
+        string key, 
+        TimeSpan? expiry = null, 
+        CancellationToken token = default)
+    {
+        return await mDatabase.KeyExpireAsync(key, expiry);
     }
 
     public Task<long?> SortedSetRankAsync(

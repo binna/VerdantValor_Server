@@ -94,9 +94,11 @@ public class GameUserService
         return (EResponseResult.Success, new AuthRes { SessionId = sessionId });
     }
     
-    // TODO 5분의 한번씩 하트비트,, ㅎㅎ 
-    //  그럼 일거양득으로 둘다 5분씩 늘릴 수 있음
-    
+    public async Task<bool> SendHeartbeatAsync(string userId)
+    {
+        return await mSessionKeyValueStore.ExtendUserSessionInfoAsync(userId);
+    }
+
     // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분
     
     // TODO 로그아웃

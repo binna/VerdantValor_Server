@@ -49,4 +49,15 @@ public class GameUserController : Controller
                 return ApiResponse<AuthRes>.From(EResponseResult.InvalidAuthType);
         }
     }
+
+    [HttpPost("Hearbeat")]
+    public async Task<ApiResponse> Hearbeat()
+    {
+        var userId = this.GetUserId();
+        
+        if (await mGameUserService.SendHeartbeatAsync(userId))
+            return ApiResponse.From(EResponseResult.Success);
+        
+        return ApiResponse.From(EResponseResult.RedisError);
+    }
 }

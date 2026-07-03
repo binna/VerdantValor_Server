@@ -4,6 +4,7 @@ namespace Common.KeyValueStore;
 
 public interface ISessionKeyValueStore
 {
-    public Task<bool> AddUserSessionInfoAsync(string key, UserSessionInfo value);
-    public Task<UserSessionInfo> GetUserSessionInfoAsync(string key);
+    Task<bool> AddUserSessionInfoAsync(string key, UserSessionInfo value);
+    Task<UserSessionInfo> GetUserSessionInfoAsync(string key);
+    Task<bool> ExtendUserSessionInfoAsync(string key);
 }

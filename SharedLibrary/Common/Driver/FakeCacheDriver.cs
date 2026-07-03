@@ -123,6 +123,14 @@ public class FakeCacheDriver : ICacheDriver
         return Task.FromResult(result);
     }
 
+    public Task<bool> KeyExpireAsync(string key, TimeSpan? expiry = null, CancellationToken token = default)
+    {
+        // TTL은 지원하지 않음
+        // Fake driver에서는 무조선 True 반환
+        
+        return Task.FromResult(true);
+    }
+
     public Task<long?> SortedSetRankAsync(
         string key,
         string member,

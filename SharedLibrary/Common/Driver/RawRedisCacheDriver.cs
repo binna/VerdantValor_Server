@@ -277,6 +277,39 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 
+    public async Task<bool> KeyExpireAsync(
+        string key, 
+        TimeSpan? expiry = null, 
+        CancellationToken token = default)
+    {
+        var command = new StringBuilder(128);
+
+        if (expiry.HasValue)
+        {
+            var seconds = (long)expiry.Value.TotalSeconds;
+            command.Append($"EXPIRE {key} {seconds}\r\n");
+        }
+        else
+        {
+            // TTL 제거: 영구 키로 변경
+            command.Append($"PERSIST {key}\r\n");
+        }
+
+        await mMutex.WaitAsync(token);
+        try
+        {
+            await mStream.WriteAsync(Encoding.UTF8.GetBytes(command.ToString()), token);
+
+            var response = (await ReadResponseAsync(token)).Data[0];
+
+            return response == "1";
+        }
+        finally
+        {
+            mMutex.Release();
+        }
+    }
+
     public async Task<long?> SortedSetRankAsync(
         string key, 
         string member, 

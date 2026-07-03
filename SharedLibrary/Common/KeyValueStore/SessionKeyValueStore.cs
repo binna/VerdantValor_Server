@@ -35,4 +35,9 @@ public class SessionKeyValueStore : ISessionKeyValueStore
         var json = await mCacheDriver.StringGetAsync(key);
         return JsonSerializer.Deserialize<UserSessionInfo>(json);
     }
+
+    public async Task<bool> ExtendUserSessionInfoAsync(string key)
+    {
+        return await mCacheDriver.KeyExpireAsync(key, mSessionExpiry);
+    }
 }
