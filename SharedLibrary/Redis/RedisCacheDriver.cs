@@ -112,8 +112,7 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
                     .SortedSetRangeByRankWithScoresAsync(key, start, stop, Order.Ascending);
                 break;
         }
-
-        var rankings = ArrayPool<RankingEntry>.Shared.Rent(entries.Length);
+var rankings = new RankingEntry[entries.Length];
         
         for (var i = 0; i < entries.Length; i++)
         {
@@ -121,6 +120,7 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         }
 
         return rankings;
+        
     }
 
     public Task<long?> SortedSetRankAsync(
