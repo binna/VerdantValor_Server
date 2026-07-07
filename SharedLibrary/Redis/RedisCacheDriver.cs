@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using Common.Error;
+﻿using Common.Error;
 using Common.Driver;
 using Common.Types;
 using StackExchange.Redis;
