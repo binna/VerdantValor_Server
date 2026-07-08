@@ -73,12 +73,6 @@ public abstract class NetworkSocket
         }
     }
     
-    protected static Packet<T> CreateResponsePacket<T>(EPacket type, EResponseResult code) where T : struct, IPacketBody, IResponsePacket
-    {
-        var response = new T { Code = (int)code };
-        return new Packet<T>(type, response);
-    }
-
     protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : struct, IPacketBody
     {
         await stream.WriteAsync(message.PacketBytes, cancellationToken);

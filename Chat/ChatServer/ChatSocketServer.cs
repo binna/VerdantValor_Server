@@ -11,10 +11,10 @@ namespace ChatServer;
 public class ChatSocketServer : NetworkSocket
 {
     private readonly string mServerIp;
-    
+
     private readonly TcpListener mListener;
     private readonly SessionManager mSessionManager;
-    
+
     public ChatSocketServer(IPAddress ipAddress, int port, CancellationToken cancellationToken = default)
         : base(cancellationToken)
     {
@@ -25,16 +25,16 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
         };
-        
+
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
 
         mSessionManager = new SessionManager();
-        
+
         mServerIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
         Console.WriteLine($"[info] Chat Server Start - {mServerIp}");
     }
-    
+
     public override async Task StartAsync()
     {
         while (!mCts.Token.IsCancellationRequested)
@@ -43,7 +43,7 @@ public class ChatSocketServer : NetworkSocket
             Console.WriteLine($"[info] Client connected - {tcpClient.Client.RemoteEndPoint}");
 
             mSessionManager.ConnectedClient.TryAdd(tcpClient, 0);
-            
+
             // fire-and-forget
             //  만약 여기서 await하면, 한 클라이언트 통신이 끝날 때까지 기다림
             // TODO  예외는 무시됨, 이부분에 대한 해결책 필요함
@@ -63,32 +63,32 @@ public class ChatSocketServer : NetworkSocket
         if (payload.SessionId != userSessionInfo.SessionId)
         {
             await SendResponsePacket<LoginRes>(
-                socketContext.Stream, 
-                EPacket.Login, 
-                EResponseResult.LoginFailed, 
-                cancellationToken); 
+                socketContext.Stream,
+                EPacket.Login,
+                EResponseResult.LoginFailed,
+                cancellationToken);
             return;
         }
 
         socketContext.SetSession(payload.SessionId, payload.UserId);
         Console.WriteLine($"[info] WebSessionId - {payload.SessionId} / userId - {payload.UserId}");
-        
+
         mSessionManager.ConnectedClient.TryRemove(socketContext.Client, out _);
         mSessionManager.LoginSessions.TryAdd(payload.UserId, socketContext.Session);
 
         socketContext.IsLogin = true;
         Console.WriteLine("[info] 연결된 유저: " + mSessionManager.LoginSessions.Count);
-        
+
         userSessionInfo.ChatServerIp = mServerIp;
         await mSessionManager.AddUserSessionInfoAsync($"{payload.UserId}", userSessionInfo);
 
         await SendResponsePacket<LoginRes>(
             socketContext.Stream,
-            EPacket.Login, 
+            EPacket.Login,
             EResponseResult.Success,
-            cancellationToken); 
+            cancellationToken);
     }
-    
+
     private async Task HandleEnterWorldAsync(
         SocketContext socketContext, CancellationToken cancellationToken)
     {
@@ -96,9 +96,9 @@ public class ChatSocketServer : NetworkSocket
         {
             await SendResponsePacket<EnterWorldRes>(
                 socketContext.Stream,
-                EPacket.EnterWorld, 
+                EPacket.EnterWorld,
                 EResponseResult.LoginRequired,
-                cancellationToken); 
+                cancellationToken);
             return;
         }
 
@@ -110,27 +110,28 @@ public class ChatSocketServer : NetworkSocket
                 socketContext.Session.CurrentWorld = "Korea_1";
                 await SendResponsePacket<EnterWorldRes>(
                     socketContext.Stream,
-                    EPacket.EnterWorld, 
-                    EResponseResult.Success, 
-                    cancellationToken); 
+                    EPacket.EnterWorld,
+                    EResponseResult.Success,
+                    cancellationToken);
                 return;
             }
+
             await SendResponsePacket<EnterWorldRes>(
                 socketContext.Stream,
-                EPacket.EnterWorld, 
-                EResponseResult.AlreadyIn, 
-                cancellationToken); 
+                EPacket.EnterWorld,
+                EResponseResult.AlreadyIn,
+                cancellationToken);
         }
         catch (KeyNotFoundException e)
         {
             await SendResponsePacket<EnterWorldRes>(
                 socketContext.Stream,
-                EPacket.EnterWorld, 
-                EResponseResult.NoneSelected, 
-                cancellationToken); 
+                EPacket.EnterWorld,
+                EResponseResult.NoneSelected,
+                cancellationToken);
         }
     }
-    
+
     private async Task HandleSendMessageAsync(
         SocketContext socketContext, CancellationToken cancellationToken)
     {
@@ -143,52 +144,81 @@ public class ChatSocketServer : NetworkSocket
                 cancellationToken);
             return;
         }
-        
-        var payload = MemoryPackSerializer
-            .Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
 
-        switch (payload.Type)
+        var kind = MemoryPackSerializer
+            .Deserialize<MessageKind>(socketContext.PayloadBuffer);
+
+        switch (kind.Type)
         {
             case MessageType.Direct:
-                Console.WriteLine("일대일 메시지");
+            {
+                var payload = MemoryPackSerializer
+                    .Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
+
+                // TODO 저장 기능 필요
+                if (!mSessionManager.LoginSessions.TryGetValue(payload.ReceiverUserId, out var session))
+                    return;
+                
+                await WritePacket(session.Stream, new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
+                    cancellationToken);
                 break;
+            }
             case MessageType.Party:
-                Console.WriteLine("파티 메시지");
-                // await BroadcastChatMessageAsync(
-                //     SessionManager.BroadcastTarget.Party, 
-                //     socketContext.Session.CurrentParty, 
-                //     packet, 
-                //     cancellationToken);
+            {
+                if (socketContext.Session.CurrentParty is null)
+                    return;
+
+                var payload = MemoryPackSerializer
+                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
+
+                await BroadcastGroupMessageAsync(
+                    SessionManager.BroadcastTarget.Party,
+                    socketContext.Session.CurrentParty,
+                    new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
+                    cancellationToken);
                 break;
+            }
             case MessageType.World:
-                Console.WriteLine("월드 메시지");
+            {
+                if (socketContext.Session.CurrentWorld is null)
+                    return;
+
+                var payload = MemoryPackSerializer
+                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
+
+                await BroadcastGroupMessageAsync(
+                    SessionManager.BroadcastTarget.World,
+                    socketContext.Session.CurrentWorld,
+                    new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
+                    cancellationToken);
                 break;
+            }
             case MessageType.Unknown:
             default:
-                await SendResponsePacket<ReceiveMessage>(
+                await SendResponsePacket<SendMessageRes>(
                     socketContext.Stream,
                     EPacket.SendMessage,
                     EResponseResult.SendMessageInvalidTarget,
                     cancellationToken);
                 return;
         }
-        
-        await SendResponsePacket<ReceiveMessage>(
+
+        await SendResponsePacket<SendMessageRes>(
             socketContext.Stream,
             EPacket.SendMessage,
             EResponseResult.Success,
             cancellationToken);
     }
-    
-    private Task HandleDisconnectAsync(
+
+    private async Task HandleDisconnectAsync(
         SocketContext socketContext, CancellationToken cancellationToken)
     {
         Console.WriteLine("[SERVER] Client disconnected");
-        
+
         if (socketContext.IsLogin)
         {
             var userId = socketContext.Session.UserId;
-            
+
             mSessionManager.LoginSessions.TryRemove(userId, out _);
 
             if (socketContext.Session.CurrentWorld is not null)
@@ -205,37 +235,41 @@ public class ChatSocketServer : NetworkSocket
         }
         else
             mSessionManager.ConnectedClient.TryRemove(socketContext.Client, out _);
+
+        await SendResponsePacket<DisconnectRes>(
+            socketContext.Stream,
+            EPacket.Disconnect,
+            EResponseResult.Success,
+            cancellationToken);
         
         socketContext.Session.Disconnect();
-
-        return Task.CompletedTask;
     }
     #endregion
-    
+
     private static async Task SendResponsePacket<T>(
-        NetworkStream stream, EPacket type, EResponseResult code, 
+        NetworkStream stream, EPacket type, EResponseResult code,
         CancellationToken cancellationToken) where T : struct, IPacketBody, IResponsePacket
     {
         var response = new T { Code = (int)code };
         await stream.WriteAsync(new Packet<T>(type, response).PacketBytes, cancellationToken);
     }
-    
-    private async Task BroadcastChatMessageAsync<T>(
+
+    private async Task BroadcastGroupMessageAsync<T>(
         SessionManager.BroadcastTarget target,
-        string name, 
-        Packet<T> packet, 
+        string name,
+        Packet<T> packet,
         CancellationToken cancellationToken) where T : struct, IPacketBody
     {
         var groups = target switch
         {
             SessionManager.BroadcastTarget.World => mSessionManager.World,
             SessionManager.BroadcastTarget.Party => mSessionManager.Party,
-            _ => null       /* Unknown 타입도 여기에 포함 */
+            _ => null /* Unknown 타입도 여기에 포함 */
         };
 
         if (groups is null || !groups.TryGetValue(name, out var users))
             return;
-        
+
         var sendTasks = new List<Task>();
 
         foreach (var userId in users.Keys)
@@ -243,12 +277,11 @@ public class ChatSocketServer : NetworkSocket
             if (mSessionManager.LoginSessions.TryGetValue(userId, out var session))
                 sendTasks.Add(WritePacket(session.Stream, packet, cancellationToken));
         }
-        
+
         await Task.WhenAll(sendTasks);
     }
-    
-    
-    // private async Task BroadcastRoomNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
+
+    // private async Task BroadcastNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
     // {
     //     if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
     //     {
@@ -258,22 +291,6 @@ public class ChatSocketServer : NetworkSocket
     //         foreach (var client in roomSessions)
     //         {
     //             await WritePacket(client.Value.Stream, packet, cancellationToken);
-    //         }
-    //     }
-    // }
-    
-    // private async Task DeleteRoomAsync(int roomId, CancellationToken cancellationToken)
-    // {
-    //     await BroadcastRoomNotificationAsync(
-    //         roomId, 
-    //         "방이 삭제되어 퇴장되었습니다.", 
-    //         cancellationToken);
-    //                     
-    //     if (mRoomSessions.TryRemove(roomId, out var roomSessions))
-    //     {
-    //         foreach (var roomSession in roomSessions)
-    //         {
-    //             roomSession.Value.RoomId = 0;
     //         }
     //     }
     // }
