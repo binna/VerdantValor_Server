@@ -8,7 +8,9 @@ public class Session
     
     public string SessionId { get; }
     public ulong UserId { get; }
-    public int RoomId { get; set; }     // TODO 딕션너리와 같이 실제 웹서버의 세션처럼
+
+    public string? CurrentWorld { get; set; } = null;
+    public string? CurrentParty { get; set; } = null;
 
     public Session(string sessionId, ulong userId, TcpClient client)
     {
