@@ -51,6 +51,8 @@ public class ChatSocketServer : NetworkSocket
             _ = HandleClientReadAsync(socketContext, mCts.Token);
         }
     }
+    
+    // TODO 좀비세션 잡아내는 과정 필요
 
     #region 패킷 핸들러 함수 모음
     private async Task HandleLoginAsync(
@@ -101,13 +103,15 @@ public class ChatSocketServer : NetworkSocket
                 cancellationToken);
             return;
         }
+        
+        var payload = MemoryPackSerializer
+            .Deserialize<EnterWorldReq>(socketContext.PayloadBuffer);
 
         try
         {
-            // TODO 서버 처음에 로딩하기 해결 후 수정
-            if (mSessionManager.AddWorld("Korea_1", socketContext.Session.UserId))
+            if (mSessionManager.AddUserToWorld(payload.worldName, socketContext.Session.UserId))
             {
-                socketContext.Session.CurrentWorld = "Korea_1";
+                socketContext.Session.CurrentWorld = payload.worldName;
                 await SendResponsePacket<EnterWorldRes>(
                     socketContext.Stream,
                     EPacket.EnterWorld,
@@ -171,7 +175,7 @@ public class ChatSocketServer : NetworkSocket
                 var payload = MemoryPackSerializer
                     .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
 
-                await BroadcastGroupMessageAsync(
+                await BroadcastPacketToGroupAsync(
                     SessionManager.BroadcastTarget.Party,
                     socketContext.Session.CurrentParty,
                     new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
@@ -186,7 +190,7 @@ public class ChatSocketServer : NetworkSocket
                 var payload = MemoryPackSerializer
                     .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
 
-                await BroadcastGroupMessageAsync(
+                await BroadcastPacketToGroupAsync(
                     SessionManager.BroadcastTarget.World,
                     socketContext.Session.CurrentWorld,
                     new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
@@ -254,7 +258,7 @@ public class ChatSocketServer : NetworkSocket
         await stream.WriteAsync(new Packet<T>(type, response).PacketBytes, cancellationToken);
     }
 
-    private async Task BroadcastGroupMessageAsync<T>(
+    private async Task BroadcastPacketToGroupAsync<T>(
         SessionManager.BroadcastTarget target,
         string name,
         Packet<T> packet,
@@ -280,18 +284,4 @@ public class ChatSocketServer : NetworkSocket
 
         await Task.WhenAll(sendTasks);
     }
-
-    // private async Task BroadcastNotificationAsync(int roomId, string notificationMessage, CancellationToken cancellationToken)
-    // {
-    //     if (mRoomSessions.TryGetValue(roomId, out var roomSessions))
-    //     {
-    //         var response = new RoomNotification { Notification = notificationMessage };
-    //         var packet = new Packet<RoomNotification>(EPacket.Notification, response);
-    //         
-    //         foreach (var client in roomSessions)
-    //         {
-    //             await WritePacket(client.Value.Stream, packet, cancellationToken);
-    //         }
-    //     }
-    // }
 }

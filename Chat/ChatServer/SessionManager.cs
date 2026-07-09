@@ -27,6 +27,7 @@ public class SessionManager
     public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> Party { get; private set; } = [];
     
     private ISessionKeyValueStore mSessionKeyValueStore;
+    // TODO DB 연결도 여기서 하고 싶은데
 
     public SessionManager()
     {
@@ -48,7 +49,7 @@ public class SessionManager
         // TODO 로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
     }
 
-    public bool AddWorld(string worldName, ulong userId)
+    public bool AddUserToWorld(string worldName, ulong userId)
     {
         return World[worldName].TryAdd(userId, 0);
     }
