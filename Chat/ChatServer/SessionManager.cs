@@ -13,13 +13,6 @@ namespace ChatServer;
 //  Service = 일을 한다 (Do)
 public class SessionManager
 {
-    public enum BroadcastTarget
-    {
-        Unknown = 0,
-        World,
-        Party
-    }
-    
     public ConcurrentDictionary<TcpClient, byte> ConnectedClient { get; private set; } = [];
     public ConcurrentDictionary<ulong, Session> LoginSessions { get; private set; } = [];
     

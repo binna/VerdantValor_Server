@@ -163,38 +163,49 @@ public class ChatSocketServer : NetworkSocket
                 if (!mSessionManager.LoginSessions.TryGetValue(payload.ReceiverUserId, out var session))
                     return;
                 
-                await WritePacket(session.Stream, new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
+                // TODO 개인에게 Notification 말이 안됨, 에러 처리
+                
+                await WritePacket(
+                    session.Stream, 
+                    new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
                     cancellationToken);
                 break;
             }
+            case MessageType.World:
             case MessageType.Party:
             {
                 if (socketContext.Session.CurrentParty is null)
                     return;
 
-                var payload = MemoryPackSerializer
-                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
-
-                await BroadcastPacketToGroupAsync(
-                    SessionManager.BroadcastTarget.Party,
-                    socketContext.Session.CurrentParty,
-                    new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
-                    cancellationToken);
-                break;
-            }
-            case MessageType.World:
-            {
-                if (socketContext.Session.CurrentWorld is null)
-                    return;
-
-                var payload = MemoryPackSerializer
-                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
-
-                await BroadcastPacketToGroupAsync(
-                    SessionManager.BroadcastTarget.World,
-                    socketContext.Session.CurrentWorld,
-                    new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
-                    cancellationToken);
+                switch (kind.Category)
+                {
+                    case MessageCategory.Notification:
+                    {
+                        var payload = MemoryPackSerializer
+                            .Deserialize<Notification>(socketContext.PayloadBuffer);
+                    
+                        await BroadcastPacketToGroupAsync(
+                            kind.Type,
+                            socketContext.Session.CurrentParty,
+                            new Packet<Notification>(EPacket.SendMessage, payload),
+                            cancellationToken);
+                        break;
+                    }
+                    case MessageCategory.Chat:
+                    {
+                        var payload = MemoryPackSerializer
+                            .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
+                
+                        await BroadcastPacketToGroupAsync(
+                            kind.Type,
+                            socketContext.Session.CurrentParty,
+                            new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
+                            cancellationToken);
+                        break;
+                    }
+                }
+                
+                // TODO 에러
                 break;
             }
             case MessageType.Unknown:
@@ -259,15 +270,15 @@ public class ChatSocketServer : NetworkSocket
     }
 
     private async Task BroadcastPacketToGroupAsync<T>(
-        SessionManager.BroadcastTarget target,
+        MessageType target,
         string name,
         Packet<T> packet,
         CancellationToken cancellationToken) where T : struct, IPacketBody
     {
         var groups = target switch
         {
-            SessionManager.BroadcastTarget.World => mSessionManager.World,
-            SessionManager.BroadcastTarget.Party => mSessionManager.Party,
+            MessageType.World => mSessionManager.World,
+            MessageType.Party => mSessionManager.Party,
             _ => null /* Unknown 타입도 여기에 포함 */
         };
 
