@@ -5,13 +5,14 @@ using Common.Types;
 namespace Common.Driver;
 
 // Fake cache driver
-//  - TTL: 지원하지 않음
-//  - ESetCondition: 지원하지 않음
-//  - Script evaluation: 지원하지 않음
+//  - TTL                   : 지원하지 않음
+//  - ESetCondition         : 지원하지 않음
+//  - Script evaluation     : 지원하지 않음
+//  - 분산락                 : 항상 성공 처리 (실제 동시성 제어 없음)
 //
 // Set 계열 반환값
-//  - true  : 새 항목이 추가됨
-//  - false : 이미 존재하여 값이 갱신됨
+//  - true                  : 새 항목이 추가됨
+//  - false                 :이미 존재하여 값이 갱신됨
 
 public class FakeCacheDriver : ICacheDriver
 {
@@ -184,5 +185,27 @@ public class FakeCacheDriver : ICacheDriver
         // Fake driver에서는 빈 결과 반환
 
         return Task.FromResult("");
+    }
+
+    public Task<bool> TryAcquireGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry,
+        CancellationToken token = default)
+    {
+        // 분산락 지원하지 않음
+        // Fake driver에서는 항상 true 반환
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> TryExtendGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry, CancellationToken token = default)
+    {
+        // 분산락 지원하지 않음
+        // Fake driver에서는 항상 true 반환
+        return Task.FromResult(true);
+    }
+
+    public Task<bool> TryReleaseGlobalLockAsync(string lockKey, string lockToken, CancellationToken token = default)
+    {
+        // 분산락 지원하지 않음
+        // Fake driver에서는 항상 true 반환
+        return Task.FromResult(true);
     }
 }

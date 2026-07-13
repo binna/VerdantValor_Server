@@ -59,6 +59,12 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         public List<string> Data { get; } = [];
     }
     
+    private const string RELEASE_LOCK_IF_OWNER_SCRIPT =
+        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
+
+    private const string EXTEND_LOCK_IF_OWNER_SCRIPT =
+        "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('PEXPIRE', KEYS[1], ARGV[2]) else return 0 end";
+    
     private readonly TcpClient mTcpClient;
     private readonly NetworkStream mStream;
     private readonly SemaphoreSlim mMutex = new(1, 1);
@@ -422,6 +428,37 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 
+    public async Task<bool> TryAcquireGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry,
+        CancellationToken token = default)
+    {
+        return await StringSetAsync(
+            lockKey, lockToken, lockExpiry, ICacheDriver.ESetCondition.NotExists, token);
+    }
+
+    public async Task<bool> TryExtendGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry, CancellationToken token = default)
+    {
+        var expiryMs = ((long)lockExpiry.TotalMilliseconds).ToString();
+
+        var result = await ScriptEvaluateAsync(
+            EXTEND_LOCK_IF_OWNER_SCRIPT,
+            [lockKey],
+            [lockToken, expiryMs],
+            token);
+
+        return long.TryParse(result, out var redisValue) && redisValue == 1;
+    }
+
+    public async Task<bool> TryReleaseGlobalLockAsync(string lockKey, string lockToken, CancellationToken token = default)
+    {
+        var result = await ScriptEvaluateAsync(
+            RELEASE_LOCK_IF_OWNER_SCRIPT,
+            [lockKey],
+            [lockToken],
+            token);
+
+        return long.TryParse(result, out var redisValue) && redisValue == 1;
+    }
+
     private async Task<RespResult> ReadResponseAsync(CancellationToken token)
     {
         RespResult respResult = new();
@@ -636,5 +673,3 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 }
-
-

@@ -212,10 +212,7 @@ builder.Services
         new SessionKeyValueStore(
             sessionCacheDriver, 
             builder.Environment.IsDevelopment() ? 0 : ShareServerConst.SESSION_EXPIRE_MS))
-    .AddSingleton<IDistributedLock>(
-        new DistributedLock(
-            distributedLockDriver, 
-            ShareServerConst.LOCK_EXPIRY_MS))
+    .AddSingleton(distributedLockDriver)
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<IInventoryRepository, InventoryRepository>()

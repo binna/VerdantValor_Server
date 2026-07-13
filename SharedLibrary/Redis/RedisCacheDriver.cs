@@ -182,4 +182,34 @@ public class RedisCacheDriver : ICacheDriver, IDisposable
         
         return response.ToString();
     }
+
+    // StackExchange.Redis에서 제공하는 분산 락 API
+    //  LockTake         : SET NX + TTL 기반 락 획득
+    //  LockRelease      : 토큰 비교 후 안전한 락 해제
+    //  LockExtend       : 현재 보유 중인 락의 TTL 연장
+    public async Task<bool> TryAcquireGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        TimeSpan lockExpiry,
+        CancellationToken token = default)
+    {
+        return await mDatabase.LockTakeAsync(lockKey, lockToken, lockExpiry);
+    }
+    
+    public async Task<bool> TryExtendGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        TimeSpan lockExpiry,
+        CancellationToken token = default)
+    {
+        return await mDatabase.LockExtendAsync(lockKey, lockToken, lockExpiry);
+    }
+
+    public async Task<bool> TryReleaseGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        CancellationToken token = default)
+    {
+        return await mDatabase.LockReleaseAsync(lockKey, lockToken);
+    }
 }
