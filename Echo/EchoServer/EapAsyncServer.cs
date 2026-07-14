@@ -55,7 +55,7 @@ public class EapAsyncServer
         //Console.WriteLine("서버: Accept 대기");
         
         // AcceptAsync를 여러 개 동시에 등록해
-        // accept를 동시에 대기(pending)시키는 구조다
+        // accept를 동시에 대기(pending)시키는 구조다.
         // 스레드를 만드는 것은 아니지만,
         // 이벤트 기반 처리에서 accept 처리량을 사전에 확보하는 효과가 있다.
         for (int i = 0; i < acceptPendingCount; i++)

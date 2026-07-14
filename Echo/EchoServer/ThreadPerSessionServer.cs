@@ -84,7 +84,7 @@ public class ThreadPerSessionServer
                             // 주의!!
                             //  Receive의 size 파라미터(세 번째 인자)는
                             //  최대로 읽을 수 있는 길이를 의미할 뿐
-                            //  반드시 그만큼 읽는다는 의미가 아니다
+                            //  반드시 그만큼 읽는다는 의미가 아니다.
                             var readLength = clientSocket.Receive(
                                 dataBuffer, totalSize, dataLength - totalSize, SocketFlags.None);
 

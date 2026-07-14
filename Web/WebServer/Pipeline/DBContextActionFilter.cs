@@ -27,7 +27,7 @@ public class DBContextActionFilter : ActionFilterAttribute
         
         // 매번 새 커넥션을 쓰는 것처럼 보이지만
         // 드라이브에서 커넥션 풀까지 코드가 짜여 있기 때문에
-        // 커넥션 풀 재사용 한다
+        // 커넥션 풀 재사용 한다.
         await using var dbContext = await mDbContextFactory.CreateDbContextAsync();
         context.HttpContext.Items.Add("dbContext", dbContext);
         context.HttpContext.Items.Add("isChange", false);

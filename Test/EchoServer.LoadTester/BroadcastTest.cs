@@ -23,15 +23,15 @@ public class BroadcastTest
             tasks.Add(Task.Run(async () =>
             {
                 // 람다는
-                //  바깥 로컬 변수를 값이 아니라 변수 자체(저장 위치)를 캡처한다
-                //  그래서 나중에 실행될 때도 같은 변수가 바뀐 값을 보게 된다
+                //  바깥 로컬 변수를 값이 아니라 변수 자체(저장 위치)를 캡처한다.
+                //  그래서 나중에 실행될 때도 같은 변수가 바뀐 값을 보게 된다.
                 
                 // IDE의 임시 변수 인라인화 제안은
                 //  이 변수를 한 번만 쓰니 newSocket을 바로 써도 된다는 코드 스타일 추천일 뿐,
-                //  람다 캡처에 따른 버그까지는 고려하지 않는다
+                //  람다 캡처에 따른 버그까지는 고려하지 않는다.
                 
                 // 각 Task가 Accept 시점의 소켓과 클라 번호를 독립적으로 가져야 하므로
-                //  람다 안에서 newSocket, clientNum을 한 번 복사해 둔다
+                //  람다 안에서 newSocket, clientNum을 한 번 복사해 둔다.
                 var socket = newSocket;
                 var num = clientNum;
                 

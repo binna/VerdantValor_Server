@@ -139,7 +139,7 @@ public class DoubleBufferedQueueTest
         Assert.Equal(3, processedCount);
     }
     
-    // N개의 스레드가 동시에 Enqueue해도 데이터 유실 없이 전부 처리 되어야 한다
+    // N개의 스레드가 동시에 Enqueue해도 데이터 유실 없이 전부 처리 되어야 한다.
     [Theory]
     [InlineData(10, 100)]
     [InlineData(50, 200)]
