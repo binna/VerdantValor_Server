@@ -189,7 +189,7 @@ public class EapAsyncServer
                     {
                         client.Value.Send(messageBuffer);
                     }
-                    catch (Exception exception)
+                    catch (Exception ex)
                     {
                         Console.WriteLine(e);
                         connectedClients.TryRemove(client.Key, out _);

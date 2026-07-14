@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Shared.Constants;
@@ -6,7 +7,7 @@ using Shared.Types;
 
 namespace Tcp;
 
-public abstract class NetworkSocket
+public abstract class NetworkSocket : IDisposable
 {
     // TODO 비정상 종료에 대한 로직 필요
     //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
@@ -39,37 +40,45 @@ public abstract class NetworkSocket
         mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     }
 
-    public abstract Task StartAsync();
+    public abstract Task StartAsync(IPAddress ipAddress, int port);
+    public abstract Task AcceptAsync();
 
     protected async Task HandleClientReadAsync(SocketContext socketContext, CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var read = await socketContext.Stream.ReadAsync(
-                socketContext.ReadBuffer, cancellationToken);
-        
-            if (read == 0)
-            {
-                Console.WriteLine("[info] disconnected");
-                return;
-            }
-            
-            socketContext.Offset = 0;
-            socketContext.Remaining = read;
-
             while (!cancellationToken.IsCancellationRequested)
             {
-                var result = ReadPacket(socketContext);
+                var read = await socketContext.Stream.ReadAsync(
+                    socketContext.ReadBuffer, cancellationToken);
 
-                if (result == ReadPacketReturn.NeedMoreData)
-                    break;
+                if (read == 0)
+                {
+                    Console.WriteLine("[info] disconnected");
+                    return;
+                }
 
-                if (Enum.IsDefined(socketContext.Header.PacketType))
-                    await mPacketHandlers[socketContext.Header.PacketType](socketContext, cancellationToken);
+                socketContext.Offset = 0;
+                socketContext.Remaining = read;
 
-                if (result == ReadPacketReturn.PacketReady)
-                    break;
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    var result = ReadPacket(socketContext);
+
+                    if (result == ReadPacketReturn.NeedMoreData)
+                        break;
+
+                    if (Enum.IsDefined(socketContext.Header.PacketType))
+                        await mPacketHandlers[socketContext.Header.PacketType](socketContext, cancellationToken);
+
+                    if (result == ReadPacketReturn.PacketReady)
+                        break;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
         }
     }
     
@@ -131,5 +140,11 @@ public abstract class NetworkSocket
         }
 
         return ReadPacketReturn.PacketReady;
+    }
+
+    public void Dispose()
+    {
+        mCts.Cancel();
+        mCts.Dispose();
     }
 }

@@ -9,7 +9,7 @@ internal class Server
     static async Task Main(string[] args)
     {
         using var cts = new CancellationTokenSource();
-        var server = new ChatSocketServer(IPAddress.Any, 20000, cts.Token);
-        await server.StartAsync();
+        var server = new ChatSocketServer(cts.Token);
+        await server.StartAsync(IPAddress.Any, 20000);
     }
 }

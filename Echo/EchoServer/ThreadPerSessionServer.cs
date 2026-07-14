@@ -125,9 +125,9 @@ public class ThreadPerSessionServer
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine(ex);
                 }
                 finally
                 {

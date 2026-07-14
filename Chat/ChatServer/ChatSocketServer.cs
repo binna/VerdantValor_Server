@@ -10,12 +10,12 @@ namespace ChatServer;
 
 public class ChatSocketServer : NetworkSocket
 {
-    private readonly string mServerIp;
+    private string mServerIp;
 
-    private readonly TcpListener mListener;
-    private readonly SessionManager mSessionManager;
+    private TcpListener mListener;
+    private SessionManager mSessionManager;
 
-    public ChatSocketServer(IPAddress ipAddress, int port, CancellationToken cancellationToken = default)
+    public ChatSocketServer(CancellationToken cancellationToken = default)
         : base(cancellationToken)
     {
         PacketHandlers = new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
@@ -25,7 +25,10 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
         };
+    }
 
+    public override async Task StartAsync(IPAddress ipAddress, int port)
+    {
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
 
@@ -33,9 +36,11 @@ public class ChatSocketServer : NetworkSocket
 
         mServerIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
         Console.WriteLine($"[info] Chat Server Start - {mServerIp}");
+
+        await AcceptAsync();
     }
 
-    public override async Task StartAsync()
+    public override async Task AcceptAsync()
     {
         while (!mCts.Token.IsCancellationRequested)
         {
@@ -45,20 +50,21 @@ public class ChatSocketServer : NetworkSocket
             mSessionManager.ConnectedClient.TryAdd(tcpClient, 0);
 
             // fire-and-forget
-            //  만약 여기서 await하면, 한 클라이언트 통신이 끝날 때까지 기다림
-            // TODO  예외는 무시됨, 이부분에 대한 해결책 필요함
+            //  의도적으로 await하지 않음
+            //  만약 여기서 await하면 한 클라이언트의 통신이 끝날 때까지
+            //  다음 클라이언트를 Accept하지 못함
             var socketContext = new SocketContext(tcpClient);
             _ = HandleClientReadAsync(socketContext, mCts.Token);
         }
     }
-    
-    // TODO 좀비세션 잡아내는 과정 필요
 
     #region 패킷 핸들러 함수 모음
     private async Task HandleLoginAsync(
-        SocketContext socketContext, CancellationToken cancellationToken)
+        SocketContext socketContext, 
+        CancellationToken cancellationToken)
     {
-        var payload = MemoryPackSerializer.Deserialize<LoginReq>(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer
+            .Deserialize<LoginReq>(socketContext.PayloadBuffer);
 
         var userSessionInfo = await mSessionManager.GetUserSessionInfoAsync($"{payload.UserId}");
 
@@ -126,7 +132,7 @@ public class ChatSocketServer : NetworkSocket
                 EResponseResult.AlreadyIn,
                 cancellationToken);
         }
-        catch (KeyNotFoundException e)
+        catch (KeyNotFoundException ex)
         {
             await SendResponsePacket<EnterWorldRes>(
                 socketContext.Stream,
@@ -226,7 +232,8 @@ public class ChatSocketServer : NetworkSocket
     }
 
     private async Task HandleDisconnectAsync(
-        SocketContext socketContext, CancellationToken cancellationToken)
+        SocketContext socketContext, 
+        CancellationToken cancellationToken)
     {
         Console.WriteLine("[SERVER] Client disconnected");
 
@@ -262,7 +269,9 @@ public class ChatSocketServer : NetworkSocket
     #endregion
 
     private static async Task SendResponsePacket<T>(
-        NetworkStream stream, EPacket type, EResponseResult code,
+        NetworkStream stream, 
+        EPacket type, 
+        EResponseResult code,
         CancellationToken cancellationToken) where T : struct, IPacketBody, IResponsePacket
     {
         var response = new T { Code = (int)code };
