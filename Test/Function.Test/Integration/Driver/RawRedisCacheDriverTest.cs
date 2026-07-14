@@ -174,4 +174,107 @@ public class RawRedisCacheDriverTest
         Assert.Equal("binna", result[2].Element);
         Assert.Equal(7, result[2].Score);
     }
+    
+    // 분산락 테스트 /////////////////////////////////////////////////////////////////////////////////
+    [Theory]
+    [InlineData("GainItem:1", "RandomToken", 5)]
+    public async Task Test_TryAcquireGlobalLockAsync_동시호출시_하나만_획득(string lockKey, string lockToken, int repeatNum)
+    {
+        var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 0);
+        var lockExpiry = TimeSpan.FromMilliseconds(1000);
+        
+        var acquiredCount = 0;
+        
+        List<Task> acquiredTasks = [];
+
+        for (var i = 0; i < repeatNum; i++)
+        {
+            acquiredTasks.Add(
+                Task.Run(async () =>
+                {
+                    var bAcquired 
+                        = await rawRedisDriver.TryAcquireGlobalLockAsync(lockKey, lockToken, lockExpiry);
+                    
+                    if (bAcquired)
+                        Interlocked.Increment(ref acquiredCount);
+                }));
+        }
+        
+        await Task.WhenAll(acquiredTasks);
+        
+        Assert.Equal(1, acquiredCount);
+    }
+
+     [Theory]
+     [InlineData("GainItem:2", "RandomToken", 1000)]
+     public async Task Test_TryReleaseLockAsync_락획득후_정상토큰으로_해제(string lockKey, string lockToken, int ttlMs)
+     {
+         var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 0);
+         var lockExpiry = TimeSpan.FromMilliseconds(ttlMs);
+        
+         var bAcquired 
+             = await rawRedisDriver.TryAcquireGlobalLockAsync(lockKey, lockToken, lockExpiry);
+
+         var bReleased 
+             = await rawRedisDriver.TryReleaseGlobalLockAsync(lockKey, lockToken);
+        
+         Assert.True(bAcquired);
+         Assert.True(bReleased);
+     }
+
+     [Theory]
+     [InlineData("GainItem:3", "RandomToken", 1000)]
+     public async Task Test_TryReleaseLockAsync_락획득후_연장후_정상토큰으로_해제(string lockKey, string lockToken, int ttlMs)
+     {
+         var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 0);
+         var lockExpiry = TimeSpan.FromMilliseconds(ttlMs);
+        
+         var bAcquired 
+             = await rawRedisDriver.TryAcquireGlobalLockAsync(lockKey, lockToken, lockExpiry);
+         
+         await Task.Delay(ttlMs / 2);
+
+         var bExtend = 
+             await rawRedisDriver.TryExtendGlobalLockAsync(lockKey, lockToken, lockExpiry);
+         
+         await Task.Delay(ttlMs / 2);
+
+         var bReleased 
+             = await rawRedisDriver.TryReleaseGlobalLockAsync(lockKey, lockToken);
+        
+         Assert.True(bAcquired);
+         Assert.True(bExtend);
+         Assert.True(bReleased);
+     }
+
+     [Theory]
+     [InlineData("GainItem:4", "RandomToken", 1000)]
+     public async Task Test_만료시간_지나면_Fail(string lockKey, string lockToken, int ttlMs)
+     {
+         var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 0);
+         var lockExpiry = TimeSpan.FromMilliseconds(ttlMs);
+        
+         var bAcquired 
+             = await rawRedisDriver.TryAcquireGlobalLockAsync(lockKey, lockToken, lockExpiry);
+
+         await Task.Delay(ttlMs + ttlMs);
+        
+         var bReleased 
+             = await rawRedisDriver.TryReleaseGlobalLockAsync(lockKey, lockToken);
+        
+         Assert.True(bAcquired);
+         Assert.False(bReleased);
+     }
+    
+    [Theory]
+    [InlineData("GainItem:5", "RandomToken")]
+    public async Task Test_TryReleaseLockAsync_락획득없이_해제시_Fail(string lockKey, string lockToken)
+    {
+        var rawRedisDriver = new RawRedisCacheDriver("localhost", 6379, 0);
+
+        var bReleased = 
+            await rawRedisDriver.TryReleaseGlobalLockAsync(lockKey, lockToken);
+
+        Assert.False(bReleased);
+    }
 }
