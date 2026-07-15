@@ -158,4 +158,35 @@ public class StoreServiceTest
         var response = await mStoreService.BuyAsync(store, 1);
         Assert.Equal($"{(int)EResponseResult.ItemCreationFailed}", $"{response.Code}");
     }
+    
+    [Fact]
+    public async Task Test_BuyAsync_Success()
+    {
+        const ulong userId = 1ul;
+        
+        mCacheDriver.TryAcquireGlobalLockAsync(
+                Arg.Any<string>(), Arg.Any<string>(), Arg.Any<TimeSpan>())
+            .Returns(Task.FromResult(true));
+        
+        mPurchaseRepository.CountAsync(Arg.Any<ulong>(), Arg.Any<int>())
+            .Returns(Task.FromResult(0));
+        
+        mGameUserRepository.FindByUserIdAsync(Arg.Any<ulong>())
+            .Returns(Task.FromResult<GameUser?>(new GameUser("shine", "shine", "1234")));
+
+        mInventoryRepository.AddAsync( 
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<ulong>())
+            .Returns(Task.FromResult);
+
+        mPurchaseRepository.MarkAsCompletedAsync(Arg.Any<ulong>())
+            .Returns(Task.FromResult);
+
+        GameDataManager.StoreTable.TryGet(1, out var store);
+        
+        mPurchaseRepository.AddAndSaveAsync(Arg.Any<int>(), Arg.Any<ulong>())
+            .Returns(Task.FromResult(new Purchase(store.Id, userId)));
+        
+        var response = await mStoreService.BuyAsync(store, userId);
+        Assert.Equal($"{(int)EResponseResult.Success}", $"{response.Code}");
+    }
 }
