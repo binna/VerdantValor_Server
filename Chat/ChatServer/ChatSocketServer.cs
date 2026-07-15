@@ -10,6 +10,8 @@ namespace ChatServer;
 
 public class ChatSocketServer : NetworkSocket
 {
+    private readonly Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<bool>>> mSendMessageHandlers;
+    
     private string mServerIp;
 
     private TcpListener mListener;
@@ -24,6 +26,14 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.EnterWorld] = HandleEnterWorldAsync,
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
+        };
+
+        mSendMessageHandlers = new Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<bool>>>
+        {
+            [MessageType.Unknown] = HandleUnknown,
+            [MessageType.Direct] = HandleDirect,
+            [MessageType.World] = HandleGroup,
+            [MessageType.Party] = HandleGroup
         };
     }
 
@@ -115,9 +125,9 @@ public class ChatSocketServer : NetworkSocket
 
         try
         {
-            if (mSessionManager.AddUserToWorld(payload.worldName, socketContext.Session.UserId))
+            if (mSessionManager.AddUserToWorld(payload.WorldName, socketContext.Session.UserId))
             {
-                socketContext.Session.CurrentWorld = payload.worldName;
+                socketContext.Session.CurrentWorld = payload.WorldName;
                 await SendResponsePacket<EnterWorldRes>(
                     socketContext.Stream,
                     EPacket.EnterWorld,
@@ -158,77 +168,13 @@ public class ChatSocketServer : NetworkSocket
         var kind = MemoryPackSerializer
             .Deserialize<MessageKind>(socketContext.PayloadBuffer);
 
-        switch (kind.Type)
-        {
-            case MessageType.Direct:
-            {
-                var payload = MemoryPackSerializer
-                    .Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
-
-                // TODO 저장 기능 필요
-                if (!mSessionManager.LoginSessions.TryGetValue(payload.ReceiverUserId, out var session))
-                    return;
-                
-                // TODO 개인에게 Notification 말이 안됨, 에러 처리
-                
-                await WritePacket(
-                    session.Stream, 
-                    new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
-                    cancellationToken);
-                break;
-            }
-            case MessageType.World:
-            case MessageType.Party:
-            {
-                if (socketContext.Session.CurrentParty is null)
-                    return;
-
-                switch (kind.Category)
-                {
-                    case MessageCategory.Notification:
-                    {
-                        var payload = MemoryPackSerializer
-                            .Deserialize<Notification>(socketContext.PayloadBuffer);
-                    
-                        await BroadcastPacketToGroupAsync(
-                            kind.Type,
-                            socketContext.Session.CurrentParty,
-                            new Packet<Notification>(EPacket.SendMessage, payload),
-                            cancellationToken);
-                        break;
-                    }
-                    case MessageCategory.Chat:
-                    {
-                        var payload = MemoryPackSerializer
-                            .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
-                
-                        await BroadcastPacketToGroupAsync(
-                            kind.Type,
-                            socketContext.Session.CurrentParty,
-                            new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
-                            cancellationToken);
-                        break;
-                    }
-                }
-                
-                // TODO 에러
-                break;
-            }
-            case MessageType.Unknown:
-            default:
-                await SendResponsePacket<SendMessageRes>(
-                    socketContext.Stream,
-                    EPacket.SendMessage,
-                    EResponseResult.SendMessageInvalidTarget,
-                    cancellationToken);
-                return;
-        }
-
-        await SendResponsePacket<SendMessageRes>(
-            socketContext.Stream,
-            EPacket.SendMessage,
-            EResponseResult.Success,
-            cancellationToken);
+        var bSuccess = await mSendMessageHandlers[kind.Type](socketContext, kind, cancellationToken);
+        if (bSuccess)
+            await SendResponsePacket<SendMessageRes>(
+                socketContext.Stream,
+                EPacket.SendMessage,
+                EResponseResult.Success,
+                cancellationToken);
     }
 
     private async Task HandleDisconnectAsync(
@@ -265,6 +211,105 @@ public class ChatSocketServer : NetworkSocket
             cancellationToken);
         
         socketContext.Session.Disconnect();
+    }
+    #endregion
+
+    #region SendMessage 타입별 핸들러
+    private async Task<bool> HandleUnknown(
+        SocketContext socketContext,
+        MessageKind kind,
+        CancellationToken cancellationToken)
+    {
+        await SendResponsePacket<SendMessageRes>(
+            socketContext.Stream,
+            EPacket.SendMessage,
+            EResponseResult.SendMessageInvalidTarget,
+            cancellationToken);
+        return true;
+    }
+
+    private async Task<bool> HandleDirect(
+        SocketContext socketContext,
+        MessageKind kind,
+        CancellationToken cancellationToken)
+    {
+        var payload = MemoryPackSerializer
+            .Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
+
+        if (!mSessionManager.LoginSessions.TryGetValue(payload.ReceiverUserId, out var session))
+        {
+            // TODO 저장 기능 필요
+            return false;
+        }
+
+        if (kind.Category == MessageCategory.Notification)
+        {
+            await SendResponsePacket<SendMessageRes>(
+                socketContext.Stream,
+                EPacket.SendMessage,
+                EResponseResult.InvalidInput,
+                cancellationToken);
+            return false;
+        }
+                
+        await WritePacket(
+            session.Stream, 
+            new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
+            cancellationToken);
+        return true;
+    }
+    
+    private async Task<bool> HandleGroup(
+        SocketContext socketContext,
+        MessageKind kind,
+        CancellationToken cancellationToken)
+    {
+        var currentGroup = kind.Type switch
+        {
+            MessageType.World => socketContext.Session.CurrentWorld,
+            MessageType.Party => socketContext.Session.CurrentParty,
+            _ => null
+        };
+        
+        if (currentGroup is null) 
+            return false;
+
+        switch (kind.Category)
+        {
+            case MessageCategory.Notification:
+            {
+                var payload = MemoryPackSerializer
+                    .Deserialize<Notification>(socketContext.PayloadBuffer);
+
+                await BroadcastPacketToGroupAsync(
+                    kind.Type,
+                    currentGroup,
+                    new Packet<Notification>(EPacket.SendMessage, payload),
+                    cancellationToken);
+                break;
+            }
+            case MessageCategory.Chat:
+            {
+                var payload = MemoryPackSerializer
+                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
+
+                await BroadcastPacketToGroupAsync(
+                    kind.Type,
+                    currentGroup,
+                    new Packet<SendGroupMessageReq>(EPacket.SendMessage, payload),
+                    cancellationToken);
+                break;
+            }
+            default:
+                await SendResponsePacket<SendMessageRes>(
+                    socketContext.Stream,
+                    EPacket.SendMessage,
+                    EResponseResult.InvalidInput,
+                    cancellationToken);
+                return false;
+        }
+
+        return true;
     }
     #endregion
 

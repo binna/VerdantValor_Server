@@ -9,7 +9,7 @@ namespace Tcp;
 
 public abstract class NetworkSocket : IDisposable
 {
-    // TODO 비정상 종료에 대한 로직 필요
+    // TODO 좀비세션 잡아낼 작업 필요
     //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
     
     private enum ReadPacketReturn
