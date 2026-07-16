@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
+using Ado;
+using Ado.Daos;
 using Common;
 using Common.KeyValueStore;
 using Common.Types;
@@ -16,11 +18,14 @@ public class SessionManager
     public ConcurrentDictionary<TcpClient, byte> ConnectedClient { get; private set; } = [];
     public ConcurrentDictionary<ulong, Session> LoginSessions { get; private set; } = [];
     
-    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> World { get; private set; } = [];
-    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> Party { get; private set; } = [];
+    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> World { get; private set; }
+    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> Party { get; private set; }
     
     private ISessionKeyValueStore mSessionKeyValueStore;
-    // TODO DB 연결도 여기서 하고 싶은데
+    private ChatPartyDao mChatPartyDao;
+    
+    // TODO 로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
+    // TODO 서버 살아 있음을 보내는 하트비트 부분 만들기
 
     public SessionManager()
     {
@@ -32,14 +37,22 @@ public class SessionManager
                     ShareServerConst.USER_SESSION_DB_NUM), 
                 0);
 
+        mChatPartyDao =
+            new ChatPartyDao(
+                new DbFactory(
+                    "Server=localhost;Database=VerdantValor;Uid=root;Pwd=940404;"));
+    }
+
+    public async Task Init()
+    {
+        var partyIds = await mChatPartyDao.FindAllPartyIdAsync();
+        foreach (var partyId in partyIds)
+        {
+            Party.TryAdd(partyId, new ConcurrentDictionary<ulong, byte>());
+        }
+
         // TODO 서버 처음에 로딩하기
         World["Korea_1"] = [];
-        
-        // TODO 파티도 리스트 만들기
-        Party["Korea_1"] = [];
-        
-        // TODO 서버 살아 있음을 보내는 하트비트 부분 만들기
-        // TODO 로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
     }
 
     public bool AddUserToWorld(string worldName, ulong userId)
@@ -56,4 +69,6 @@ public class SessionManager
     {
         return await mSessionKeyValueStore.AddUserSessionInfoAsync(userId, userSessionInfo);
     }
+    
+    // TODO 서버 하트비트 만들기
 }
