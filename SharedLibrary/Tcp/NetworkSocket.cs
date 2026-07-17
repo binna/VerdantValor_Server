@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Shared.Constants;
@@ -19,6 +20,7 @@ public abstract class NetworkSocket : IDisposable
     private Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers = [];
     
     protected readonly CancellationTokenSource mCts;
+    protected readonly Config mConfig;
     
     protected Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> PacketHandlers
     {
@@ -35,6 +37,10 @@ public abstract class NetworkSocket : IDisposable
         CancellationToken token = default)
     {
         mCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        
+        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var jsonText = File.ReadAllText(path);
+        mConfig = JsonSerializer.Deserialize<Config>(jsonText) ?? throw new Exception("Invalid Configuration File");
     }
 
     public abstract Task StartAsync(IPAddress ipAddress, int port);

@@ -13,7 +13,6 @@ public class ChatSocketServer : NetworkSocket
 {
     private readonly Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<bool>>> mSendMessageHandlers;
 
-    private const string mServerName = "Ko_Chat"; 
     private string mServerIp;
 
     private TcpListener mListener;
@@ -44,16 +43,20 @@ public class ChatSocketServer : NetworkSocket
         mListener = new TcpListener(ipAddress, port);
         mListener.Start();
 
-        mSessionManager = new SessionManager();
+        mSessionManager = new SessionManager(
+            mConfig.Database.Url,
+            mConfig.Redis.Host,
+            $"{mConfig.Redis.Port}");
+        await mSessionManager.Init();
 
-        mServerIp = $"{Dns.GetHostEntry(Dns.GetHostName()).AddressList[1]}:{port}";
+        mServerIp = $"{(await Dns.GetHostEntryAsync(Dns.GetHostName())).AddressList[1]}:{port}";
         Console.WriteLine($"[Info] Chat Server Start - {mServerIp}");
 
         // fire-and-forget
         //  의도적으로 await하지 않음
         //  서버가 살아있음을 주기적으로 Redis에 알리기 위한 하트비트 루프이므로
         //  백그라운드에서 주기적으로 실행이 필요함
-        _ = mSessionManager.StartHeartbeatLoopAsync(mServerName, mServerIp, mCts);
+        _ = mSessionManager.StartHeartbeatLoopAsync(mConfig.Name, mServerIp, mCts);
 
         // fire-and-forget
         //  의도적으로 await하지 않음
