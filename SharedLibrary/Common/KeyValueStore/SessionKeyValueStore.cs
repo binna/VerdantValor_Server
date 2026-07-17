@@ -8,6 +8,7 @@ public class SessionKeyValueStore : ISessionKeyValueStore
 {
     private readonly ICacheDriver mCacheDriver;
     private readonly TimeSpan? mSessionExpiry;
+    private readonly TimeSpan mServerExpiry = TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES * 2);
 
     public SessionKeyValueStore(ICacheDriver cacheDriver, long expiryMs)
     {
@@ -39,5 +40,16 @@ public class SessionKeyValueStore : ISessionKeyValueStore
     public async Task<bool> ExtendUserSessionInfoAsync(string key)
     {
         return await mCacheDriver.KeyExpireAsync(key, mSessionExpiry);
+    }
+
+    // TODO 분리할 수도 있음
+    public async Task<bool> RefreshServerHeartbeatAsync(string serverName, string serverIp)
+    {
+        return await mCacheDriver.StringSetAsync($"{serverName}_{serverIp}", "", mServerExpiry);
+    }
+    
+    public async Task<bool> IsServerAliveAsync(string serverName, string serverIp)
+    {
+        return !string.IsNullOrEmpty(await mCacheDriver.StringGetAsync($"{serverName}_{serverIp}"));
     }
 }

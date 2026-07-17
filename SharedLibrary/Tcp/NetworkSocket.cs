@@ -9,9 +9,6 @@ namespace Tcp;
 
 public abstract class NetworkSocket : IDisposable
 {
-    // TODO 좀비세션 잡아낼 작업 필요
-    //      Timer 함수로 1분에 한번씩 확인하는 식으로 작업 예정
-    
     private enum ReadPacketReturn
     {
         NeedMoreData,
@@ -35,33 +32,76 @@ public abstract class NetworkSocket : IDisposable
     }
     
     protected NetworkSocket(
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
-        mCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        mCts = CancellationTokenSource.CreateLinkedTokenSource(token);
     }
 
     public abstract Task StartAsync(IPAddress ipAddress, int port);
     public abstract Task AcceptAsync();
-
-    protected async Task HandleClientReadAsync(SocketContext socketContext, CancellationToken cancellationToken)
+    
+    protected abstract Task CheckSessionsAsync();
+    
+    public static bool IsSocketAlive(TcpClient client)
     {
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            var socket = client.Client;
+
+            // 읽기 가능한 상태 확인
+            // 단, 상대방이 연결을 끊었을 때도 true가 된다
+            var isReadable = socket.Poll(0, SelectMode.SelectRead);
+
+            // 대기 중인 데이터가 있는지 확인
+            var noDataAvailable = socket.Available == 0;
+
+            // 읽기는 가능한데 데이터가 없다 = 연결이 끊긴 것
+            return !(isReadable && noDataAvailable);
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+    
+    protected async Task StartConnectionCheckAsync(int intervalMinutes)
+    {
+        while (!mCts.IsCancellationRequested)
+        {
+            try
+            {
+                await CheckSessionsAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Session Check Failed: {ex.Message}");
+            }
+            
+            await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), mCts.Token);
+        }
+    }
+
+    protected async Task HandleClientReadAsync(
+        SocketContext socketContext, 
+        CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
             {
                 var read = await socketContext.Stream.ReadAsync(
-                    socketContext.ReadBuffer, cancellationToken);
+                    socketContext.ReadBuffer, token);
 
                 if (read == 0)
                 {
-                    Console.WriteLine("[info] disconnected");
+                    Console.WriteLine("[Info] Disconnected");
                     return;
                 }
 
                 socketContext.Offset = 0;
                 socketContext.Remaining = read;
 
-                while (!cancellationToken.IsCancellationRequested)
+                while (!token.IsCancellationRequested)
                 {
                     var result = ReadPacket(socketContext);
 
@@ -69,7 +109,7 @@ public abstract class NetworkSocket : IDisposable
                         break;
 
                     if (Enum.IsDefined(socketContext.Header.PacketType))
-                        await mPacketHandlers[socketContext.Header.PacketType](socketContext, cancellationToken);
+                        await mPacketHandlers[socketContext.Header.PacketType](socketContext, token);
 
                     if (result == ReadPacketReturn.PacketReady)
                         break;
@@ -82,7 +122,10 @@ public abstract class NetworkSocket : IDisposable
         }
     }
     
-    protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : struct, IPacketBody
+    protected static async Task WritePacket<T>(
+        NetworkStream stream, 
+        Packet<T> message, 
+        CancellationToken cancellationToken) where T : struct, IPacketBody
     {
         await stream.WriteAsync(message.PacketBytes, cancellationToken);
     }

@@ -4,9 +4,9 @@ namespace Common.Helpers;
 
 public interface ISecurityHelper
 {
-    public string ComputeSha512Hash(string plainText);
-    public bool VerifySha512Hash(string plainText, string hashText);
-    public EncryptReq EncryptPayload<T>(T data);
-    public T DecryptPayload<T>(EncryptReq request);
-    public byte[] DecryptPayloadToBytes(EncryptReq request);
+    string ComputeSha512Hash(string plainText);
+    bool VerifySha512Hash(string plainText, string hashText);
+    EncryptReq EncryptPayload<T>(T data);
+    T DecryptPayload<T>(EncryptReq request);
+    byte[] DecryptPayloadToBytes(EncryptReq request);
 }

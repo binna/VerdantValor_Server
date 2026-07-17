@@ -70,5 +70,22 @@ public class SessionManager
         return await mSessionKeyValueStore.AddUserSessionInfoAsync(userId, userSessionInfo);
     }
     
-    // TODO 서버 하트비트 만들기
+    public async Task StartHeartbeatLoopAsync(string serverName, string serverIp, CancellationTokenSource cts)
+    {
+        while (!cts.Token.IsCancellationRequested)
+        {
+            try
+            {
+                var success = await mSessionKeyValueStore.RefreshServerHeartbeatAsync(serverName, serverIp);
+                if (!success)
+                    Console.WriteLine($"[Error] {serverName} Heartbeat Failed - {serverIp}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Heartbeat Exception: {ex.Message}");
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES), cts.Token);
+        }
+    }
 }

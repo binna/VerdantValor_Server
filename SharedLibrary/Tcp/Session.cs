@@ -21,4 +21,5 @@ public class Session
 
     public NetworkStream Stream => mClient.GetStream();
     public void Disconnect() => mClient.Close();
+    public bool IsAlive() => NetworkSocket.IsSocketAlive(mClient);
 }

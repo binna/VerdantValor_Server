@@ -45,9 +45,9 @@ public class ChatSocketServerTest
                         Interlocked.Increment(ref clientConnectedCnt);
                         return; // 성공하면 즉시 종료
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        mOutput.WriteLine($"[Test] Connect Failed (retry {retry}): {e.Message}");
+                        mOutput.WriteLine($"[Test] Connect Failed (retry {retry}): {ex.Message}");
                         await Task.Delay(200, cts.Token); // 짧은 간격으로 재시도
                     }
                 }

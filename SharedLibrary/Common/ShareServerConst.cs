@@ -10,4 +10,7 @@ public class ShareServerConst
     public const int LOCK_DB_NUM = 1;
     public const int WEB_SESSION_DB_NUM = 2;
     public const int USER_SESSION_DB_NUM = 3;
+    
+    public const int HEARTBEAT_MINUTES = 5;
+    public const int ZOMBIE_CHECK_MINUTES  = 1;
 }
