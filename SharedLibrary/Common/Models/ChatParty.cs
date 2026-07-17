@@ -24,7 +24,7 @@ public class ChatParty
         if (!await reader.ReadAsync(token))
             return null;
         
-        var partyIdIdx = reader.GetOrdinal("partyIdIdx");
+        var partyIdIdx = reader.GetOrdinal("partyId");
         var nameIdx = reader.GetOrdinal("name");
 
         return new ChatParty
@@ -43,7 +43,7 @@ public class ChatParty
 
         List<string> parties = [];
         
-        var partyIdIdx = reader.GetOrdinal("partyIdIdx");
+        var partyIdIdx = reader.GetOrdinal("partyId");
 
         while (await reader.ReadAsync(token))
         {
