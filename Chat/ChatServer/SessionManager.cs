@@ -48,7 +48,7 @@ public class SessionManager
                 0);
     }
 
-    public async Task Init()
+    public async Task Init(CancellationToken token)
     {
         World = [];
         Party = [];
@@ -56,10 +56,10 @@ public class SessionManager
         // TODO 서버 처음에 로딩하기
         World["Korea_1"] = [];
         
-        var partyIds = await mChatPartyDao.FindAllPartyIdAsync();
+        var partyIds = await mChatPartyDao.FindAllPartyIdAsync(token);
         foreach (var partyId in partyIds)
         {
-            Party.TryAdd(partyId, new ConcurrentDictionary<ulong, byte>());
+            Party[partyId] = [ /* TODO 나중에 여기에도 데이터가 있도록 처리 */ ];
         }
     }
 

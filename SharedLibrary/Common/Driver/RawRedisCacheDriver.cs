@@ -359,7 +359,10 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 
-    public async Task<double?> SortedSetScoreAsync(string key, string member, CancellationToken token = default)
+    public async Task<double?> SortedSetScoreAsync(
+        string key, 
+        string member, 
+        CancellationToken token = default)
     {
         // ZSCORE key member
         var command = new StringBuilder(128);
@@ -428,14 +431,21 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         }
     }
 
-    public async Task<bool> TryAcquireGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry,
+    public async Task<bool> TryAcquireGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        TimeSpan lockExpiry,
         CancellationToken token = default)
     {
         return await StringSetAsync(
             lockKey, lockToken, lockExpiry, ICacheDriver.ESetCondition.NotExists, token);
     }
 
-    public async Task<bool> TryExtendGlobalLockAsync(string lockKey, string lockToken, TimeSpan lockExpiry, CancellationToken token = default)
+    public async Task<bool> TryExtendGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        TimeSpan lockExpiry, 
+        CancellationToken token = default)
     {
         var expiryMs = ((long)lockExpiry.TotalMilliseconds).ToString();
 
@@ -448,7 +458,10 @@ public class RawRedisCacheDriver : ICacheDriver, IDisposable
         return long.TryParse(result, out var redisValue) && redisValue == 1;
     }
 
-    public async Task<bool> TryReleaseGlobalLockAsync(string lockKey, string lockToken, CancellationToken token = default)
+    public async Task<bool> TryReleaseGlobalLockAsync(
+        string lockKey, 
+        string lockToken, 
+        CancellationToken token = default)
     {
         var result = await ScriptEvaluateAsync(
             RELEASE_LOCK_IF_OWNER_SCRIPT,

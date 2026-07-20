@@ -12,7 +12,7 @@ public class ChatPartyDao
         mDbFactory = dbFactory;
     }
 
-    public async Task<List<string>> FindAllPartyIdAsync(CancellationToken token = default)
+    public async Task<List<string>> FindAllPartyIdAsync(CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -23,5 +23,7 @@ public class ChatPartyDao
         return await ChatParty.FromDbDataReaderToPartyIdListAsync(reader, token);
     }
     
-    // TODO 존재 여부 검색하는 부분 필요,,, ㅎ
+    // TODO 존재 여부 검색하는 부분 필요,,, 
+    
+    // TODO 삭제 : 공지 후 나가지는 무언가가 필요
 }

@@ -47,7 +47,7 @@ public class ChatSocketServer : NetworkSocket
             mConfig.Database.Url,
             mConfig.Redis.Host,
             $"{mConfig.Redis.Port}");
-        await mSessionManager.Init();
+        await mSessionManager.Init(mToken);
 
         mServerIp = $"{(await Dns.GetHostEntryAsync(Dns.GetHostName())).AddressList[1]}:{port}";
         Console.WriteLine($"[Info] Chat Server Start - {mServerIp}");

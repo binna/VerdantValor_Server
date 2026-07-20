@@ -12,7 +12,7 @@ public sealed class GameUserDao
         mDbFactory = dbFactory;
     }
     
-    public async Task<bool> ExistsByEmail(string email, CancellationToken token = default)
+    public async Task<bool> ExistsByEmail(string email, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -28,7 +28,7 @@ public sealed class GameUserDao
         return await reader.ReadAsync(token);
     }
 
-    public async Task<GameUser?> FindByEmail(string email, CancellationToken token = default)
+    public async Task<GameUser?> FindByEmail(string email, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -44,7 +44,7 @@ public sealed class GameUserDao
         return await GameUser.FromDbDataReaderAsync(reader, token);
     }
 
-    public async Task<GameUser?> FindByUserId(ulong userId, CancellationToken token = default)
+    public async Task<GameUser?> FindByUserId(ulong userId, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
