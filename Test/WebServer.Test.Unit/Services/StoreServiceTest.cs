@@ -147,10 +147,6 @@ public class StoreServiceTest
         mGameUserRepository.FindByUserIdAsync(Arg.Any<ulong>())
             .Returns(Task.FromResult<GameUser?>(new GameUser("shine", "shine", "1234")));
 
-        mInventoryRepository.AddAsync( 
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<ulong>())
-            .Returns(Task.FromResult);
-
         GameDataManager.StoreTable.TryGet(1, out var store);
 
         store.Items[0].Amount = -1;
@@ -176,9 +172,6 @@ public class StoreServiceTest
 
         mInventoryRepository.AddAsync( 
                 Arg.Any<int>(), Arg.Any<int>(), Arg.Any<ulong>())
-            .Returns(Task.FromResult);
-
-        mPurchaseRepository.MarkAsCompletedAsync(Arg.Any<ulong>())
             .Returns(Task.FromResult);
 
         GameDataManager.StoreTable.TryGet(1, out var store);

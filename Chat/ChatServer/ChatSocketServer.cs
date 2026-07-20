@@ -18,8 +18,8 @@ public class ChatSocketServer : NetworkSocket
     private TcpListener mListener;
     private SessionManager mSessionManager;
 
-    public ChatSocketServer(CancellationToken token = default)
-        : base(token)
+    public ChatSocketServer(CancellationTokenSource cts = default)
+        : base(cts)
     {
         PacketHandlers = new Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>>
         {
@@ -56,7 +56,7 @@ public class ChatSocketServer : NetworkSocket
         //  의도적으로 await하지 않음
         //  서버가 살아있음을 주기적으로 Redis에 알리기 위한 하트비트 루프이므로
         //  백그라운드에서 주기적으로 실행이 필요함
-        _ = mSessionManager.StartHeartbeatLoopAsync(mConfig.Name, mServerIp, mCts);
+        _ = mSessionManager.StartHeartbeatLoopAsync(mConfig.Name, mServerIp, mToken);
 
         // fire-and-forget
         //  의도적으로 await하지 않음
@@ -69,9 +69,9 @@ public class ChatSocketServer : NetworkSocket
 
     public override async Task AcceptAsync()
     {
-        while (!mCts.IsCancellationRequested)
+        while (!mToken.IsCancellationRequested)
         {
-            var tcpClient = await mListener.AcceptTcpClientAsync(mCts.Token);
+            var tcpClient = await mListener.AcceptTcpClientAsync(mToken);
             Console.WriteLine($"[Info] Client Connected - {tcpClient.Client.RemoteEndPoint}");
 
             mSessionManager.ConnectedClient.TryAdd(tcpClient, 0);
@@ -81,8 +81,37 @@ public class ChatSocketServer : NetworkSocket
             //  만약 여기서 await하면 한 클라이언트의 통신이 끝날 때까지
             //  다음 클라이언트를 Accept하지 못함
             var socketContext = new SocketContext(tcpClient);
-            _ = HandleClientReadAsync(socketContext, mCts.Token);
+            _ = HandleClientReadAsync(socketContext, mToken);
         }
+    }
+
+    protected override Task DisconnectClientAsync(SocketContext socketContext)
+    {
+        if (socketContext.IsLogin)
+        {
+            var userId = socketContext.Session.UserId;
+
+            mSessionManager.LoginSessions.TryRemove(userId, out _);
+
+            if (socketContext.Session.CurrentWorld is not null)
+            {
+                if (mSessionManager.World.TryGetValue(socketContext.Session.CurrentWorld, out var users))
+                    users.TryRemove(userId, out _);
+            }
+
+            if (socketContext.Session.CurrentParty is not null)
+            {
+                if (mSessionManager.Party.TryGetValue(socketContext.Session.CurrentParty, out var users))
+                    users.TryRemove(userId, out _);
+            }
+        }
+        else
+            mSessionManager.ConnectedClient.TryRemove(socketContext.Client, out _);
+        
+        socketContext.Session.Disconnect();
+        socketContext.IsLogin = false;
+        
+        return Task.CompletedTask;
     }
 
     protected override Task CheckSessionsAsync()
@@ -100,11 +129,17 @@ public class ChatSocketServer : NetworkSocket
             if (session.IsAlive()) continue;
 
             if (session.CurrentWorld is not null)
-                mSessionManager.World[session.CurrentWorld].TryRemove(session.UserId, out _);
-            
+            {
+                if (mSessionManager.World.TryGetValue(session.CurrentWorld, out var world))
+                    world.TryRemove(session.UserId, out _);
+            }
+
             if (session.CurrentParty is not null)
-                mSessionManager.Party[session.CurrentParty].TryRemove(session.UserId, out _);
-            
+            {
+                if (mSessionManager.Party.TryGetValue(session.CurrentParty, out var party))
+                    party.TryRemove(session.UserId, out _);
+            }
+
             mSessionManager.LoginSessions.TryRemove(session.UserId, out _);
             
             session.Disconnect();
@@ -226,36 +261,13 @@ public class ChatSocketServer : NetworkSocket
         SocketContext socketContext, 
         CancellationToken token)
     {
-        Console.WriteLine("[Info] Client Disconnected");
-
-        if (socketContext.IsLogin)
-        {
-            var userId = socketContext.Session.UserId;
-
-            mSessionManager.LoginSessions.TryRemove(userId, out _);
-
-            if (socketContext.Session.CurrentWorld is not null)
-            {
-                if (mSessionManager.World.TryGetValue(socketContext.Session.CurrentWorld, out var users))
-                    users.TryRemove(userId, out _);
-            }
-
-            if (socketContext.Session.CurrentParty is not null)
-            {
-                if (mSessionManager.Party.TryGetValue(socketContext.Session.CurrentParty, out var users))
-                    users.TryRemove(userId, out _);
-            }
-        }
-        else
-            mSessionManager.ConnectedClient.TryRemove(socketContext.Client, out _);
-
         await SendResponsePacket<DisconnectRes>(
             socketContext.Stream,
             EPacket.Disconnect,
             EResponseResult.Success,
-            token);
+            mToken);
         
-        socketContext.Session.Disconnect();
+        await DisconnectClientAsync(socketContext);
     }
     #endregion
 

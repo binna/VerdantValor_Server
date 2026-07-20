@@ -24,8 +24,14 @@ public class SessionManager
     private ChatPartyDao mChatPartyDao;
     private ISessionKeyValueStore mSessionKeyValueStore;
     
-    // TODO 로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
-    // TODO 서버 살아 있음을 보내는 하트비트 부분 만들기
+    // TODO
+    //  로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
+    // TODO
+    //  금칙어 추가
+    // TODO
+    //  DB Distory 중에서 처리를 안한다는 건가 이런 방법을 고민해기
+    //  플로우차트에 대한 느낌, 어디로 진행하고 어디로 하고 
+    //  멀티 인스턴스 이 정보를 다른 애들에게도 알리고,,
 
     public SessionManager(string dbUrl, string redisHost, string redisPort)
     {
@@ -72,22 +78,27 @@ public class SessionManager
         return await mSessionKeyValueStore.AddUserSessionInfoAsync(userId, userSessionInfo);
     }
     
-    public async Task StartHeartbeatLoopAsync(string serverName, string serverIp, CancellationTokenSource cts)
+    public async Task StartHeartbeatLoopAsync(string serverName, string serverIp, CancellationToken token)
     {
-        while (!cts.Token.IsCancellationRequested)
+        while (!token.IsCancellationRequested)
         {
             try
             {
                 var success = await mSessionKeyValueStore.RefreshServerHeartbeatAsync(serverName, serverIp);
                 if (!success)
                     Console.WriteLine($"[Error] {serverName} Heartbeat Failed - {serverIp}");
+                
+                await Task.Delay(TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES), token);
+            }
+            catch (OperationCanceledException ex)
+            {
+                // 취소 시그널은 의도된 종료이므로 에러가 아님, 루프를 빠져나감
+                break;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Error] Heartbeat Exception: {ex.Message}");
             }
-
-            await Task.Delay(TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES), cts.Token);
         }
     }
 }

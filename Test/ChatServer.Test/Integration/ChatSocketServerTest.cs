@@ -18,7 +18,7 @@ public class ChatSocketServerTest
     public async Task Test_여러_클라이언트_동시_접속시_전부_정상_연결됨(int clientCount)
     {
         using var cts = new CancellationTokenSource();
-        var server = new ChatSocketServer(cts.Token);
+        var server = new ChatSocketServer(cts);
         var startAsync = server.StartAsync(IPAddress.Any, 20000);
 
         await Task.Delay(1000, cts.Token);

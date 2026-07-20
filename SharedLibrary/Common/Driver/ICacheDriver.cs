@@ -32,7 +32,7 @@ public interface ICacheDriver
     
     Task<bool> KeyExpireAsync(string key, TimeSpan? expiry = null, CancellationToken token = default);
     Task<long?> SortedSetRankAsync(string key, string member, EGetOrder order = EGetOrder.Ascending, CancellationToken token = default);
-    Task<double?> SortedSetScoreAsync(string key, string membe트r, CancellationToken token = default);
+    Task<double?> SortedSetScoreAsync(string key, string member, CancellationToken token = default);
     Task<string> ScriptEvaluateAsync(string script, string[] keys, string[] values, CancellationToken token = default);
     
     /*

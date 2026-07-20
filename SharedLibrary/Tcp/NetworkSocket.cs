@@ -19,7 +19,9 @@ public abstract class NetworkSocket : IDisposable
 
     private Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers = [];
     
-    protected readonly CancellationTokenSource mCts;
+    private readonly CancellationTokenSource mCts;
+    
+    protected readonly CancellationToken mToken;
     protected readonly Config mConfig;
     
     protected Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> PacketHandlers
@@ -34,9 +36,10 @@ public abstract class NetworkSocket : IDisposable
     }
     
     protected NetworkSocket(
-        CancellationToken token = default)
+        CancellationTokenSource cts = default)
     {
-        mCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        mCts = cts ?? throw new ArgumentNullException(nameof(cts), "필수 값이 누락되었습니다.");
+        mToken = cts.Token;
         
         var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         var jsonText = File.ReadAllText(path);
@@ -45,6 +48,7 @@ public abstract class NetworkSocket : IDisposable
 
     public abstract Task StartAsync(IPAddress ipAddress, int port);
     public abstract Task AcceptAsync();
+    protected abstract Task DisconnectClientAsync(SocketContext socketContext);
     
     protected abstract Task CheckSessionsAsync();
     
@@ -64,7 +68,7 @@ public abstract class NetworkSocket : IDisposable
             // 읽기는 가능한데 데이터가 없다 = 연결이 끊긴 것
             return !(isReadable && noDataAvailable);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
@@ -72,18 +76,17 @@ public abstract class NetworkSocket : IDisposable
     
     protected async Task StartConnectionCheckAsync(int intervalMinutes)
     {
-        while (!mCts.IsCancellationRequested)
+        while (!mToken.IsCancellationRequested)
         {
             try
             {
                 await CheckSessionsAsync();
+                await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), mToken);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[Error] Session Check Failed: {ex.Message}");
             }
-            
-            await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), mCts.Token);
         }
     }
 
@@ -100,7 +103,7 @@ public abstract class NetworkSocket : IDisposable
 
                 if (read == 0)
                 {
-                    Console.WriteLine("[Info] Disconnected");
+                    Console.WriteLine($"[Info] Client Disconnected");
                     return;
                 }
 
@@ -122,10 +125,20 @@ public abstract class NetworkSocket : IDisposable
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            // 취소 시그널은 의도된 종료이므로 에러가 아님
+        }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Console.WriteLine($"[Error] HandleClientReadAsync Error - {ex.Message}");
         }
+        finally
+        {
+            // 정상적으로 통신 중일 때는 이 메서드가 끝나지 않는다.
+            // 즉 finally에 도달했다는 것 자체가 연결이 끊겼음을 의미한다.
+            await DisconnectClientAsync(socketContext);
+        }   
     }
     
     protected static async Task WritePacket<T>(
