@@ -12,7 +12,7 @@ namespace WebServer.Controllers;
 [ApiController]
 public class GameUserController : Controller
 {
-    readonly ILogger<GameUserController> mLogger;
+    private readonly ILogger<GameUserController> mLogger;
     private readonly GameUserService mGameUserService;
 
     public GameUserController(
@@ -41,7 +41,6 @@ public class GameUserController : Controller
                 var result = await mGameUserService
                     .LoginAsync(request.Email, request.Pw, request.DeviceId);
                 return ApiResponse<AuthRes>.From(result.Item1, result.Item2);
-                break;
             case EAuth.Logout:
             // TODO 로그아웃
             default:
