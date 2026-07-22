@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Efcore.Repositories;
 
-public class ChatPartyRepository
+public class ChatPartyRepository : IChatPartyRepository
 {
     private readonly IHttpContextAccessor mHttpContextAccessor;
 
