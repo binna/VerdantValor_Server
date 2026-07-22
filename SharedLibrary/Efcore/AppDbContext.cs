@@ -12,6 +12,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<GameUser> GameUser { get; set; } = null!;
     public DbSet<Purchase> Purchase { get; set; } = null!;
     public DbSet<Inventory> Inventory { get; set; } = null!;
+    public DbSet<ChatParty> ChatParty { get; set; } = null!;
+    public DbSet<ChatPartyMember> ChatPartyMember { get; set; } = null!;
+    public DbSet<ChatPartyInvitation> ChatPartyInvitation { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +32,20 @@ public sealed class AppDbContext : DbContext
             {
                 entity.HasKey(table => table.Id);
                 entity.HasIndex(table => new { table.UserId, table.ItemId }).IsUnique();
+            })
+            .Entity<ChatParty>(entity =>
+            {
+                entity.HasKey(table => table.PartyId);
+            })
+            .Entity<ChatPartyMember>(entity =>
+            {
+                entity.HasKey(table => new { table.PartyId, table.UserId });
+                entity.HasIndex(table => table.PartyId).IsUnique();
+            })
+            .Entity<ChatPartyInvitation>(entity =>
+            {
+                entity.HasKey(table => new { table.PartyId, table.UserId });
+                entity.HasIndex(table => table.PartyId).IsUnique();
             })
             ;
     }

@@ -10,13 +10,17 @@ public class ChatParty
     
     [MaxLength(50)]
     public string Name { get; private set; } = string.Empty;
+    
+    public ulong OwnerUserId { get; private set; }
 
     
     private ChatParty() { }
     
-    public ChatParty(string name)
+    public ChatParty(string name, ulong ownerUserId)
     {
+        PartyId = Guid.NewGuid().ToString("N");
         Name = name;
+        OwnerUserId = ownerUserId;
     }
 
     public static async Task<ChatParty> FromDbDataReaderAsync(DbDataReader reader, CancellationToken token = default)
