@@ -36,16 +36,15 @@ public sealed class AppDbContext : DbContext
             .Entity<ChatParty>(entity =>
             {
                 entity.HasKey(table => table.PartyId);
+                entity.HasIndex(table => table.OwnerUserId).IsUnique();
             })
             .Entity<ChatPartyMember>(entity =>
             {
                 entity.HasKey(table => new { table.PartyId, table.UserId });
-                entity.HasIndex(table => table.PartyId).IsUnique();
             })
             .Entity<ChatPartyInvitation>(entity =>
             {
                 entity.HasKey(table => new { table.PartyId, table.UserId });
-                entity.HasIndex(table => table.PartyId).IsUnique();
             })
             ;
     }
