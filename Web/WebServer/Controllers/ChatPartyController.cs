@@ -48,12 +48,22 @@ public class ChatPartyController : Controller
             }
             case EChatPartyType.Invite:
             {
-                var code = await mChatPartyService.InviteAsync(userId, "name", request.InviteUserId);
+                var code = await mChatPartyService.InviteAsync(userId, request.InviteUserId);
                 return ApiResponse.From(code);
             }
             default:
-                return ApiResponse
-                    .From(EResponseResult.Success);
+                return ApiResponse.From(EResponseResult.InvalidInput);
         }
+    }
+    
+    [HttpPost("AcceptInvite")]
+    [Authorize(Policy = "SessionPolicy")]
+    public async Task<ApiResponse> AcceptInvite([FromBody] AcceptInviteReq request)
+    {
+        if (!ulong.TryParse(this.GetUserId(), out var userId))
+            return ApiResponse.From(EResponseResult.InvalidUserId);
+
+        var code = await mChatPartyService.AcceptInviteAsync(request.PartyId, userId);
+        return ApiResponse.From(code);
     }
 }

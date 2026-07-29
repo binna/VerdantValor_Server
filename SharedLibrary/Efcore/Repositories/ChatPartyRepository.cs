@@ -25,10 +25,13 @@ public class ChatPartyRepository : IChatPartyRepository
         return await dbContext.ChatParty.AnyAsync(p => p.PartyId == partyId);
     }
     
-    public async Task<bool> IsOwnerAsync(string partyId, ulong ownerUserId)
+    public async Task<string?> FindPartyIdByOwnerUserIdAsync(ulong ownerUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        return await dbContext.ChatParty.AnyAsync(p => p.PartyId == partyId &&  p.OwnerUserId == ownerUserId);
+        return await dbContext.ChatParty
+            .Where(p => p.OwnerUserId == ownerUserId)
+            .Select(p => p.PartyId)
+            .FirstOrDefaultAsync();
     }
 
     public async Task AddAsync(ChatParty chatParty)
