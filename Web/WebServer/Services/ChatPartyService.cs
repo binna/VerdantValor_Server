@@ -19,15 +19,15 @@ public class ChatPartyService
         mChatPartyRepository = chatPartyRepository;
     }
 
-    public async Task<EResponseResult> CreateAsync(ulong userId, string name)
+    public async Task<EResponseResult> CreateAsync(ulong ownerUserId, string partyName)
     {
-        var bHasPartyByOwnerUserId = await mChatPartyRepository.HasOwnerAsync(userId);
+        var bHasPartyByOwnerUserId = await mChatPartyRepository.HasOwnerAsync(ownerUserId);
         if (bHasPartyByOwnerUserId)
             return EResponseResult.AlreadyHasParty;
 
         for (var retry = 0; retry < RETRY_COUNT; retry++)
         {
-            var party = new ChatParty(name, userId);
+            var party = new ChatParty(partyName, ownerUserId);
             
             var bHasPartyByPartyId = await mChatPartyRepository.ExistsAsync(party.PartyId);
             if (bHasPartyByPartyId) continue;
@@ -39,11 +39,11 @@ public class ChatPartyService
         return EResponseResult.UnexpectedError;
     }
     
-    public async Task<EResponseResult> InviteAsync(ulong userId, string partyId, ulong inviteUserId)
+    public async Task<EResponseResult> InviteAsync(ulong ownerUserId, ulong inviteUserId)
     {
-        var bIsOwner = await mChatPartyRepository.IsOwnerAsync(partyId, userId);
+        var partyId = await mChatPartyRepository.FindPartyIdByOwnerUserIdAsync(ownerUserId);
 
-        if (!bIsOwner)
+        if (partyId == null)
             return EResponseResult.NotOwner;
 
         await mChatPartyRepository.InviteAddAsync(partyId, inviteUserId);
@@ -54,5 +54,11 @@ public class ChatPartyService
     {
         var bDeleted = await mChatPartyRepository.DeleteAsync(userId);
         return !bDeleted ? EResponseResult.NotOwner : EResponseResult.Success;
+    }
+    
+    public async Task<EResponseResult> AcceptInviteAsync(string partyId, ulong inviteUserId)
+    {
+        var bMemberAdd = await mChatPartyRepository.MemberAddAsync(partyId, inviteUserId);
+        return !bMemberAdd ? EResponseResult.NotOwner : EResponseResult.Success;
     }
 }
