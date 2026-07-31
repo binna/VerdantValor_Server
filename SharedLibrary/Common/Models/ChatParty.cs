@@ -1,10 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Common;
 
 namespace Common.Models;
 
 public class ChatParty
 {
+    public enum EState
+    {
+        Available,
+        Deleted,
+    }
+
     [MaxLength(32)]
     public string PartyId { get; private set; }
     
@@ -12,6 +19,9 @@ public class ChatParty
     public string Name { get; private set; } = string.Empty;
     
     public ulong OwnerUserId { get; private set; }
+
+    [NotMapped] 
+    public EState State { get; set; } = EState.Available;
 
     
     private ChatParty() { }
@@ -42,9 +52,6 @@ public class ChatParty
     
     public static async Task<List<string>> FromDbDataReaderToPartyIdListAsync(DbDataReader reader, CancellationToken token = default)
     {
-        if (!await reader.ReadAsync(token))
-            return null;
-
         List<string> parties = [];
         
         var partyIdIdx = reader.GetOrdinal("partyId");
@@ -55,5 +62,15 @@ public class ChatParty
         }
 
         return parties;
+    }
+    
+    public static async Task<string> FromDbDataReaderToPartyIdAsync(DbDataReader reader, CancellationToken token = default)
+    {
+        if (!await reader.ReadAsync(token))
+            return null;
+        
+        var partyIdIdx = reader.GetOrdinal("partyId");
+        
+        return await reader.GetFieldValueAsync<string>(partyIdIdx, token);
     }
 }
