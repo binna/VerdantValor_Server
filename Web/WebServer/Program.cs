@@ -216,6 +216,7 @@ builder.Services
     .AddSingleton<IGameUserRepository, GameUserRepository>()
     .AddSingleton<IPurchaseRepository, PurchaseRepository>()
     .AddSingleton<IInventoryRepository, InventoryRepository>()
+    .AddSingleton<IChatPartyRepository, ChatPartyRepository>()
     .AddSingleton<GameUserService>()
     .AddSingleton<RankingService>()
     .AddSingleton<ItemService>()

@@ -43,13 +43,14 @@ public class ChatPartyRepository : IChatPartyRepository
     public async Task InviteAddAsync(string partyId, ulong invitedUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
+        // TODO 가입중인 파티있는지 검증
         await dbContext.ChatPartyInvitation.AddAsync(new ChatPartyInvitation(partyId, invitedUserId));
     }
 
     public async Task<bool> MemberAddAsync(string partyId, ulong invitedUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        
+        // TODO 가입중인 파티있는지 검증
         var invitation = await dbContext.ChatPartyInvitation
             .FirstOrDefaultAsync(x => x.PartyId == partyId && x.UserId == invitedUserId);
 

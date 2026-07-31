@@ -12,7 +12,7 @@ public sealed class GameUserDao
         mDbFactory = dbFactory;
     }
     
-    public async Task<bool> ExistsByEmail(string email, CancellationToken token)
+    public async Task<bool> ExistsByEmailAsync(string email, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -28,7 +28,7 @@ public sealed class GameUserDao
         return await reader.ReadAsync(token);
     }
 
-    public async Task<GameUser?> FindByEmail(string email, CancellationToken token)
+    public async Task<GameUser?> FindByEmailAsync(string email, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -44,7 +44,7 @@ public sealed class GameUserDao
         return await GameUser.FromDbDataReaderAsync(reader, token);
     }
 
-    public async Task<GameUser?> FindByUserId(ulong userId, CancellationToken token)
+    public async Task<GameUser?> FindByUserIdAsync(ulong userId, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
         await conn.OpenAsync(token);
@@ -60,27 +60,27 @@ public sealed class GameUserDao
         return await GameUser.FromDbDataReaderAsync(reader, token);
     }
 
-    public async Task<bool> Save(string nickname, string email, string pw)
+    public async Task<bool> SaveAsync(string nickname, string email, string password, CancellationToken token)
     {
         await using var conn = mDbFactory.CreateConnection();
-        await conn.OpenAsync();
+        await conn.OpenAsync(token);
 
-        var cmd = new MySqlCommand(
+        await using var cmd = new MySqlCommand(
             "INSERT INTO gameUser " +
             "(nickname, email, pw, createdAt, updatedAt) " +
             "VALUES " +
-            "(@nickname, @email, @pw, @createdAt, @updatedAt);",
+            "(@nickname, @email, @password, @createdAt, @updatedAt);",
             conn);
 
         var now = DateTime.Now;
 
         cmd.Parameters.Add("@nickname", MySqlDbType.VarChar).Value = nickname;
         cmd.Parameters.Add("@email", MySqlDbType.VarChar).Value = email;
-        cmd.Parameters.Add("@pw", MySqlDbType.VarChar).Value = pw;
+        cmd.Parameters.Add("@password", MySqlDbType.VarChar).Value = password;
         cmd.Parameters.Add("@createdAt", MySqlDbType.DateTime).Value = now;
         cmd.Parameters.Add("@updatedAt", MySqlDbType.DateTime).Value = now;
 
-        var rows = await cmd.ExecuteNonQueryAsync();
+        var rows = await cmd.ExecuteNonQueryAsync(token);
 
         return rows > 0;
     }

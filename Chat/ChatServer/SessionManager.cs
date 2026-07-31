@@ -24,6 +24,8 @@ public class SessionManager
     private ChatPartyDao mChatPartyDao;
     private ISessionKeyValueStore mSessionKeyValueStore;
     
+    private int mInitialized;
+    
     // TODO
     //  로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
     // TODO
@@ -50,6 +52,9 @@ public class SessionManager
 
     public async Task Init(CancellationToken token)
     {
+        if (Interlocked.CompareExchange(ref mInitialized, 1, 0) != 0) 
+            return;
+        
         World = [];
         Party = [];
         
@@ -59,13 +64,24 @@ public class SessionManager
         var partyIds = await mChatPartyDao.FindAllPartyIdAsync(token);
         foreach (var partyId in partyIds)
         {
-            Party[partyId] = [ /* TODO 나중에 여기에도 데이터가 있도록 처리 */ ];
+            Party[partyId] = [];
         }
     }
 
     public bool AddUserToWorld(string worldName, ulong userId)
     {
         return World[worldName].TryAdd(userId, 0);
+    }
+    
+    public async Task<string?> AddUserToPartyAsync(ulong userId, CancellationToken token)
+    {
+        var partyId = await mChatPartyDao.FindPartyIdByOwnerUserIdAsync(userId, token) 
+                      ?? await mChatPartyDao.FindPartyIdByMemberUserIdAsync(userId, token);
+        
+        if (partyId is null)
+            return null;
+
+        return Party[partyId].TryAdd(userId, 0) ? partyId : null;
     }
 
     public async Task<UserSessionInfo> GetUserSessionInfoAsync(string userId)

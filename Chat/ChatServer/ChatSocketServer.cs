@@ -17,6 +17,8 @@ public class ChatSocketServer : NetworkSocket
 
     private TcpListener mListener;
     private SessionManager mSessionManager;
+    
+    // TODO 삭제할때, 여기 자체적으로 상태 컬럼을 만들어서 삭제 중으로 만들어보자
 
     public ChatSocketServer(CancellationTokenSource cts = default)
         : base(cts)
@@ -25,6 +27,7 @@ public class ChatSocketServer : NetworkSocket
         {
             [EPacket.Login] = HandleLoginAsync,
             [EPacket.EnterWorld] = HandleEnterWorldAsync,
+            [EPacket.EnterParty] = HandleEnterPartyAsync,
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
         };
@@ -149,13 +152,9 @@ public class ChatSocketServer : NetworkSocket
     }
 
     #region 패킷 핸들러 함수 모음
-    private async Task HandleLoginAsync(
-        SocketContext socketContext, 
-        CancellationToken token)
+    private async Task HandleLoginAsync(SocketContext socketContext, CancellationToken token)
     {
-        var payload = MemoryPackSerializer
-            .Deserialize<LoginReq>(socketContext.PayloadBuffer);
-
+        var payload = MemoryPackSerializer.Deserialize<LoginReq>(socketContext.PayloadBuffer);
         var userSessionInfo = await mSessionManager.GetUserSessionInfoAsync($"{payload.UserId}");
 
         if (payload.SessionId != userSessionInfo.SessionId)
@@ -187,8 +186,7 @@ public class ChatSocketServer : NetworkSocket
             token);
     }
 
-    private async Task HandleEnterWorldAsync(
-        SocketContext socketContext, CancellationToken token)
+    private async Task HandleEnterWorldAsync(SocketContext socketContext, CancellationToken token)
     {
         if (!socketContext.IsLogin)
         {
@@ -200,8 +198,7 @@ public class ChatSocketServer : NetworkSocket
             return;
         }
         
-        var payload = MemoryPackSerializer
-            .Deserialize<EnterWorldReq>(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer.Deserialize<EnterWorldReq>(socketContext.PayloadBuffer);
 
         try
         {
@@ -232,8 +229,49 @@ public class ChatSocketServer : NetworkSocket
         }
     }
 
-    private async Task HandleSendMessageAsync(
-        SocketContext socketContext, CancellationToken token)
+    private async Task HandleEnterPartyAsync(SocketContext socketContext, CancellationToken token)
+    {
+        if (!socketContext.IsLogin)
+        {
+            await SendResponsePacket<EnterPartyRes>(
+                socketContext.Stream,
+                EPacket.EnterParty,
+                EResponseResult.LoginRequired,
+                token);
+            return;
+        }
+        
+        try
+        {
+            var partyId = await mSessionManager.AddUserToPartyAsync(socketContext.Session.UserId, token);
+            if (partyId is null)
+            {
+                await SendResponsePacket<EnterPartyRes>(
+                    socketContext.Stream,
+                    EPacket.EnterParty,
+                    EResponseResult.AlreadyIn,
+                    token);
+                return;
+            }
+            
+            socketContext.Session.CurrentParty = partyId;
+            await SendResponsePacket<EnterPartyRes>(
+                socketContext.Stream,
+                EPacket.EnterParty,
+                EResponseResult.Success,
+                token);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            await SendResponsePacket<EnterPartyRes>(
+                socketContext.Stream,
+                EPacket.EnterParty,
+                EResponseResult.NoneSelected,
+                token);
+        }
+    }
+
+    private async Task HandleSendMessageAsync(SocketContext socketContext, CancellationToken token)
     {
         if (!socketContext.IsLogin)
         {
@@ -245,8 +283,7 @@ public class ChatSocketServer : NetworkSocket
             return;
         }
 
-        var kind = MemoryPackSerializer
-            .Deserialize<MessageKind>(socketContext.PayloadBuffer);
+        var kind = MemoryPackSerializer.Deserialize<MessageKind>(socketContext.PayloadBuffer);
 
         var bSuccess = await mSendMessageHandlers[kind.Type](socketContext, kind, token);
         if (bSuccess)
@@ -257,9 +294,7 @@ public class ChatSocketServer : NetworkSocket
                 token);
     }
 
-    private async Task HandleDisconnectAsync(
-        SocketContext socketContext, 
-        CancellationToken token)
+    private async Task HandleDisconnectAsync(SocketContext socketContext, CancellationToken token)
     {
         await SendResponsePacket<DisconnectRes>(
             socketContext.Stream,
@@ -272,10 +307,7 @@ public class ChatSocketServer : NetworkSocket
     #endregion
 
     #region SendMessage 타입별 핸들러
-    private async Task<bool> HandleUnknown(
-        SocketContext socketContext,
-        MessageKind kind,
-        CancellationToken token)
+    private async Task<bool> HandleUnknown(SocketContext socketContext, MessageKind kind, CancellationToken token)
     {
         await SendResponsePacket<SendMessageRes>(
             socketContext.Stream,
@@ -285,13 +317,9 @@ public class ChatSocketServer : NetworkSocket
         return true;
     }
 
-    private async Task<bool> HandleDirect(
-        SocketContext socketContext,
-        MessageKind kind,
-        CancellationToken token)
+    private async Task<bool> HandleDirect(SocketContext socketContext, MessageKind kind, CancellationToken token)
     {
-        var payload = MemoryPackSerializer
-            .Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
+        var payload = MemoryPackSerializer.Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
 
         if (!mSessionManager.LoginSessions.TryGetValue(payload.ReceiverUserId, out var session))
         {
@@ -316,10 +344,7 @@ public class ChatSocketServer : NetworkSocket
         return true;
     }
     
-    private async Task<bool> HandleGroup(
-        SocketContext socketContext,
-        MessageKind kind,
-        CancellationToken token)
+    private async Task<bool> HandleGroup(SocketContext socketContext, MessageKind kind, CancellationToken token)
     {
         var currentGroup = kind.Type switch
         {

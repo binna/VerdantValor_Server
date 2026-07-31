@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
 
 namespace Common.Models;
 
@@ -16,5 +17,15 @@ public class ChatPartyMember
     {
         PartyId = partyId;
         UserId = userId;
+    }
+    
+    public static async Task<string> FromDbDataReaderToPartyIdAsync(DbDataReader reader, CancellationToken token = default)
+    {
+        if (!await reader.ReadAsync(token))
+            return null;
+        
+        var partyIdIdx = reader.GetOrdinal("partyId");
+        
+        return await reader.GetFieldValueAsync<string>(partyIdIdx, token);
     }
 }
