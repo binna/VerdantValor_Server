@@ -28,6 +28,7 @@ public class ChatSocketServer : NetworkSocket
             [EPacket.Login] = HandleLoginAsync,
             [EPacket.EnterWorld] = HandleEnterWorldAsync,
             [EPacket.EnterParty] = HandleEnterPartyAsync,
+            [EPacket.ExitParty] = HandleExitPartyAsync,
             [EPacket.SendMessage] = HandleSendMessageAsync,
             [EPacket.Disconnect] = HandleDisconnectAsync,
         };
@@ -219,7 +220,7 @@ public class ChatSocketServer : NetworkSocket
                 EResponseResult.AlreadyIn,
                 token);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             await SendResponsePacket<EnterWorldRes>(
                 socketContext.Stream,
@@ -261,11 +262,76 @@ public class ChatSocketServer : NetworkSocket
                 EResponseResult.Success,
                 token);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
             await SendResponsePacket<EnterPartyRes>(
                 socketContext.Stream,
                 EPacket.EnterParty,
+                EResponseResult.NoneSelected,
+                token);
+        }
+    }
+
+    private async Task HandleExitPartyAsync(SocketContext socketContext, CancellationToken token)
+    {
+        if (!socketContext.IsLogin)
+        {
+            await SendResponsePacket<ExitPartyRes>(
+                socketContext.Stream,
+                EPacket.ExitParty,
+                EResponseResult.LoginRequired,
+                token);
+            return;
+        }
+        
+        var partyId = socketContext.Session.CurrentParty;
+        var userId = socketContext.Session.UserId;
+        socketContext.Session.CurrentParty = null;
+        if (partyId is null)
+        {
+            await SendResponsePacket<ExitPartyRes>(
+                socketContext.Stream,
+                EPacket.ExitParty,
+                EResponseResult.NotIn,
+                token);
+            return;
+        }
+
+        try
+        {
+            var bRemoved = await mSessionManager.RemoveUserFromPartyAsync(userId, token);
+            if (!bRemoved)
+            {
+                await SendResponsePacket<ExitPartyRes>(
+                    socketContext.Stream,
+                    EPacket.ExitParty,
+                    EResponseResult.UnexpectedError,
+                    token);
+                return;
+            }
+
+            var notification = new Notification
+            {
+                Content = $"{userId}님이 파티를 나갔습니다."
+            };
+
+            await BroadcastPacketToGroupAsync(
+                MessageType.Party,
+                partyId,
+                new Packet<Notification>(EPacket.SendMessage, notification),
+                token);
+        
+            await SendResponsePacket<ExitPartyRes>(
+                socketContext.Stream,
+                EPacket.ExitParty,
+                EResponseResult.Success,
+                token);
+        }
+        catch (KeyNotFoundException)
+        {
+            await SendResponsePacket<ExitPartyRes>(
+                socketContext.Stream,
+                EPacket.ExitParty,
                 EResponseResult.NoneSelected,
                 token);
         }

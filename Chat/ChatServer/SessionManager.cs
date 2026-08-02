@@ -84,6 +84,12 @@ public class SessionManager
         return Party[partyId].TryAdd(userId, 0) ? partyId : null;
     }
 
+    public async Task<bool> RemoveUserFromPartyAsync(ulong userId, CancellationToken token)
+    {
+        var partyId = await mChatPartyDao.FindPartyIdByMemberUserIdAsync(userId, token);
+        return partyId is not null && Party[partyId].TryRemove(userId,  out _);
+    }
+
     public async Task<UserSessionInfo> GetUserSessionInfoAsync(string userId)
     {
         return await mSessionKeyValueStore.GetUserSessionInfoAsync(userId);
@@ -106,7 +112,7 @@ public class SessionManager
                 
                 await Task.Delay(TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES), token);
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
                 // 취소 시그널은 의도된 종료이므로 에러가 아님, 루프를 빠져나감
                 break;
