@@ -28,29 +28,32 @@ public class GameUserController : Controller
     public async Task<ApiResponse<AuthRes>> Auth([FromBody] AuthReq request)
     {
         if (!Enum.TryParse<EAuth>(request.AuthType, out var authType))
-            return ApiResponse<AuthRes>
-                .From(EResponseResult.InvalidInput);
+            return ApiResponse<AuthRes>.From(EResponseResult.InvalidInput);
 
         switch (authType)
         {
             case EAuth.Join:
+            {
                 var code = await mGameUserService
                     .JoinAsync(request.Email, request.Pw, request.Nickname);
                 return ApiResponse<AuthRes>.From(code);
+            }
             case EAuth.Login:
+            {
                 var result = await mGameUserService
                     .LoginAsync(request.Email, request.Pw, request.DeviceId);
                 return ApiResponse<AuthRes>.From(result.Item1, result.Item2);
+            }
             case EAuth.Logout:
             // TODO 로그아웃
             default:
-                mLogger.LogError("Invalid authType {AuthType}", authType);
-                return ApiResponse<AuthRes>.From(EResponseResult.InvalidAuthType);
+                mLogger.LogError("Invalid Type {Type}", authType);
+                return ApiResponse<AuthRes>.From(EResponseResult.InvalidInput);
         }
     }
 
-    [HttpPost("Hearbeat")]
-    public async Task<ApiResponse> Hearbeat()
+    [HttpPost("Heartbeat")]
+    public async Task<ApiResponse> Heartbeat()
     {
         var userId = this.GetUserId();
         

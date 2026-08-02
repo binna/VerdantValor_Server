@@ -28,8 +28,7 @@ public class ChatPartyController : Controller
     public async Task<ApiResponse> ChatParty([FromBody] ChatPartyReq request)
     {
         if (!Enum.TryParse<EChatPartyType>(request.ChatPartyType, out var chatPartyType))
-            return ApiResponse
-                .From(EResponseResult.InvalidInput);
+            return ApiResponse.From(EResponseResult.InvalidInput);
         
         if (!ulong.TryParse(this.GetUserId(), out var userId))
             return ApiResponse.From(EResponseResult.InvalidUserId);
@@ -52,6 +51,7 @@ public class ChatPartyController : Controller
                 return ApiResponse.From(code);
             }
             default:
+                mLogger.LogError("Invalid Type {Type}", chatPartyType);
                 return ApiResponse.From(EResponseResult.InvalidInput);
         }
     }
