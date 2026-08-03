@@ -1,5 +1,9 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Ado.Daos;
+using Common.KeyValueStore;
+using NSubstitute;
+using Tcp;
 using Xunit.Abstractions;
 
 namespace ChatServer.Test.Integration;
@@ -7,25 +11,47 @@ namespace ChatServer.Test.Integration;
 public class ChatSocketServerTest
 {
     private readonly ITestOutputHelper mOutput;
-    
+    private readonly Config mConfig;
+    private readonly IChatPartyDao mChatPartyDao;
+    private readonly ISessionKeyValueStore mSessionKeyValueStore;
+
     public ChatSocketServerTest(ITestOutputHelper output)
     {
         mOutput = output;
+
+        mChatPartyDao = Substitute.For<IChatPartyDao>();
+        mChatPartyDao.FindAllPartyIdAsync(Arg.Any<CancellationToken>())
+            .Returns([]);
+        mChatPartyDao.FindPartyIdByMemberUserIdAsync(Arg.Any<ulong>(), Arg.Any<CancellationToken>())
+            .Returns((string?)null);
+
+        mSessionKeyValueStore = Substitute.For<ISessionKeyValueStore>();
+        mSessionKeyValueStore.RefreshServerHeartbeatAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(true);
+
+        mConfig = Substitute.For<Config>();
     }
+
     
     [Theory]
     [InlineData(1000)]
     public async Task Test_여러_클라이언트_동시_접속시_전부_정상_연결됨(int clientCount)
     {
         using var cts = new CancellationTokenSource();
-        var server = new ChatSocketServer(cts);
+        var token = cts.Token;
+        var worldPartyManager = new WorldPartyManager(mChatPartyDao, mSessionKeyValueStore, token);
+        var sessionManager = new SessionManager(mChatPartyDao, mSessionKeyValueStore, token);
+
+        using var server = new ChatSocketServer(
+            mChatPartyDao, mSessionKeyValueStore, worldPartyManager, sessionManager, mConfig, cts);
+        
         var startAsync = server.StartAsync(IPAddress.Any, 20000);
 
-        await Task.Delay(1000, cts.Token);
+        await Task.Delay(1000, token);
 
-        List<Task> clients = [];
+        List<Task<TcpClient?>> clients = [];
         var clientConnectedCnt = 0;
-
+        
         for (var i = 0; i < clientCount; i++)
         {
             clients.Add(Task.Run(async () =>
@@ -40,25 +66,32 @@ public class ChatSocketServerTest
                 {
                     try
                     {
-                        using var client = new TcpClient();
-                        await client.ConnectAsync(IPAddress.Loopback, 20000, cts.Token);
+                        var client = new TcpClient();
+                        await client.ConnectAsync(IPAddress.Loopback, 20000, token);
                         Interlocked.Increment(ref clientConnectedCnt);
-                        return; // 성공하면 즉시 종료
+                        return client;
                     }
                     catch (Exception ex)
                     {
                         mOutput.WriteLine($"[Test] Connect Failed (retry {retry}): {ex.Message}");
-                        await Task.Delay(200, cts.Token); // 짧은 간격으로 재시도
+                        await Task.Delay(200, token); // 짧은 간격으로 재시도
                     }
                 }
-
+            
                 mOutput.WriteLine("[Test] Max retry exceeded, giving up.");
-            }, cts.Token));
+                return null;
+            }, token));
         }
-
+        
         await Task.WhenAll(clients);
-
+        
         Assert.Equal(clientCount, clientConnectedCnt);
+        
+        foreach (var client in clients)
+        {
+            Assert.NotNull(client.Result);
+            client.Result?.Dispose();    
+        }
 
         await cts.CancelAsync();
     }
