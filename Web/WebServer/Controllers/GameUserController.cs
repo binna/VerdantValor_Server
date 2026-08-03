@@ -56,10 +56,7 @@ public class GameUserController : Controller
     public async Task<ApiResponse> Heartbeat()
     {
         var userId = this.GetUserId();
-        
-        if (await mGameUserService.SendHeartbeatAsync(userId))
-            return ApiResponse.From(EResponseResult.Success);
-        
-        return ApiResponse.From(EResponseResult.RedisError);
+        var code = await mGameUserService.SendHeartbeatAsync(userId);
+        return ApiResponse.From(code);
     }
 }

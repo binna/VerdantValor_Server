@@ -20,8 +20,7 @@ public class ServerDateTimeController : Controller
             ServerDateTime.ToCustomDateTime(req.TargetNow)
         );
 
-        return ApiResponse
-            .From(EResponseResult.Success);
+        return ApiResponse.From(EResponseResult.Success);
     }
     
     [HttpPost("reset")]
@@ -30,7 +29,6 @@ public class ServerDateTimeController : Controller
     {
         ServerDateTime.ResetServerTimeNow();
         
-        return ApiResponse
-            .From(EResponseResult.Success);
+        return ApiResponse.From(EResponseResult.Success);
     }
 }

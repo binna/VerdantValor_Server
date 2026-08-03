@@ -12,10 +12,14 @@ namespace WebServer.Controllers;
 [ApiController]
 public class RankingController : Controller
 {
+    private readonly ILogger<RankingController> mLogger;
     private readonly RankingService mRankingService;
     
-    public RankingController(RankingService rankingService)
+    public RankingController(
+        ILogger<RankingController> logger, 
+        RankingService rankingService)
     {
+        mLogger = logger;
         mRankingService = rankingService;
     }
 
@@ -32,16 +36,21 @@ public class RankingController : Controller
         
         switch (rankingScope)
         {
-            case ERankingScope.My:
-                var nickname = this.GetNickname();
-                return await mRankingService
-                    .GetMemberRankAsync(rankingType, userId, nickname);
             case ERankingScope.Global:
-                return await mRankingService
+            {
+                var result = await mRankingService
                     .GetTopRankingAsync(rankingType, request.Limit);
+                return ApiResponse<RankRes>.From(result.Item1, result.Item2);
+            }
+            case ERankingScope.My:
+            {
+                var result = await mRankingService
+                    .GetMemberRankAsync(rankingType, userId, this.GetNickname());
+                return ApiResponse<RankRes>.From(result.Item1, result.Item2);
+            }
             default:
-                return ApiResponse<RankRes>
-                    .From(EResponseResult.Success);
+                mLogger.LogError("Invalid Scope {Scope}", rankingScope);
+                return ApiResponse<RankRes>.From(EResponseResult.InvalidInput);
         }
     }
 
@@ -53,10 +62,9 @@ public class RankingController : Controller
         var nickname = this.GetNickname();
 
         if (!Enum.TryParse<ERanking>(request.Type, out var rankingType))
-            return ApiResponse<RankRes>
-                .From(EResponseResult.InvalidInput);
+            return ApiResponse<RankRes>.From(EResponseResult.InvalidInput);
 
-        return await mRankingService.AddScore(
-            rankingType, userId, nickname, request.Score);
+        var code =  await mRankingService.AddScore(rankingType, userId, nickname, request.Score);
+        return ApiResponse.From(code);
     }
 }

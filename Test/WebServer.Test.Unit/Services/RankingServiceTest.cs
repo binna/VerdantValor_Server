@@ -36,24 +36,22 @@ public class RankingServiceTest
     [InlineData(200)]
     public async Task Test_GetTopRanking_Limit_길이가_범위_밖일때_Fail(int limit)
     {
+        var rankings = new[]
+        {
+            new RankingEntry("1/user1", 1000.0),
+            new RankingEntry("2/user2", 900.0),
+            new RankingEntry("3/user3", 800.0),
+            new RankingEntry("4/user4", 700.0),
+            new RankingEntry("5/user5", 600.0),
+        };
+        
         mKeyValueStore.GetTopRankingByType(
                 $"{AppConstant.RANKING_ROOT}:{ERanking.All}", limit)
-            .Returns(Task.FromResult(
-                new []
-                {
-                    new RankingEntry("1/user1", 1000.0),
-                    new RankingEntry("2/user2", 900.0),
-                    new RankingEntry("3/user3", 800.0),
-                    new RankingEntry("4/user4", 700.0),
-                    new RankingEntry("5/user5", 600.0),
-                }
-            ));
+            .Returns(Task.FromResult(rankings));
         
-        var response = await mRankingService
-            .GetTopRankingAsync(ERanking.All, limit);
+        var result = await mRankingService.GetTopRankingAsync(ERanking.All, limit);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.InvalidInput}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.InvalidInput}", $"{result.Item1}");
     }
 
     [Fact]
@@ -63,41 +61,61 @@ public class RankingServiceTest
                 $"{AppConstant.RANKING_ROOT}:{ERanking.All}", 100)
             .Returns(Task.FromResult(Array.Empty<RankingEntry>()));
         
-        var response = await mRankingService
-            .GetTopRankingAsync(ERanking.All, 100);
+        var result = await mRankingService.GetTopRankingAsync(ERanking.All, 100);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.Success}", $"{result.Item1}");
+        Assert.Empty(result.Item2.Rankings);
     }
     
-    [Theory]
-    [InlineData(50)]
-    [InlineData(70)]
-    [InlineData(95)]
-    [InlineData(100)]
-    public async Task Test_GetTopRanking_Success(int limit)
+    [Fact]
+    public async Task Test_GetTopRanking_파싱_실패한_항목은_결과에서_제외됨()
     {
+        var rankings = new[]
+        {
+            new RankingEntry("1/user1", 1000.0),
+            new RankingEntry("2/user2", 900.0),
+            new RankingEntry("3user3", 800.0),
+            new RankingEntry("4/user4", 700.0),
+            new RankingEntry("5/user5", 600.0),
+        };
+        
         mKeyValueStore.GetTopRankingByType(
-            $"{AppConstant.RANKING_ROOT}:{ERanking.All}", limit)
-            .Returns(Task.FromResult(
-                new []
-                {
-                    new RankingEntry("1/user1", 1000.0),
-                    new RankingEntry("2/user2", 900.0),
-                    new RankingEntry("3/user3", 800.0),
-                    new RankingEntry("4/user4", 700.0),
-                    new RankingEntry("5/user5", 600.0),
-                }
-            ));
+                $"{AppConstant.RANKING_ROOT}:{ERanking.All}", 100)
+            .Returns(Task.FromResult(rankings));
         
-        var response = await mRankingService
-            .GetTopRankingAsync(ERanking.All, limit);
+        var result = await mRankingService.GetTopRankingAsync(ERanking.All, 100);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.Success}", $"{result.Item1}"); 
+        Assert.Equal(rankings.Length - 1, result.Item2.Rankings.Count);
+        Assert.Equal("user1", result.Item2.Rankings[0].Nickname);
+        Assert.Equal("user2", result.Item2.Rankings[1].Nickname);
+        Assert.Equal("user4", result.Item2.Rankings[2].Nickname);
+        Assert.Equal("user5", result.Item2.Rankings[3].Nickname);
+    }
+    
+    [Fact]
+    public async Task Test_GetTopRanking_Success()
+    {
+        var rankings = new[]
+        {
+            new RankingEntry("1/user1", 1000.0),
+            new RankingEntry("2/user2", 900.0),
+            new RankingEntry("3/user3", 800.0),
+            new RankingEntry("4/user4", 700.0),
+            new RankingEntry("5/user5", 600.0),
+        };
+        
+        mKeyValueStore.GetTopRankingByType(
+            $"{AppConstant.RANKING_ROOT}:{ERanking.All}", 100)
+            .Returns(Task.FromResult(rankings));
+        
+        var result = await mRankingService.GetTopRankingAsync(ERanking.All, 100);
+        
+        Assert.Equal($"{EResponseResult.Success}", $"{result.Item1}"); 
+        Assert.Equal(rankings.Length, result.Item2.Rankings.Count);
     }
     #endregion
-
+    
     #region 내 랭킹 조회
     [Theory]
     [InlineData("3", "user3", null, 3.0D)]
@@ -113,11 +131,10 @@ public class RankingServiceTest
             .GetMemberScore(Arg.Any<string>(), Arg.Any<string>())
             .Returns(Task.FromResult(score));
             
-        var response = await mRankingService
-            .GetMemberRankAsync(ERanking.All, userId, nickname);
+        var result = await mRankingService.GetMemberRankAsync(ERanking.All, userId, nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.SuccessEmptyRanking}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.SuccessEmptyRanking}", $"{result.Item1}");
+        Assert.Empty(result.Item2.Rankings);
     }
     
     [Theory]
@@ -126,20 +143,22 @@ public class RankingServiceTest
     {
         mKeyValueStore
             .GetMemberRank(Arg.Any<string>(), Arg.Any<string>())
-            .Returns(Task.FromResult(rank));
+            .Returns(Task.FromResult(rank - 1));
         
         mKeyValueStore
             .GetMemberScore(Arg.Any<string>(), Arg.Any<string>())
             .Returns(Task.FromResult(score));
         
-        var response = await mRankingService
-            .GetMemberRankAsync(ERanking.All, userId, nickname);
+        var result = await mRankingService.GetMemberRankAsync(ERanking.All, userId, nickname);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.Success}", $"{result.Item1}"); 
+        Assert.Single(result.Item2.Rankings); 
+        Assert.Equal(nickname, result.Item2.Rankings[0].Nickname); 
+        Assert.Equal(rank, result.Item2.Rankings[0].Rank); 
+        Assert.Equal(score, result.Item2.Rankings[0].Score); 
     }
     #endregion
-
+    
     #region 랭킹 추가
     [Theory]
     [InlineData("1", "user1", 0.0D)]
@@ -147,22 +166,18 @@ public class RankingServiceTest
     [InlineData("3", "user3", -110.0D)]
     public async Task Test_AddScore_점수가_0또는음수일때_Fail(string userId, string nickname, double score)
     {
-        var response = await mRankingService
-            .AddScore(ERanking.All, userId, nickname, score);
+        var code = await mRankingService.AddScore(ERanking.All, userId, nickname, score);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.ScoreCannotBeNegative}"); 
-        Assert.False(response.IsSuccess);
+        Assert.Equal($"{EResponseResult.ScoreCannotBeNegative}", $"{code}"); 
     }
-
+    
     [Theory]
     [InlineData("1", "user1", 5000.0D)]
     public async Task Test_AddScore_Success(string userId, string nickname, double score)
     {
-        var response = await mRankingService
-            .AddScore(ERanking.All, userId, nickname, score);
+        var code = await mRankingService.AddScore(ERanking.All, userId, nickname, score);
         
-        Assert.Equal($"{response.Code}", $"{(int)EResponseResult.Success}"); 
-        Assert.True(response.IsSuccess);
+        Assert.Equal( $"{EResponseResult.Success}", $"{code}"); 
     }
     #endregion
 }

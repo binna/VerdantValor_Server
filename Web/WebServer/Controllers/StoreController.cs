@@ -34,6 +34,7 @@ public class StoreController : Controller
         if (!ulong.TryParse(this.GetUserId(), out var userId))
             return ApiResponse.From(EResponseResult.InvalidUserId);
        
-        return await mStoreService.BuyAsync(store, userId);
+        var code = await mStoreService.BuyAsync(store, userId); 
+        return ApiResponse.From(code);
     }
 }

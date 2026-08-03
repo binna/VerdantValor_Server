@@ -2,7 +2,6 @@
 using Common.Concurrency;
 using Common.Driver;
 using Common.Models;
-using Common.Web;
 using Efcore.Repositories;
 using Shared.GameData;
 using Shared.Types;
@@ -66,7 +65,7 @@ public class StoreService
     // 그럼에도 학습 목적이 크고,
     // 앞으로 락 사용처가 늘어나면
     // 이 구조가 더 유용해질 거라 판단해 이번엔 적용해본다.
-    public async Task<ApiResponse> BuyAsync(Store store, ulong userId)
+    public async Task<EResponseResult> BuyAsync(Store store, ulong userId)
     {
         var key = $"Buy:{userId}";
         var token = $"{Guid.NewGuid()}";
@@ -79,14 +78,14 @@ public class StoreService
 
             var bAcquired = await distributedLockHandle.TryAcquireGlobalLockAsync();
             if (!bAcquired)
-                return ApiResponse.From(EResponseResult.LockAcquisitionFailed);
+                return EResponseResult.LockAcquisitionFailed;
             
             if (store.MaxPurchaseCount != 0)
             {
                 var count = await mPurchaseRepository.CountAsync(userId, store.Id);
 
                 if (count >= store.MaxPurchaseCount)
-                    return ApiResponse.From(EResponseResult.PurchaseLimitExceeded);
+                    return EResponseResult.PurchaseLimitExceeded;
             }
 
             purchase = await mPurchaseRepository.AddAndSaveAsync(store.Id, userId);
@@ -94,22 +93,22 @@ public class StoreService
             var user = await mGameUserRepository.FindByUserIdAsync(userId);
 
             if (user == null)
-                return ApiResponse.From(EResponseResult.NoData);
+                return EResponseResult.NoData;
 
             var bPurchaseSuccess = Purchase(store.PriceType, store.Prices, user);
 
             if (!bPurchaseSuccess)
-                return ApiResponse.From(EResponseResult.PurchaseFailed);
+                return EResponseResult.PurchaseFailed;
 
             var bItemGranted = await mItemService.GainItem(store.Items, user);
 
             if (!bItemGranted)
-                return ApiResponse.From(EResponseResult.ItemCreationFailed);
+                return EResponseResult.ItemCreationFailed;
         }
         
         await mPurchaseRepository.MarkAsCompletedAsync(purchase.Id);
         
-        return ApiResponse.From(EResponseResult.Success);
+        return EResponseResult.Success;
     }
 
     private static bool Purchase(ECurrencyType priceType, Dictionary<ECurrency, decimal> prices, GameUser user)

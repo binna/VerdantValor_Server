@@ -94,9 +94,9 @@ public class GameUserService
         return (EResponseResult.Success, new AuthRes { SessionId = sessionId });
     }
     
-    public async Task<bool> SendHeartbeatAsync(string userId)
+    public async Task<EResponseResult> SendHeartbeatAsync(string userId)
     {
-        return await mSessionKeyValueStore.ExtendUserSessionInfoAsync(userId);
+        return await mSessionKeyValueStore.ExtendUserSessionInfoAsync(userId) ? EResponseResult.Success : EResponseResult.RedisError;
     }
 
     // TODO 체팅 어느 서버에 배정됬는지,,, 연결하는 부분

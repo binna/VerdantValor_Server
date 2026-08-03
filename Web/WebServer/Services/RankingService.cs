@@ -19,11 +19,10 @@ public class RankingService
         mKeyValueStore = keyValueStore;
     }
 
-    public async Task<ApiResponse<RankRes>> GetTopRankingAsync(ERanking rankingType, int limit)
+    public async Task<(EResponseResult, RankRes)> GetTopRankingAsync(ERanking rankingType, int limit)
     {
         if (limit is < AppConstant.RANKING_MIN or > AppConstant.RANKING_MAX)
-            return ApiResponse<RankRes>
-                .From(EResponseResult.InvalidInput);
+            return (EResponseResult.InvalidInput, new RankRes());
 
         var redisRankings =
             await mKeyValueStore.GetTopRankingByType(CreateRankingKeyName(rankingType), limit);
@@ -39,6 +38,7 @@ public class RankingService
             {
                 mLogger.LogError("Failed to parse userId.\nCheck Redis data. {@userId}", 
                     new { userId = userInfo[0] });
+                continue;
             }
             
             result.Rankings.Add(new RankInfo
@@ -49,11 +49,10 @@ public class RankingService
             });
         }
 
-        return ApiResponse<RankRes>
-            .From(EResponseResult.Success, result);
+        return (EResponseResult.Success, result);
     }
 
-    public async Task<ApiResponse<RankRes>> GetMemberRankAsync(ERanking rankingType, string userId, string nickname)
+    public async Task<(EResponseResult, RankRes)> GetMemberRankAsync(ERanking rankingType, string userId, string nickname)
     {
         var member = CreateMemberFieldName(userId, nickname);
         var rankingKey = CreateRankingKeyName(rankingType);
@@ -65,8 +64,7 @@ public class RankingService
             await mKeyValueStore.GetMemberScore(rankingKey, member);
 
         if (rank == null || score == null)
-            return ApiResponse<RankRes>
-                .From(EResponseResult.SuccessEmptyRanking);
+            return (EResponseResult.SuccessEmptyRanking, new RankRes());
         
         var result = new RankRes();
         result.Rankings.Add(
@@ -78,22 +76,19 @@ public class RankingService
             }
         );
 
-        return ApiResponse<RankRes>
-            .From(EResponseResult.Success, result);
+        return (EResponseResult.Success, result);
     }
 
-    public async Task<ApiResponse> AddScore(ERanking rankingType, string userId, string nickname, double score)
+    public async Task<EResponseResult> AddScore(ERanking rankingType, string userId, string nickname, double score)
     {
         if (score <= 0)
-            return ApiResponse
-                .From(EResponseResult.ScoreCannotBeNegative);
+            return EResponseResult.ScoreCannotBeNegative;
         
         var member = CreateMemberFieldName(userId, nickname);
         
         await mKeyValueStore.AddSortedSetAsync(CreateRankingKeyName(rankingType), member, score); 
         
-        return ApiResponse
-            .From(EResponseResult.Success);
+        return EResponseResult.Success;
     }
 
     private static string CreateMemberFieldName(string userId, string nickname)

@@ -61,8 +61,9 @@ public class StoreServiceTest
         
         GameDataManager.StoreTable.TryGet(1, out var store);
         
-        var response = await mStoreService.BuyAsync(store, 1);
-        Assert.Equal($"{(int)EResponseResult.LockAcquisitionFailed}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, 1);
+        
+        Assert.Equal($"{EResponseResult.LockAcquisitionFailed}", $"{code}");
     }
     
     [Fact]
@@ -77,8 +78,9 @@ public class StoreServiceTest
         
         GameDataManager.StoreTable.TryGet(1, out var store);
         
-        var response = await mStoreService.BuyAsync(store, 2);
-        Assert.Equal($"{(int)EResponseResult.PurchaseLimitExceeded}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, 2);
+        
+        Assert.Equal($"{EResponseResult.PurchaseLimitExceeded}", $"{code}");
     }
     
     [Fact]
@@ -104,8 +106,9 @@ public class StoreServiceTest
             MaxPurchaseCount = 1
         };
         
-        var response = await mStoreService.BuyAsync(store, 3);
-        Assert.Equal($"{(int)EResponseResult.ItemCreationFailed}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, 3);
+        
+        Assert.Equal($"{EResponseResult.ItemCreationFailed}", $"{code}");
     }
     
     [Fact]
@@ -130,8 +133,9 @@ public class StoreServiceTest
             MaxPurchaseCount = 1
         };
         
-        var response = await mStoreService.BuyAsync(store, 4);
-        Assert.Equal($"{(int)EResponseResult.PurchaseFailed}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, 4);
+        
+        Assert.Equal($"{EResponseResult.PurchaseFailed}", $"{code}");
     }
     
     [Fact]
@@ -151,8 +155,9 @@ public class StoreServiceTest
 
         store.Items[0].Amount = -1;
         
-        var response = await mStoreService.BuyAsync(store, 1);
-        Assert.Equal($"{(int)EResponseResult.ItemCreationFailed}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, 1);
+        
+        Assert.Equal($"{EResponseResult.ItemCreationFailed}", $"{code}");
     }
     
     [Fact]
@@ -179,7 +184,10 @@ public class StoreServiceTest
         mPurchaseRepository.AddAndSaveAsync(Arg.Any<int>(), Arg.Any<ulong>())
             .Returns(Task.FromResult(new Purchase(store.Id, userId)));
         
-        var response = await mStoreService.BuyAsync(store, userId);
-        Assert.Equal($"{(int)EResponseResult.Success}", $"{response.Code}");
+        var code = await mStoreService.BuyAsync(store, userId);
+        
+        Assert.Equal($"{EResponseResult.Success}", $"{code}");
     }
+    
+    // TODO 유료결제
 }

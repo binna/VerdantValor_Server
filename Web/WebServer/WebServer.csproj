@@ -26,6 +26,14 @@
 
     <ItemGroup>
       <Folder Include="Logs\" />
+        
     </ItemGroup>
 
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>SolutionDir</_Parameter1>
+        <_Parameter2>$(SolutionDir)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+    
 </Project>
