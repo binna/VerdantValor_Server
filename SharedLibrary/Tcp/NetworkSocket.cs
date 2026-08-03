@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Shared.Constants;
@@ -10,46 +9,29 @@ namespace Tcp;
 
 public abstract class NetworkSocket : IDisposable
 {
-    private enum ReadPacketReturn
+    private enum EReadPacketReturn
     {
         NeedMoreData,
         PacketReady,
         BufferDrained
     }
 
-    private Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers = [];
+    private bool mbDisposed;
+    private Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> mPacketHandlers;
     
     private readonly CancellationTokenSource mCts;
-    
     protected readonly CancellationToken mToken;
-    protected readonly Config mConfig;
-    
-    protected Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> PacketHandlers
-    {
-        set
-        {
-            if (mPacketHandlers.Count > 0)
-                throw new InvalidOperationException("PacketHandlers는 한 번만 설정할 수 있습니다.");
 
-            mPacketHandlers = value;
-        }
-    }
-    
-    protected NetworkSocket(
-        CancellationTokenSource cts = default)
+    protected NetworkSocket(CancellationTokenSource cts = default)
     {
-        mCts = cts ?? throw new ArgumentNullException(nameof(cts), "필수 값이 누락되었습니다.");
+        mCts = cts ?? throw new ArgumentNullException(nameof(cts), "A required value is missing.");
         mToken = cts.Token;
-        
-        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-        var jsonText = File.ReadAllText(path);
-        mConfig = JsonSerializer.Deserialize<Config>(jsonText) ?? throw new Exception("Invalid Configuration File");
     }
 
     public abstract Task StartAsync(IPAddress ipAddress, int port);
-    public abstract Task AcceptAsync();
+    protected abstract Task AcceptAsync();
     protected abstract Task DisconnectClientAsync(SocketContext socketContext);
-    
+    protected abstract Task StartHeartbeatLoopAsync();
     protected abstract Task CheckSessionsAsync();
     
     public static bool IsSocketAlive(TcpClient client)
@@ -73,8 +55,32 @@ public abstract class NetworkSocket : IDisposable
             return false;
         }
     }
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (mbDisposed)
+            return;
+
+        if (disposing)
+        {
+            mCts.Cancel();
+            mCts.Dispose();
+        }
+
+        mbDisposed = true;
+    }
     
-    protected async Task StartConnectionCheckAsync(int intervalMinutes)
+    protected virtual void LogInfo(string message) => Console.WriteLine($"[Info] {message}");
+    protected virtual void LogError(string message) => Console.WriteLine($"[Error] {message}");
+    
+    protected void RegisterPacketHandlers(Dictionary<EPacket, Func<SocketContext, CancellationToken, Task>> packetHandlers) => mPacketHandlers = packetHandlers;
+    
+    protected async Task ConnectionCheckLoopAsync(int intervalMinutes)
     {
         while (!mToken.IsCancellationRequested)
         {
@@ -83,16 +89,19 @@ public abstract class NetworkSocket : IDisposable
                 await CheckSessionsAsync();
                 await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), mToken);
             }
+            catch (OperationCanceledException)
+            {
+                // 취소로 인한 종료는 정상 흐름이므로 루프를 빠져나간다.
+                break;
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Error] Session Check Failed: {ex.Message}");
+                LogError($"Session Check Failed: {ex.Message}");
             }
         }
     }
 
-    protected async Task HandleClientReadAsync(
-        SocketContext socketContext, 
-        CancellationToken token)
+    protected async Task HandleClientReadAsync(SocketContext socketContext, CancellationToken token)
     {
         try
         {
@@ -103,7 +112,7 @@ public abstract class NetworkSocket : IDisposable
 
                 if (read == 0)
                 {
-                    Console.WriteLine($"[Info] Client Disconnected");
+                    LogInfo("Client Disconnected");
                     return;
                 }
 
@@ -114,24 +123,37 @@ public abstract class NetworkSocket : IDisposable
                 {
                     var result = ReadPacket(socketContext);
 
-                    if (result == ReadPacketReturn.NeedMoreData)
+                    if (result == EReadPacketReturn.NeedMoreData)
                         break;
 
-                    if (Enum.IsDefined(socketContext.Header.PacketType))
-                        await mPacketHandlers[socketContext.Header.PacketType](socketContext, token);
+                    var packetType = socketContext.Header.PacketType;
+                    
+                    if (!Enum.IsDefined(packetType))
+                    {
+                        LogError($"Unknown Packet Type: {packetType}");
+                        break;
+                    }
+                    
+                    if (!mPacketHandlers.TryGetValue(packetType, out var handler))
+                    {
+                        LogError($"No Handler Registered For Packet Type: {packetType}");
+                        break;
+                    }
 
-                    if (result == ReadPacketReturn.PacketReady)
+                    await handler(socketContext, token);
+
+                    if (result == EReadPacketReturn.PacketReady)
                         break;
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            // 취소 시그널은 의도된 종료이므로 에러가 아님
+            // 취소로 인한 종료는 정상 흐름이므로 루프를 빠져나간다.
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Error] HandleClientReadAsync Error - {ex.Message}");
+            LogError($"HandleClientReadAsync Error - {ex.Message}");
         }
         finally
         {
@@ -141,15 +163,12 @@ public abstract class NetworkSocket : IDisposable
         }   
     }
     
-    protected static async Task WritePacket<T>(
-        NetworkStream stream, 
-        Packet<T> message, 
-        CancellationToken cancellationToken) where T : struct, IPacketBody
+    protected static async Task WritePacket<T>(NetworkStream stream, Packet<T> message, CancellationToken cancellationToken) where T : struct, IPacketBody
     {
         await stream.WriteAsync(message.PacketBytes, cancellationToken);
     }
     
-    private static ReadPacketReturn ReadPacket(SocketContext socketContext)
+    private static EReadPacketReturn ReadPacket(SocketContext socketContext)
     {
         while (socketContext.Remaining > 0)
         {
@@ -168,7 +187,7 @@ public abstract class NetworkSocket : IDisposable
                 socketContext.Remaining -= takeHeader;
 
                 if (socketContext.HeaderRead < AppConstant.HEADER_SIZE)
-                    return ReadPacketReturn.NeedMoreData;
+                    return EReadPacketReturn.NeedMoreData;
 
                 var beforePayloadLength = socketContext.Header.PayloadSize;
 
@@ -180,33 +199,27 @@ public abstract class NetworkSocket : IDisposable
             }
 
             var needPayLoad = socketContext.Header.PayloadSize - socketContext.PayloadRead;
-            var takePayLoad = Math.Min(needPayLoad, socketContext.Remaining);
+            var takePayload = Math.Min(needPayLoad, socketContext.Remaining);
 
             Buffer.BlockCopy(
                 socketContext.ReadBuffer, socketContext.Offset,
                 socketContext.PayloadBuffer, socketContext.PayloadRead,
-                takePayLoad);
+                takePayload);
 
-            socketContext.PayloadRead += takePayLoad;
-            socketContext.Offset += takePayLoad;
-            socketContext.Remaining -= takePayLoad;
+            socketContext.PayloadRead += takePayload;
+            socketContext.Offset += takePayload;
+            socketContext.Remaining -= takePayload;
 
             if (socketContext.PayloadRead < socketContext.Header.PayloadSize)
-                return ReadPacketReturn.NeedMoreData;
+                return EReadPacketReturn.NeedMoreData;
             
             socketContext.HeaderRead = 0;
             socketContext.PayloadRead = 0;
             
             if (socketContext.Remaining  > 0)
-                return ReadPacketReturn.BufferDrained;
+                return EReadPacketReturn.BufferDrained;
         }
 
-        return ReadPacketReturn.PacketReady;
-    }
-
-    public void Dispose()
-    {
-        mCts.Cancel();
-        mCts.Dispose();
+        return EReadPacketReturn.PacketReady;
     }
 }

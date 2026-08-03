@@ -1,11 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
-using Ado;
 using Ado.Daos;
-using Common;
 using Common.KeyValueStore;
 using Common.Types;
-using Redis;
+using Shared.Types;
 using Tcp;
 
 namespace ChatServer;
@@ -15,112 +13,50 @@ namespace ChatServer;
 //  Service = 일을 한다 (Do)
 public class SessionManager
 {
-    public ConcurrentDictionary<TcpClient, byte> ConnectedClient { get; private set; } = [];
-    public ConcurrentDictionary<ulong, Session> LoginSessions { get; private set; } = [];
-
-    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> World { get; private set; }
-    public ConcurrentDictionary<string, ConcurrentDictionary<ulong, byte>> Party { get; private set; }
-    
-    private ChatPartyDao mChatPartyDao;
-    private ISessionKeyValueStore mSessionKeyValueStore;
-    
-    private int mInitialized;
-    
-    // TODO
-    //  로그아웃 후 파티는 나가는 것이 필요할까? 나중에 처리 필요
+    // TODO Max 패킷을 공통 두기
+    //  매번 계산하기 힘듦
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
     // TODO
     //  금칙어 추가
     // TODO
     //  DB Distory 중에서 처리를 안한다는 건가 이런 방법을 고민해기
     //  플로우차트에 대한 느낌, 어디로 진행하고 어디로 하고 
     //  멀티 인스턴스 이 정보를 다른 애들에게도 알리고,,
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    private ConcurrentDictionary<TcpClient, byte> mConnectedClient = [];
+    private ConcurrentDictionary<ulong, Session> mLoginSessions = [];
 
-    public SessionManager(string dbUrl, string redisHost, string redisPort)
-    {
-        mChatPartyDao =
-            new ChatPartyDao(
-                new DbFactory(dbUrl));
-        
-        mSessionKeyValueStore = 
-            new SessionKeyValueStore(
-                new RedisCacheDriver(
-                    redisHost, 
-                    redisPort, 
-                    ShareServerConst.USER_SESSION_DB_NUM), 
-                0);
-    }
-
-    public async Task Init(CancellationToken token)
-    {
-        if (Interlocked.CompareExchange(ref mInitialized, 1, 0) != 0) 
-            return;
-        
-        World = [];
-        Party = [];
-        
-        // TODO 서버 처음에 로딩하기
-        World["Korea_1"] = [];
-        
-        var partyIds = await mChatPartyDao.FindAllPartyIdAsync(token);
-        foreach (var partyId in partyIds)
-        {
-            Party[partyId] = [];
-        }
-    }
-
-    public bool AddUserToWorld(string worldName, ulong userId)
-    {
-        return World[worldName].TryAdd(userId, 0);
-    }
+    private readonly IChatPartyDao mChatPartyDao;
+    private readonly ISessionKeyValueStore mSessionKeyValueStore;
+    private readonly CancellationToken mToken;
     
-    public async Task<string?> AddUserToPartyAsync(ulong userId, CancellationToken token)
+    public SessionManager(
+        IChatPartyDao chatPartyDao, 
+        ISessionKeyValueStore sessionKeyValueStore,
+        CancellationToken token)
     {
-        var partyId = await mChatPartyDao.FindPartyIdByOwnerUserIdAsync(userId, token) 
-                      ?? await mChatPartyDao.FindPartyIdByMemberUserIdAsync(userId, token);
+        mChatPartyDao = chatPartyDao;
+        mSessionKeyValueStore = sessionKeyValueStore;
+        mToken = token;
+    }
+
+    public IEnumerable<TcpClient> GetConnectedClients() => mConnectedClient.Keys;
+    public IEnumerable<Session> GetLoginSessions() => mLoginSessions.Values;
+    public bool AddConnectedClient(TcpClient tcpClient) => mConnectedClient.TryAdd(tcpClient, 0);
+    public bool RemoveConnectedClient(TcpClient client) => mConnectedClient.TryRemove(client, out _);
+    public bool RemoveLoginSession(ulong userId) => mLoginSessions.TryRemove(userId, out _);
+    public bool TryGetLoginSession(ulong userId, out Session? session) => mLoginSessions.TryGetValue(userId, out session);
+
+    public async Task<EResponseResult> LoginAsync(SocketContext socketContext, UserSessionInfo userSessionInfo)
+    {
+        if (!mConnectedClient.TryRemove(socketContext.Client, out _))
+            return EResponseResult.ConnectionNotFound;
+
+        var bAdded = await mSessionKeyValueStore.AddUserSessionInfoAsync($"{socketContext.Session.UserId}", userSessionInfo);
+        if (!bAdded) 
+            return EResponseResult.RedisError;
         
-        if (partyId is null)
-            return null;
-
-        return Party[partyId].TryAdd(userId, 0) ? partyId : null;
-    }
-
-    public async Task<bool> RemoveUserFromPartyAsync(ulong userId, CancellationToken token)
-    {
-        var partyId = await mChatPartyDao.FindPartyIdByMemberUserIdAsync(userId, token);
-        return partyId is not null && Party[partyId].TryRemove(userId,  out _);
-    }
-
-    public async Task<UserSessionInfo> GetUserSessionInfoAsync(string userId)
-    {
-        return await mSessionKeyValueStore.GetUserSessionInfoAsync(userId);
-    }
-
-    public async Task<bool> AddUserSessionInfoAsync(string userId, UserSessionInfo userSessionInfo)
-    {
-        return await mSessionKeyValueStore.AddUserSessionInfoAsync(userId, userSessionInfo);
-    }
-    
-    public async Task StartHeartbeatLoopAsync(string serverName, string serverIp, CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            try
-            {
-                var success = await mSessionKeyValueStore.RefreshServerHeartbeatAsync(serverName, serverIp);
-                if (!success)
-                    Console.WriteLine($"[Error] {serverName} Heartbeat Failed - {serverIp}");
-                
-                await Task.Delay(TimeSpan.FromMinutes(ShareServerConst.HEARTBEAT_MINUTES), token);
-            }
-            catch (OperationCanceledException)
-            {
-                // 취소 시그널은 의도된 종료이므로 에러가 아님, 루프를 빠져나감
-                break;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Error] Heartbeat Exception: {ex.Message}");
-            }
-        }
+        mLoginSessions[socketContext.Session.UserId] = socketContext.Session;
+        return EResponseResult.Success;
     }
 }

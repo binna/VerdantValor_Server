@@ -3,7 +3,7 @@ using MySql.Data.MySqlClient;
 
 namespace Ado.Daos;
 
-public class ChatPartyDao
+public class ChatPartyDao : IChatPartyDao
 {
     private readonly DbFactory mDbFactory;
     
