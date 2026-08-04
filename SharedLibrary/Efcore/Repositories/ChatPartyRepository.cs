@@ -13,16 +13,22 @@ public class ChatPartyRepository : IChatPartyRepository
         mHttpContextAccessor = httpContextAccessor;
     }
     
-    public async Task<bool> HasOwnerAsync(ulong ownerUserId)
+    public async Task<bool> ExistsAsync(string partyId)
+    {
+        var dbContext = mHttpContextAccessor.GetAppDbContext();
+        return await dbContext.ChatParty.AnyAsync(p => p.PartyId == partyId);
+    }
+    
+    public async Task<bool> IsOwnerAsync(ulong ownerUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
         return await dbContext.ChatParty.AnyAsync(p => p.OwnerUserId == ownerUserId);
     }
     
-    public async Task<bool> ExistsAsync(string partyId)
+    public async Task<bool> IsMemberAsync(ulong userId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        return await dbContext.ChatParty.AnyAsync(p => p.PartyId == partyId);
+        return await dbContext.ChatPartyMember.AnyAsync(x => x.UserId == userId);
     }
     
     public async Task<string?> FindPartyIdByOwnerUserIdAsync(ulong ownerUserId)
@@ -38,19 +44,18 @@ public class ChatPartyRepository : IChatPartyRepository
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
         await dbContext.ChatParty.AddAsync(chatParty);
+        await dbContext.ChatPartyMember.AddAsync(new ChatPartyMember(chatParty.PartyId, chatParty.OwnerUserId));
     }
     
     public async Task InviteAddAsync(string partyId, ulong invitedUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        // TODO 가입중인 파티있는지 검증
         await dbContext.ChatPartyInvitation.AddAsync(new ChatPartyInvitation(partyId, invitedUserId));
     }
 
     public async Task<bool> MemberAddAsync(string partyId, ulong invitedUserId)
     {
         var dbContext = mHttpContextAccessor.GetAppDbContext();
-        // TODO 가입중인 파티있는지 검증
         var invitation = await dbContext.ChatPartyInvitation
             .FirstOrDefaultAsync(x => x.PartyId == partyId && x.UserId == invitedUserId);
 

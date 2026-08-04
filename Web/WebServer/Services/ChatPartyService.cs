@@ -21,16 +21,21 @@ public class ChatPartyService
 
     public async Task<EResponseResult> CreateAsync(ulong ownerUserId, string partyName)
     {
-        var bHasPartyByOwnerUserId = await mChatPartyRepository.HasOwnerAsync(ownerUserId);
-        if (bHasPartyByOwnerUserId)
+        var bIsOwner = await mChatPartyRepository.IsOwnerAsync(ownerUserId);
+        if (bIsOwner)
             return EResponseResult.AlreadyHasParty;
+        
+        var bIsMember = await mChatPartyRepository.IsMemberAsync(ownerUserId);
+        if (bIsMember)
+            return EResponseResult.AlreadyIn;
 
         for (var retry = 0; retry < RETRY_COUNT; retry++)
         {
             var party = new ChatParty(partyName, ownerUserId);
             
             var bHasPartyByPartyId = await mChatPartyRepository.ExistsAsync(party.PartyId);
-            if (bHasPartyByPartyId) continue;
+            if (bHasPartyByPartyId) 
+                continue;
             
             await mChatPartyRepository.AddAsync(party);
             return EResponseResult.Success;
@@ -43,8 +48,12 @@ public class ChatPartyService
     {
         var partyId = await mChatPartyRepository.FindPartyIdByOwnerUserIdAsync(ownerUserId);
 
-        if (partyId == null)
+        if (partyId is null)
             return EResponseResult.NotOwner;
+        
+        var bIsMember = await mChatPartyRepository.IsMemberAsync(inviteUserId);
+        if (bIsMember)
+            return EResponseResult.AlreadyIn;
 
         await mChatPartyRepository.InviteAddAsync(partyId, inviteUserId);
         return EResponseResult.Success;
@@ -53,12 +62,12 @@ public class ChatPartyService
     public async Task<EResponseResult> DeleteAsync(ulong userId)
     {
         var bDeleted = await mChatPartyRepository.DeleteAsync(userId);
-        return !bDeleted ? EResponseResult.NotOwner : EResponseResult.Success;
+        return bDeleted ? EResponseResult.Success : EResponseResult.NotOwner;
     }
     
     public async Task<EResponseResult> AcceptInviteAsync(string partyId, ulong inviteUserId)
     {
         var bMemberAdd = await mChatPartyRepository.MemberAddAsync(partyId, inviteUserId);
-        return !bMemberAdd ? EResponseResult.NotOwner : EResponseResult.Success;
+        return bMemberAdd ? EResponseResult.Success : EResponseResult.InvitationNotFound;
     }
 }
