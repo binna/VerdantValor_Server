@@ -65,9 +65,9 @@
 - Redis 기반 세션 공유 구조로 멀티 서버 환경에서도 로그인 상태 일관성 유지    
   - 코드:
     - Program.cs
-      - [세션 설정](./Web/WebServer/Program.cs#L38)
+      - [세션 설정](./Web/WebServer/Program.cs#L37)
       - [세션 사용](./Web/WebServer/Program.cs#L237)
-      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L157)
+      - [세션 공유용 Redis 설정](./Web/WebServer/Program.cs#L150)
     
     - [SessionAuthHandler.cs 세션](./Web/WebServer/Pipeline/SessionAuthHandler.cs)
 
@@ -100,8 +100,8 @@
 - Authentication Handler + Attribute 기반 인증 정책 적용
   - 코드:
     - Program.cs
-      - [인증과 인가 설정](./Web/WebServer/Program.cs#L182)
-      - [인증과 인가 사용](./Web/WebServer/Program.cs#L239)
+      - [인증과 인가 설정](./Web/WebServer/Program.cs#L175)
+      - [인증과 인가 사용](./Web/WebServer/Program.cs#L240)
     - [PassThroughAuthHandler.cs 인증 핸들러](./Web/WebServer/Pipeline/PassThroughAuthHandler.cs)
     - [사용 예시 - RankingController GetRank API](./Web/WebServer/Controllers/RankingController.cs#L23)
     
