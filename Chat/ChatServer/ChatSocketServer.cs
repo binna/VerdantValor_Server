@@ -43,6 +43,8 @@ public class ChatSocketServer : NetworkSocket
             {
                 [EPacket.Login] = HandleLoginAsync,
                 [EPacket.EnterWorld] = HandleEnterWorldAsync,
+                [EPacket.CreateParty] = HandleCreatePartyAsync,
+                [EPacket.DeleteParty] = HandleDeletePartyAsync,
                 [EPacket.EnterParty] = HandleEnterPartyAsync,
                 [EPacket.ExitParty] = HandleExitPartyAsync,
                 [EPacket.SendMessage] = HandleSendMessageAsync,
@@ -107,7 +109,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
 
-    protected override async Task DisconnectClientAsync(SocketContext socketContext)
+    protected override Task DisconnectClientAsync(SocketContext socketContext)
     {
         if (socketContext.IsLogin)
         {
@@ -131,13 +133,14 @@ public class ChatSocketServer : NetworkSocket
             }
 
             socketContext.Session.Disconnect();
-            return;
+            return Task.CompletedTask;
         }
         
         if (!mSessionManager.RemoveConnectedClient(socketContext.Client))
             LogError("Failed To Remove Session - No Login");
         
         socketContext.Client.Close();
+        return Task.CompletedTask;
     }
 
     protected override async Task StartHeartbeatLoopAsync()
@@ -164,7 +167,7 @@ public class ChatSocketServer : NetworkSocket
         }
     }
 
-    protected override async Task CheckSessionsAsync()
+    protected override Task CheckSessionsAsync()
     {
         foreach (var client in mSessionManager.GetConnectedClients())
         {
@@ -199,6 +202,8 @@ public class ChatSocketServer : NetworkSocket
 
             session.Disconnect();
         }
+
+        return Task.CompletedTask;
     }
 
     #region 패킷 핸들러 함수 모음
@@ -257,6 +262,32 @@ public class ChatSocketServer : NetworkSocket
             token);
     }
 
+    private async Task HandleCreatePartyAsync(SocketContext socketContext, CancellationToken token)
+    {
+        var payload = MemoryPackSerializer.Deserialize<CreatePartyReq>(socketContext.PayloadBuffer);
+
+        var code = await mWorldPartyManager.CreatePartyAsync(payload.PartyId);
+
+        await SendResponsePacket<CreatePartyRes>(
+            socketContext.Stream,
+            EPacket.CreateParty,
+            code,
+            token);
+    }
+
+    private async Task HandleDeletePartyAsync(SocketContext socketContext, CancellationToken token)
+    {
+        var payload = MemoryPackSerializer.Deserialize<DeletePartyReq>(socketContext.PayloadBuffer);
+
+        var code = await mWorldPartyManager.DeletePartyAsync(payload.PartyId);
+
+        await SendResponsePacket<DeletePartyRes>(
+            socketContext.Stream,
+            EPacket.DeleteParty,
+            code,
+            token);
+    }
+
     private async Task HandleEnterPartyAsync(SocketContext socketContext, CancellationToken token)
     {
         if (!socketContext.IsLogin)
@@ -269,7 +300,11 @@ public class ChatSocketServer : NetworkSocket
             return;
         }
 
-        var code = await mWorldPartyManager.AddUserToPartyAsync(socketContext.Session.UserId);
+        var (code, partyId) = await mWorldPartyManager.AddUserToPartyAsync(socketContext.Session.UserId);
+        
+        if (code == EResponseResult.Success)
+            socketContext.Session.CurrentParty = partyId;
+        
         await SendResponsePacket<EnterPartyRes>(
             socketContext.Stream,
             EPacket.EnterParty,

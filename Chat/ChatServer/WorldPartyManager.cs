@@ -49,17 +49,18 @@ public class WorldPartyManager
         return world.TryAdd(userId, 0) ? EResponseResult.Success : EResponseResult.AlreadyIn;
     }
     
-    public async Task<EResponseResult> AddUserToPartyAsync(ulong userId)
+    public async Task<(EResponseResult Code, string? PartyId)> AddUserToPartyAsync(ulong userId)
     {
         var partyId = await mChatPartyDao.FindPartyIdByMemberUserIdAsync(userId, mToken);
         
         if (partyId is null)
-            return EResponseResult.NotIn;
+            return (EResponseResult.NotIn, null);
         
         if (!mParties.TryGetValue(partyId, out var party))
-            return EResponseResult.NoneSelected;
+            return (EResponseResult.NoneSelected, null);
         
-        return party.TryAdd(userId, 0) ? EResponseResult.Success : EResponseResult.AlreadyIn;
+        var code = party.TryAdd(userId, 0) ? EResponseResult.Success : EResponseResult.AlreadyIn;
+        return (code, partyId);
     }
     
     public EResponseResult RemoveUserFromWorld(string worldName, ulong userId)
@@ -78,7 +79,25 @@ public class WorldPartyManager
         return party.TryRemove(userId, out _) ? EResponseResult.Success : EResponseResult.UnexpectedError;
     }
     
-    // TODO 파티랑 월드 추가, 파티랑 월드 삭제
-    //  월드추가는 레디스에서 확인해서 추가할 예정
-    //  파티는 클라에서 쏴줄거야
+    public async Task<EResponseResult> CreatePartyAsync(string partyId)
+    {
+        var chatParty = await mChatPartyDao.FindByPartyIdAsync(partyId, mToken);
+
+        if (chatParty is null)
+            return EResponseResult.NoneSelected;
+
+        return mParties.TryAdd(partyId, []) ? EResponseResult.Success : EResponseResult.AlreadyIn;
+    }
+
+    public async Task<EResponseResult> DeletePartyAsync(string partyId)
+    {
+        var chatParty = await mChatPartyDao.FindByPartyIdAsync(partyId, mToken);
+
+        if (chatParty is not null)
+            return EResponseResult.PartyNotYetDeleted;
+
+        return mParties.TryRemove(partyId, out _) ? EResponseResult.Success : EResponseResult.UnexpectedError;
+    }
+    
+    // TODO 월드 추가 삭제
 }

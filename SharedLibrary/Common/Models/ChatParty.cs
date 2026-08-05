@@ -40,6 +40,7 @@ public class ChatParty
         
         var partyIdIdx = reader.GetOrdinal("partyId");
         var nameIdx = reader.GetOrdinal("name");
+        var ownerUserIdIdx = reader.GetOrdinal("ownerUserId");
 
         return new ChatParty
         {
@@ -47,6 +48,8 @@ public class ChatParty
                 await reader.GetFieldValueAsync<string>(partyIdIdx, token),
             Name =
                 await reader.GetFieldValueAsync<string>(nameIdx, token),
+            OwnerUserId = 
+                await reader.GetFieldValueAsync<ulong>(ownerUserIdIdx, token),
         };
     }
     

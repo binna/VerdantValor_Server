@@ -4,6 +4,7 @@ namespace Tcp;
 
 public class Session
 {
+    // TODO 닉네임 부분 추가하기
     private readonly TcpClient mClient;
     
     public string SessionId { get; }

@@ -50,4 +50,18 @@ public class ChatPartyDao : IChatPartyDao
         await using var reader = await cmd.ExecuteReaderAsync(token);
         return await ChatPartyMember.FromDbDataReaderToPartyIdAsync(reader, token);
     }
+
+    public async Task<ChatParty?> FindByPartyIdAsync(string partyId, CancellationToken token)
+    {
+        await using var conn = mDbFactory.CreateConnection();
+        await conn.OpenAsync(token);
+
+        await using var cmd = new MySqlCommand(
+            "SELECT partyId, name, ownerUserId FROM chatParty WHERE partyId = @partyId", conn);
+
+        cmd.Parameters.Add("@partyId", MySqlDbType.VarChar).Value = partyId;
+
+        await using var reader = await cmd.ExecuteReaderAsync(token);
+        return await ChatParty.FromDbDataReaderAsync(reader, token);
+    }
 }
