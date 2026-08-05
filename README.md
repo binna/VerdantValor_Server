@@ -125,6 +125,9 @@
 - 수신 → 버퍼링 → 파싱 → 처리로 이어지는 네트워크 처리 흐름 구성 
   - 코드:
     - [NetworkSocket.cs](/SharedLibrary/Tcp/NetworkSocket.cs)
+- 클라이언트 세션별로 독립된 버퍼를 유지해 수신 상태 혼선 방지
+  - 코드:
+    - [https://github.com/binna/VerdantValor_Server/blob/main/SharedLibrary/Tcp/SocketContext.cs]
 
 #### 헤더 기반 가변 길이 패킷 처리
 - TCP 스트림 특성상 패킷 경계가 보장되지 않는 점을 고려  
