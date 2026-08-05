@@ -127,7 +127,7 @@
     - [NetworkSocket.cs](/SharedLibrary/Tcp/NetworkSocket.cs)
 - 클라이언트 세션별로 독립된 버퍼를 유지해 수신 상태 혼선 방지
   - 코드:
-    - [https://github.com/binna/VerdantValor_Server/blob/main/SharedLibrary/Tcp/SocketContext.cs]
+    - [SocketContext.cs](/SharedLibrary/Tcp/SocketContext.cs)
 
 #### 헤더 기반 가변 길이 패킷 처리
 - TCP 스트림 특성상 패킷 경계가 보장되지 않는 점을 고려  
