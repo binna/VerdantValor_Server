@@ -95,9 +95,12 @@ public class WorldPartyManager
 
         if (chatParty is not null)
             return EResponseResult.PartyNotYetDeleted;
+        
+        // TODO 다른 세션에 CurrentParty 삭제 방법 고려하기
 
         return mParties.TryRemove(partyId, out _) ? EResponseResult.Success : EResponseResult.UnexpectedError;
     }
     
     // TODO 월드 추가 삭제
+    // TODO 파티도 같은 월드끼리 가능해야 함
 }

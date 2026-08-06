@@ -17,7 +17,7 @@ public class ChatSocketServer : NetworkSocket
     private string mServerIp;
     private TcpListener mListener;
     
-    private readonly Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<bool>>> mSendMessageHandlers;
+    private readonly Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken,  Task<EResponseResult>>> mSendMessageHandlers;
     private readonly IChatPartyDao mChatPartyDao;
     private readonly ISessionKeyValueStore mSessionKeyValueStore;
     private readonly WorldPartyManager mWorldPartyManager;
@@ -51,9 +51,8 @@ public class ChatSocketServer : NetworkSocket
                 [EPacket.Disconnect] = HandleDisconnectAsync,
             });
 
-        mSendMessageHandlers = new Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<bool>>>
+        mSendMessageHandlers = new Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<EResponseResult>>>
         {
-            [MessageType.Unknown] = HandleUnknown,
             [MessageType.Direct] = HandleDirect,
             [MessageType.World] = HandleGroup,
             [MessageType.Party] = HandleGroup
@@ -383,13 +382,12 @@ public class ChatSocketServer : NetworkSocket
             return;
         }
 
-        var bSuccess = await handler(socketContext, kind, token);
-        if (bSuccess)
-            await SendResponsePacket<SendMessageRes>(
-                socketContext.Stream,
-                EPacket.SendMessage,
-                EResponseResult.Success,
-                token);
+        var code = await handler(socketContext, kind, token);
+        await SendResponsePacket<SendMessageRes>(
+            socketContext.Stream,
+            EPacket.SendMessage,
+            code,
+            token);
     }
 
     private async Task HandleDisconnectAsync(SocketContext socketContext, CancellationToken token)
@@ -405,47 +403,28 @@ public class ChatSocketServer : NetworkSocket
     #endregion
 
     #region SendMessage 타입별 핸들러
-    private async Task<bool> HandleUnknown(SocketContext socketContext, MessageKind kind, CancellationToken token)
-    {
-        await SendResponsePacket<SendMessageRes>(
-            socketContext.Stream,
-            EPacket.SendMessage,
-            EResponseResult.SendMessageInvalidTarget,
-            token);
-        return true;
-    }
-
-    private async Task<bool> HandleDirect(SocketContext socketContext, MessageKind kind, CancellationToken token)
+    private async Task<EResponseResult> HandleDirect(SocketContext socketContext, MessageKind kind, CancellationToken token)
     {
         var payload = MemoryPackSerializer.Deserialize<SendDirectMessageReq>(socketContext.PayloadBuffer);
 
+        // TODO 멀티일때, 어떤식으로 다른 서버에 통신을 할지 고민 필요
         if (!mSessionManager.TryGetLoginSession(payload.ReceiverUserId, out var session))
-        {
-            // TODO 다이렉트 메시지 저장 기능 필요
-            return false;
-        }
+            return EResponseResult.ReceiverOffline;
 
         if (session is null)
-            return false;
+            return EResponseResult.ReceiverOffline;
 
         if (kind.Category == MessageCategory.Notification)
-        {
-            await SendResponsePacket<SendMessageRes>(
-                session.Stream,
-                EPacket.SendMessage,
-                EResponseResult.InvalidInput,
-                token);
-            return false;
-        }
+            return EResponseResult.InvalidInput;
                 
         await WritePacket(
             session.Stream, 
             new Packet<SendDirectMessageReq>(EPacket.SendMessage, payload),
             token);
-        return true;
+        return EResponseResult.Success;
     }
     
-    private async Task<bool> HandleGroup(SocketContext socketContext, MessageKind kind, CancellationToken token)
+    private async Task<EResponseResult>  HandleGroup(SocketContext socketContext, MessageKind kind, CancellationToken token)
     {
         var currentGroup = kind.Type switch
         {
@@ -455,15 +434,13 @@ public class ChatSocketServer : NetworkSocket
         };
         
         if (currentGroup is null) 
-            return false;
+            return EResponseResult.NotIn;
 
         switch (kind.Category)
         {
             case MessageCategory.Notification:
             {
-                var payload = MemoryPackSerializer
-                    .Deserialize<Notification>(socketContext.PayloadBuffer);
-
+                var payload = MemoryPackSerializer.Deserialize<Notification>(socketContext.PayloadBuffer);
                 await BroadcastPacketToGroupAsync(
                     kind.Type,
                     currentGroup,
@@ -473,9 +450,7 @@ public class ChatSocketServer : NetworkSocket
             }
             case MessageCategory.Chat:
             {
-                var payload = MemoryPackSerializer
-                    .Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
-
+                var payload = MemoryPackSerializer.Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
                 await BroadcastPacketToGroupAsync(
                     kind.Type,
                     currentGroup,
@@ -484,15 +459,10 @@ public class ChatSocketServer : NetworkSocket
                 break;
             }
             default:
-                await SendResponsePacket<SendMessageRes>(
-                    socketContext.Stream,
-                    EPacket.SendMessage,
-                    EResponseResult.InvalidInput,
-                    token);
-                return false;
+                return EResponseResult.InvalidInput;
         }
 
-        return true;
+        return EResponseResult.Success;
     }
     #endregion
 
