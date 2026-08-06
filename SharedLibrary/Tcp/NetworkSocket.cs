@@ -153,7 +153,7 @@ public abstract class NetworkSocket : IDisposable
         }
         catch (Exception ex)
         {
-            LogError($"HandleClientReadAsync Error - {ex.Message}");
+            LogError($"HandleClientReadAsync: {ex.Message}");
         }
         finally
         {
