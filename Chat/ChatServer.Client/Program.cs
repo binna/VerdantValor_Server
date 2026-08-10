@@ -3,64 +3,121 @@ using ChatServer.Client;
 
 internal class Server
 {
+    public enum EClientMenu
+    {
+        Logout = 0,
+        Login = 1,
+        EnterWorld = 2,
+        CreateParty = 3,
+        DeleteParty = 4,
+        EnterParty = 5,
+        ExitParty = 6,
+        WorldSendMessage = 7,
+        PartySendMessage = 8,
+    }
+    
     static async Task Main(string[] args)
     {
         using var cts = new CancellationTokenSource();
-        var client = new ChatSocketClient(cts.Token);
-        var startTask = client.StartAsync();
-        
-        // Console.WriteLine("Menu=================");
-        // Console.WriteLine("1. Login");
-        // Console.WriteLine("2. Show RoomList");
-        // Console.WriteLine("3. Create Room");
-        // Console.WriteLine("4. Enter Room");
-        // Console.WriteLine("5. Terminate a Program");
-        // Console.WriteLine("=====================");
-        //
-        while (!cts.Token.IsCancellationRequested) 
+        ChatSocketClient? client = null;
+        Task? startTask = null;
+
+        EClientMenu menu;
+
+        while (!cts.Token.IsCancellationRequested)
         {
-        //     Console.WriteLine("Menu Num: ");
-        //     var selectedOption = Console.ReadLine();
-        //
-        //     switch (selectedOption)
-        //     {
-        //         case "1":
-        //         {
-        //             Console.WriteLine("Enter UserId: ");
-        //             var userIdInput = Console.ReadLine();
-        //             if (!ulong.TryParse(userIdInput, out var userId))
-        //             {
-        //                 Console.WriteLine("Invalid user ID.");
-        //                 break;
-        //             }
-        //
-        //             await server.SendLoginReqAsync(userId);
-        //             break;
-        //         }
-        //         case "2":
-        //         {
-        //             await server.SendRoomListReqAsync();
-        //             break;
-        //         }
-        //         case "3":
-        //         {
-        //             await server.SendCreateRoomAsync();
-        //             break;
-        //         }
-        //         case "4":
-        //         {
-        //             Console.WriteLine("Enter RoomId : ");
-        //             var roomIdInput = Console.ReadLine();
-        //             if (!int.TryParse(roomIdInput, out var roomId))
-        //             {
-        //                 Console.WriteLine("Invalid room ID.");
-        //                 break;
-        //             }
-        //
-        //             await server.SendEnterRoomAsync(roomId);
-        //             break;
-        //         }
-            // }
+            PrintMenu();
+
+            if (Enum.TryParse(Console.ReadLine(), out menu))
+            {
+                Console.WriteLine("[Notice] 잘못된 입력입니다.");
+                continue;
+            }
+
+            switch (menu)
+            {
+                case EClientMenu.Login:
+                    if (ulong.TryParse(Console.ReadLine(), out var userId)) 
+                    {
+                        client = new ChatSocketClient(cts.Token);
+                        startTask = client.StartAsync();
+                        
+                        var sessionId = Console.ReadLine();
+                        if (sessionId is not null)
+                        {
+                            Console.WriteLine($"{sessionId}");
+                            await client.LoginAsync(userId, sessionId);
+                            break;
+                        }
+                    }
+                    Console.WriteLine("Invalid input");
+                    break;
+                case EClientMenu.EnterWorld:
+                    if (client is not null)
+                    {
+                        var worldName = Console.ReadLine();
+                        if (worldName is not null)
+                        {
+                            Console.WriteLine($"{worldName}");
+                            await client.EnterWorldAsync(worldName);
+                        }
+                    }
+                    Console.WriteLine("Invalid input and no login");
+                    break;
+                case EClientMenu.CreateParty:
+                    if (client is not null)
+                    {
+                        var partyId = Console.ReadLine();
+                        if (partyId is not null)
+                        {
+                            Console.WriteLine($"{partyId}");
+                            await client.CreatePartyAsync(partyId);
+                        }
+                    }
+                    Console.WriteLine("Invalid input and no login");
+                    break;
+                case EClientMenu.DeleteParty:
+                    if (client is not null)
+                    {
+                        var partyId = Console.ReadLine();
+                        if (partyId is not null)
+                        {
+                            Console.WriteLine($"{partyId}");
+                            await client.DeletePartyAsync(partyId);
+                        }
+                    }
+                    Console.WriteLine("Invalid input and no login");
+                    break;;
+                case EClientMenu.EnterParty:
+                    if (client is not null)
+                        await client.EnterPartyAsync();
+                    Console.WriteLine("Invalid input and no login");
+                    break;;
+                case EClientMenu.ExitParty:
+                    if (client is not null)
+                        await client.ExitPartyAsync();
+                    Console.WriteLine("Invalid input and no login");
+                    break;;
+                default:
+                    Console.WriteLine("[Notice] 잘못된 입력입니다.");
+                    break;
+            }
         }
+    }
+
+    private static void PrintMenu()
+    {
+        Console.WriteLine("Menu=================");
+        Console.WriteLine("1. Login");
+        Console.WriteLine("2. Enter World");
+        Console.WriteLine("3. Create Party");
+        Console.WriteLine("4. Delete Party");
+        Console.WriteLine("5. Enter Party");
+        Console.WriteLine("6. Exit Party");
+        Console.WriteLine("7. Send Message");
+        Console.WriteLine("8. Disconnect");
+        Console.WriteLine("0. Logout");
+        Console.WriteLine("=====================");
+        Console.Write("Menu Num: ");
     }
 }
