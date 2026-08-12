@@ -17,7 +17,7 @@ public class ChatSocketServer : NetworkSocket
     private string mServerIp;
     private TcpListener mListener;
     
-    private readonly Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken,  Task<EResponseResult>>> mSendMessageHandlers;
+    private readonly Dictionary<EMessageType, Func<SocketContext, MessageKind, CancellationToken,  Task<EResponseResult>>> mSendMessageHandlers;
     private readonly IChatPartyDao mChatPartyDao;
     private readonly ISessionKeyValueStore mSessionKeyValueStore;
     private readonly WorldPartyManager mWorldPartyManager;
@@ -51,11 +51,11 @@ public class ChatSocketServer : NetworkSocket
                 [EPacket.Disconnect] = HandleDisconnectAsync,
             });
 
-        mSendMessageHandlers = new Dictionary<MessageType, Func<SocketContext, MessageKind, CancellationToken, Task<EResponseResult>>>
+        mSendMessageHandlers = new Dictionary<EMessageType, Func<SocketContext, MessageKind, CancellationToken, Task<EResponseResult>>>
         {
-            [MessageType.Direct] = HandleDirect,
-            [MessageType.World] = HandleGroup,
-            [MessageType.Party] = HandleGroup
+            [EMessageType.Direct] = HandleDirect,
+            [EMessageType.World] = HandleGroup,
+            [EMessageType.Party] = HandleGroup
         };
     }
 
@@ -345,7 +345,7 @@ public class ChatSocketServer : NetworkSocket
 
             socketContext.Session.CurrentParty = null;
             await BroadcastPacketToGroupAsync(
-                MessageType.Party,
+                EMessageType.Party,
                 partyId,
                 new Packet<Notification>(EPacket.SendMessage, notification),
                 token);
@@ -414,7 +414,7 @@ public class ChatSocketServer : NetworkSocket
         if (session is null)
             return EResponseResult.ReceiverOffline;
 
-        if (kind.Category == MessageCategory.Notification)
+        if (kind.Category == EMessageCategory.Notification)
             return EResponseResult.InvalidInput;
                 
         await WritePacket(
@@ -428,8 +428,8 @@ public class ChatSocketServer : NetworkSocket
     {
         var currentGroup = kind.Type switch
         {
-            MessageType.World => socketContext.Session.CurrentWorld,
-            MessageType.Party => socketContext.Session.CurrentParty,
+            EMessageType.World => socketContext.Session.CurrentWorld,
+            EMessageType.Party => socketContext.Session.CurrentParty,
             _ => null
         };
         
@@ -438,7 +438,7 @@ public class ChatSocketServer : NetworkSocket
 
         switch (kind.Category)
         {
-            case MessageCategory.Notification:
+            case EMessageCategory.Notification:
             {
                 var payload = MemoryPackSerializer.Deserialize<Notification>(socketContext.PayloadBuffer);
                 await BroadcastPacketToGroupAsync(
@@ -448,7 +448,7 @@ public class ChatSocketServer : NetworkSocket
                     token);
                 break;
             }
-            case MessageCategory.Chat:
+            case EMessageCategory.Chat:
             {
                 var payload = MemoryPackSerializer.Deserialize<SendGroupMessageReq>(socketContext.PayloadBuffer);
                 await BroadcastPacketToGroupAsync(
@@ -477,7 +477,7 @@ public class ChatSocketServer : NetworkSocket
     }
 
     private async Task BroadcastPacketToGroupAsync<T>(
-        MessageType type,
+        EMessageType type,
         string name,
         Packet<T> packet,
         CancellationToken token) where T : struct, IPacketBody
@@ -486,10 +486,10 @@ public class ChatSocketServer : NetworkSocket
 
         switch (type)
         {
-            case MessageType.World:
+            case EMessageType.World:
                 mWorldPartyManager.TryGetWorldMembers(name, out users);
                 break;
-            case MessageType.Party:
+            case EMessageType.Party:
                 mWorldPartyManager.TryGetPartyMembers(name, out users);
                 break;
         }

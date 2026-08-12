@@ -1,5 +1,9 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using MemoryPack;
 using Protocol.Chat.Frames;
 using Protocol.Chat.Payloads;
@@ -61,7 +65,7 @@ public class ChatSocketClient
                     SessionId = sessionId,
                     UserId = userId
                 });
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
 
     public async Task EnterWorldAsync(string worldName)
@@ -73,7 +77,7 @@ public class ChatSocketClient
                 {
                     WorldName = worldName
                 });
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
 
     public async Task CreatePartyAsync(string partyId)
@@ -85,7 +89,7 @@ public class ChatSocketClient
                 {
                     PartyId = partyId
                 });
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
 
     public async Task DeletePartyAsync(string partyId)
@@ -97,7 +101,7 @@ public class ChatSocketClient
                 {
                     PartyId = partyId
                 });
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
 
     public async Task EnterPartyAsync()
@@ -106,7 +110,7 @@ public class ChatSocketClient
             new Packet<EnterPartyReq>(
                 EPacket.EnterParty,
                 new EnterPartyReq());
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
 
     public async Task ExitPartyAsync()
@@ -115,7 +119,69 @@ public class ChatSocketClient
             new Packet<ExitPartyReq>(
                 EPacket.ExitParty,
                 new ExitPartyReq());
-        await mSocketContext.Stream.WriteAsync(packet.PacketBytes, mToken);
+        await WritePacket(mClient.GetStream(), packet, mToken);
+    }
+
+    public async Task WorldSendMessage(string message)
+    {
+        var packet =
+            new Packet<SendGroupMessageReq>(
+                EPacket.SendMessage,
+                new SendGroupMessageReq
+                {
+                    Kind = new MessageKind
+                    {
+                        Id = $"{Guid.NewGuid()}",
+                        Category = EMessageCategory.Chat,
+                        Type = EMessageType.World
+                    },
+                    Content = message,
+                    CreatedAt = DateTime.Now
+                });
+        await WritePacket(mClient.GetStream(), packet, mToken);
+    }
+    
+    // TODO message 사이즈 규격 정하기, Id 처리(개수랑 서버 소속 밝히겠끔 바꾸기)
+
+    public async Task PartySendMessage(string message)
+    {
+        var packet =
+            new Packet<SendGroupMessageReq>(
+                EPacket.SendMessage,
+                new SendGroupMessageReq
+                {
+                    Kind = new MessageKind
+                    {
+                        Id = $"{Guid.NewGuid()}",
+                        Category = EMessageCategory.Chat,
+                        Type = EMessageType.Party
+                    },
+                    Content = message,
+                    CreatedAt = DateTime.Now
+                });
+        await WritePacket(mClient.GetStream(), packet, mToken);
+    }
+    
+    public async Task DirectSendMessage(ulong userId, string nickname, ulong receiverUserId, string message)
+    {
+        var packet =
+            new Packet<SendDirectMessageReq>(
+                EPacket.SendMessage,
+                new SendDirectMessageReq
+                {
+                    Kind = new MessageKind
+                    {
+                        Id = $"{Guid.NewGuid()}",
+                        Category = EMessageCategory.Chat,
+                        Type = EMessageType.Direct
+                    },
+                    SenderUserId = userId,
+                    SenderUserNickname = nickname,
+                    ReceiverUserId = receiverUserId,
+                    Content = message,
+                    CreatedAt = DateTime.Now
+                });
+        await WritePacket(mClient.GetStream(), packet, mToken);
     }
     #endregion
 
